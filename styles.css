@@ -1056,3 +1056,15 @@ body {
     top: 0;
   }
 }
+
+
+/* v0.8 sync time visibility */
+#lawCheckedAt {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.45;
+  word-break: keep-all;
+}

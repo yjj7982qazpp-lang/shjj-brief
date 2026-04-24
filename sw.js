@@ -1,4 +1,4 @@
-const CACHE_NAME = "shjj-brief-v7-cache-fix1";
+const CACHE_NAME = "shjj-brief-v8-cache-fix1";
 
 const ASSETS = [
   "./",

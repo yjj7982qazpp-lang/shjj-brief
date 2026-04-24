@@ -357,7 +357,8 @@ async function loadLawUpdates() {
 
     setText("lawBasisChip", data.basis || "시행일 기준");
     setText("lawNotice", data.scope || data.notice || "시행일 기준 법령 변경을 확인합니다.");
-    setText("lawCheckedAt", `확인일: ${safeText(data.checked_at)}`);
+    const syncedAtText = data.synced_at ? ` · 자동갱신: ${data.synced_at}` : "";
+    setText("lawCheckedAt", `확인일: ${safeText(data.checked_at)}${syncedAtText}`);
 
     setText("lawTodayCount", `${todayCount}건`);
     setText("lawWeekCount", `${weekCount}건`);
