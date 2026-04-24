@@ -1,0 +1,40 @@
+name: Auto Law Brief Update
+
+on:
+  schedule:
+    # 09:20 KST = 00:20 UTC
+    - cron: "20 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-law-brief:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Update law brief data
+        env:
+          LAW_OC: ${{ secrets.LAW_OC }}
+        run: python .github/scripts/collect_law_updates.py
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/law_updates.json DEPLOY_STATUS.txt
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto update law brief data"
+            git push
+          fi

@@ -1,0 +1,27 @@
+[
+  {
+    "name": "건축법",
+    "category": "건축 인허가",
+    "priority": 1
+  },
+  {
+    "name": "건축법 시행령",
+    "category": "건축 인허가",
+    "priority": 1
+  },
+  {
+    "name": "건축법 시행규칙",
+    "category": "건축 인허가",
+    "priority": 1
+  },
+  {
+    "name": "주택건설기준 등에 관한 규정",
+    "category": "공동주택",
+    "priority": 1
+  },
+  {
+    "name": "건축물관리법",
+    "category": "유지관리",
+    "priority": 2
+  }
+]
