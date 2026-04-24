@@ -103,5 +103,7 @@
     "version": "law_collector_v1",
     "oc_mode": "test",
     "errors": []
-  }
+  },
+  "synced_at": "2026-04-25 00:09:32",
+  "sync_status": "success"
 }
