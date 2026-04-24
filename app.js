@@ -260,19 +260,73 @@ function getLawChangeSummary(item) {
   );
 }
 
+function groupByCategory(items) {
+  const groups = {};
+
+  (items || []).forEach((item) => {
+    const category = safeText(item.category, "기타");
+
+    if (!groups[category]) {
+      groups[category] = [];
+    }
+
+    groups[category].push(item);
+  });
+
+  return groups;
+}
+
+function renderChangedCategoryGroups(changedItems) {
+  if (!changedItems.length) return "";
+
+  const groups = groupByCategory(changedItems);
+
+  return Object.entries(groups).map(([category, items]) => {
+    const cards = items.map(renderChangedItem).join("");
+
+    return `
+      <section class="law-category-group changed-group">
+        <div class="law-category-title">
+          <strong>${category}</strong>
+          <span>변경 ${items.length}건</span>
+        </div>
+        <div class="law-category-body">
+          ${cards}
+        </div>
+      </section>
+    `;
+  }).join("");
+}
+
 function renderNoChangeGroup(unchangedItems) {
   if (!unchangedItems.length) return "";
 
-  const names = unchangedItems.map((item) => {
-    return `<li>${safeText(item.law_name)} <span>${safeText(item.category, "분류 없음")}</span></li>`;
+  const groups = groupByCategory(unchangedItems);
+
+  const categoryBlocks = Object.entries(groups).map(([category, items]) => {
+    const names = items.map((item) => {
+      return `<li>${safeText(item.law_name)}</li>`;
+    }).join("");
+
+    return `
+      <details class="law-nochange-category">
+        <summary>
+          <strong>${category}</strong>
+          <span>${items.length}건</span>
+        </summary>
+        <ul class="law-nochange-list">
+          ${names}
+        </ul>
+      </details>
+    `;
   }).join("");
 
   return `
     <details class="law-nochange-box">
       <summary>변경 없는 법령 ${unchangedItems.length}건</summary>
-      <ul class="law-nochange-list">
-        ${names}
-      </ul>
+      <div class="law-nochange-categories">
+        ${categoryBlocks}
+      </div>
     </details>
   `;
 }
@@ -334,7 +388,7 @@ function renderLawList(containerId, items, emptyMessage) {
   let html = "";
 
   if (changedItems.length > 0) {
-    html += changedItems.map(renderChangedItem).join("");
+    html += renderChangedCategoryGroups(changedItems);
   } else {
     html += `<div class="law-empty">${emptyMessage}</div>`;
   }
