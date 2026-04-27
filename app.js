@@ -377,80 +377,88 @@ function getLawChangeSummary(item) {
   );
 }
 
-function groupByCategory(items) {
-  const groups = {};
+const LAW_MAJOR_GROUPS = ["건축", "도시주택", "소방안전", "교통기타", "기타"];
+
+function getLawMajorGroup(item) {
+  const text = [
+    safeText(item.category, ""),
+    safeText(item.law_name, ""),
+    safeText(item.law_type, ""),
+  ].join(" ");
+
+  if (/건축|녹색건축|피난|방화|에너지절약|범죄예방|건축물관리|면적|높이/.test(text)) {
+    return "건축";
+  }
+
+  if (/주택|국토|도시|공동주택|계획|이용|하수도/.test(text)) {
+    return "도시주택";
+  }
+
+  if (/소방|안전|시설물|편의증진|장애인|노인|임산부|층간|바닥충격음/.test(text)) {
+    return "소방안전";
+  }
+
+  if (/교통|주차장|자전거|도로|차량|자동차/.test(text)) {
+    return "교통기타";
+  }
+
+  return "기타";
+}
+
+function groupLawItemsByMajorGroup(items) {
+  const grouped = new Map(LAW_MAJOR_GROUPS.map((name) => [name, []]));
 
   (items || []).forEach((item) => {
-    const category = safeText(item.category, "기타");
-
-    if (!groups[category]) {
-      groups[category] = [];
-    }
-
-    groups[category].push(item);
+    const groupName = getLawMajorGroup(item);
+    grouped.get(groupName).push(item);
   });
 
-  return groups;
+  return LAW_MAJOR_GROUPS
+    .map((name) => ({ name, items: grouped.get(name) || [] }))
+    .filter((group) => group.items.length > 0);
+}
+
+function renderLawAccordionGroup(title, items, renderItem, options = {}) {
+  const countLabel = options.countLabel || "건";
+  const noteText = options.noteText || "";
+  const openAttr = options.open ? " open" : "";
+  const inner = items.map(renderItem).join("");
+  const extra = noteText ? ` <span>${escapeHtml(noteText)}</span>` : "";
+
+  return `
+    <details class="law-category-group"${openAttr}>
+      <summary class="law-category-title">
+        <strong>${escapeHtml(title)}</strong>
+        <span>${escapeHtml(`${items.length}${countLabel}`)}${extra}</span>
+      </summary>
+      <div class="law-category-body">
+        ${inner}
+      </div>
+    </details>
+  `;
+}
+
+function renderLawEmptyState(apiStatus, message) {
+  const statusText = apiStatus === "success" ? "API 성공 0건" : "API 실패 0건";
+
+  return `
+    <div class="law-empty law-empty-status ${apiStatus === "success" ? "success" : "error"}">
+      ${escapeHtml(`${statusText} · ${message}`)}
+    </div>
+  `;
 }
 
 function renderChangedCategoryGroups(changedItems) {
   if (!changedItems.length) return "";
 
-  const groups = groupByCategory(changedItems);
+  const groups = groupLawItemsByMajorGroup(changedItems);
 
-  return Object.entries(groups).map(([category, items]) => {
-    const cards = items.map(renderChangedItem).join("");
-
-    return `
-      <section class="law-category-group changed-group">
-        <div class="law-category-title">
-          <strong>${escapeHtml(category)}</strong>
-          <span>변경 ${items.length}건</span>
-        </div>
-        <div class="law-category-body">
-          ${cards}
-        </div>
-      </section>
-    `;
-  }).join("");
-}
-
-function renderNoChangeGroup(unchangedItems) {
-  if (!unchangedItems.length) return "";
-
-  const groups = groupByCategory(unchangedItems);
-
-  const categoryBlocks = Object.entries(groups).map(([category, items]) => {
-    const names = items.map((item) => {
-      return `
-        <li>
-          <strong>${safeHtml(item.law_name)}</strong>
-          <span>${safeHtml(item.summary, "새로 시행되는 변경사항은 확인되지 않았습니다.")}</span>
-        </li>
-      `;
-    }).join("");
-
-    return `
-      <details class="law-nochange-category">
-        <summary>
-          <strong>${escapeHtml(category)}</strong>
-          <span>${items.length}건</span>
-        </summary>
-        <ul class="law-nochange-list">
-          ${names}
-        </ul>
-      </details>
-    `;
-  }).join("");
-
-  return `
-    <details class="law-nochange-box">
-      <summary>변경 없음 ${unchangedItems.length}건 · 정기 확인</summary>
-      <div class="law-nochange-categories">
-        ${categoryBlocks}
-      </div>
-    </details>
-  `;
+  return groups.map(({ name, items }) => renderLawAccordionGroup(
+    name,
+    items,
+    renderChangedItem,
+    { countLabel: "건" }
+  )).join("");
 }
 
 function renderChangedItem(item) {
@@ -484,18 +492,18 @@ function renderChangedItem(item) {
       </div>
 
       <div class="law-change-summary-box">
-        <span>변경 후 요약</span>
+        <span>변경 요약</span>
         <p>${escapeHtml(getLawChangeSummary(item))}</p>
       </div>
 
       <div class="law-next-step">
-        오늘 확인: 시행일, 개정유형, 영향도를 먼저 보고 업무 메모에 후속 조치를 남기세요.
+        오늘 확인: 시행일, 개정유형, 영향도를 먼저 보고 업무 메모를 남기세요.
       </div>
     </article>
   `;
 }
 
-function updateLawAction(todayCount, weekCount, monthCount) {
+function updateLawAction(todayCount, weekCount, monthCount, apiStatus, apiError) {
   if (todayCount > 0) {
     setText("lawActionTitle", "오늘 즉시 확인");
     setText("lawActionText", `오늘 시행 변경 ${todayCount}건이 있습니다. 법령명, 시행일, 변경 후 요약을 먼저 확인하세요.`);
@@ -508,33 +516,32 @@ function updateLawAction(todayCount, weekCount, monthCount) {
     return;
   }
 
-  setText("lawActionTitle", "정기 확인 완료");
-  setText("lawActionText", `오늘 신규 변경은 없습니다. 감시 법령 ${monthCount > 0 ? "최근 30일 변경 이력" : "목록"}을 훑고 필요한 메모만 남기세요.`);
-}
-
-function renderLawList(containerId, items, emptyMessage) {
-  const container = $(containerId);
-  if (!container) return;
-
-  if (!Array.isArray(items) || items.length === 0) {
-    container.innerHTML = `<div class="law-empty">${escapeHtml(emptyMessage)}</div>`;
+  if (apiStatus && apiStatus !== "success") {
+    const suffix = apiError ? ` (${apiError})` : "";
+    setText("lawActionTitle", "API 조회 확인");
+    setText("lawActionText", `오늘 변경 0건처럼 보여도 실제로는 API 상태가 ${apiStatus}입니다. 최신성부터 다시 확인하세요.${suffix}`);
     return;
   }
 
-  const changedItems = items.filter((item) => item.status !== "no_change");
-  const unchangedItems = items.filter((item) => item.status === "no_change");
+  setText("lawActionTitle", "정기 확인 완료");
+  setText("lawActionText", `오늘 신규 변경이 없습니다. 감시 법령 ${monthCount > 0 ? "최근 30일 변경 이력" : "목록"}을 훑고 필요한 메모만 남기세요.`);
+}
 
-  let html = "";
+function renderLawList(containerId, items, emptyMessage, options = {}) {
+  const container = $(containerId);
+  if (!container) return;
 
-  if (changedItems.length > 0) {
-    html += renderChangedCategoryGroups(changedItems);
-  } else {
-    html += `<div class="law-empty">${escapeHtml(emptyMessage)}</div>`;
+  const apiStatus = options.apiStatus || "";
+  const changedItems = Array.isArray(items)
+    ? items.filter((item) => item.status !== "no_change")
+    : [];
+
+  if (!changedItems.length) {
+    container.innerHTML = renderLawEmptyState(apiStatus, emptyMessage);
+    return;
   }
 
-  html += renderNoChangeGroup(unchangedItems);
-
-  container.innerHTML = html;
+  container.innerHTML = renderChangedCategoryGroups(changedItems);
 }
 
 function formatLawDate(value) {
@@ -549,29 +556,47 @@ function renderTrackedLaws(items, checkedAt) {
 
   if (!Array.isArray(items) || items.length === 0) {
     setText("trackedLawCount", "0개 추적 중");
-    container.innerHTML = `<div class="law-empty">${escapeHtml("관심 법령 추적 데이터가 없습니다.")}</div>`;
+    container.innerHTML = `<div class="law-empty">관심 법령 추적 데이터가 없습니다.</div>`;
     return;
   }
 
   setText("trackedLawCount", `${items.length}개 추적 중`);
 
-  container.innerHTML = items.map((item) => {
-    const isToday = item.status === "today_updated" || item.latest_update_date === checkedAt;
-    const dateText = formatLawDate(item.latest_update_date);
-    const statusText = isToday
-      ? "오늘 업데이트"
-      : dateText
-        ? `최근 업데이트: ${dateText}`
-        : "최근 업데이트 이력 없음";
+  const groups = groupLawItemsByMajorGroup(items);
+
+  container.innerHTML = groups.map(({ name, items: groupItems }) => {
+    const todayCount = groupItems.filter((item) => item.status === "today_updated" || item.latest_update_date === checkedAt).length;
+
+    const rows = groupItems.map((item) => {
+      const isToday = item.status === "today_updated" || item.latest_update_date === checkedAt;
+      const dateText = formatLawDate(item.latest_update_date);
+      const statusText = isToday
+        ? "오늘 업데이트"
+        : dateText
+          ? `최근 업데이트: ${dateText}`
+          : "최근 업데이트: 확인 필요";
+
+      return `
+        <article class="tracked-law-item ${isToday ? "today-updated" : ""}">
+          <div>
+            <strong>${safeHtml(item.law_name)}</strong>
+            <span>${safeHtml(item.category, "기타")}</span>
+          </div>
+          <em>${escapeHtml(statusText)}</em>
+        </article>
+      `;
+    }).join("");
 
     return `
-      <article class="tracked-law-item ${isToday ? "today-updated" : ""}">
-        <div>
-          <strong>${safeHtml(item.law_name)}</strong>
-          <span>${safeHtml(item.category, "기타")}</span>
+      <details class="tracked-law-group">
+        <summary class="tracked-law-title">
+          <strong>${escapeHtml(name)}</strong>
+          <span>${escapeHtml(`${groupItems.length}개${todayCount > 0 ? ` · 오늘 ${todayCount}건` : ""}`)}</span>
+        </summary>
+        <div class="tracked-law-list">
+          ${rows}
         </div>
-        <em>${escapeHtml(statusText)}</em>
-      </article>
+      </details>
     `;
   }).join("");
 }
@@ -592,7 +617,7 @@ async function loadLawUpdates() {
     const apiStatus = data.api_status || "";
     const apiStatusLabel = {
       success: "정상",
-      partial_success: "일부 실패",
+      partial_success: "부분 성공",
       no_data: "0건",
       missing_law_oc: "OC 필요",
       api_error: "오류",
@@ -613,25 +638,28 @@ async function loadLawUpdates() {
     setText("lawTodayCount", `${todayCount}건`);
     setText("lawWeekCount", `${weekCount}건`);
     setText("lawMonthCount", `${monthCount}건`);
-    updateLawAction(todayCount, weekCount, monthCount);
+    updateLawAction(todayCount, weekCount, monthCount, apiStatus, data.error || "");
     renderTrackedLaws(data.tracked_laws, data.checked_at);
 
     renderLawList(
       "lawTodayList",
       todayItems,
-      "오늘 새로 시행되는 변경은 없습니다. 감시 법령 목록을 정기 확인하세요."
+      "오늘 변경이 없습니다.",
+      { apiStatus, error: data.error || "" }
     );
 
     renderLawList(
       "lawWeekList",
       weekItems,
-      "최근 7일 내 새로 시행된 변경은 없습니다. 진행 중인 업무 영향은 낮아 보입니다."
+      "최근 7일 기준 변경이 없습니다.",
+      { apiStatus, error: data.error || "" }
     );
 
     renderLawList(
       "lawMonthList",
       monthItems,
-      "최근 30일 내 새로 시행된 변경은 없습니다. 월간 정기 확인만 진행하세요."
+      "최근 30일 기준 변경이 없습니다.",
+      { apiStatus, error: data.error || "" }
     );
   } catch (error) {
     setText("lawNotice", "법령 변경 데이터를 불러오지 못했습니다. 네트워크 또는 data/law_updates.json 파일을 확인하세요.");
@@ -639,13 +667,12 @@ async function loadLawUpdates() {
     setText("lawActionTitle", "확인 필요");
     setText("lawActionText", "자동 브리프를 표시하지 못했습니다. 오늘 업무 전 수동으로 주요 법령 변경 여부를 확인하세요.");
 
-    renderLawList("lawTodayList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.");
-    renderLawList("lawWeekList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.");
-    renderLawList("lawMonthList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.");
+    renderLawList("lawTodayList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.", { apiStatus: "api_error" });
+    renderLawList("lawWeekList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.", { apiStatus: "api_error" });
+    renderLawList("lawMonthList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.", { apiStatus: "api_error" });
     renderTrackedLaws([], "");
   }
 }
-
 function setupLawTabs() {
   document.querySelectorAll(".law-tab-btn").forEach((btn) => {
     btn.setAttribute("role", "tab");
