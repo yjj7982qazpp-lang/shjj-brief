@@ -1136,14 +1136,16 @@ footer {
 
 .law-list {
   display: grid;
-  gap: 9px;
+  gap: 12px;
 }
 
 .law-item {
-  padding: 13px;
+  padding: 16px;
   border-radius: 20px;
-  background: var(--card-soft);
-  box-shadow: inset 0 0 0 1px var(--line);
+  background: white;
+  box-shadow:
+    0 10px 26px rgba(17, 24, 39, 0.08),
+    inset 0 0 0 1px rgba(23, 32, 51, 0.07);
 }
 
 .law-item-head {
@@ -1201,14 +1203,14 @@ footer {
 .law-meta {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 7px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .law-meta div {
-  padding: 9px;
+  padding: 11px 12px;
   border-radius: 14px;
-  background: white;
+  background: var(--card-soft);
 }
 
 .law-meta span {
@@ -1266,13 +1268,89 @@ footer {
 
 /* v0.6 법령 브리핑 UI 개선 */
 .law-item-changed {
-  border: 1px solid rgba(216, 180, 106, 0.42);
-  background:
-    linear-gradient(145deg, rgba(255, 244, 216, 0.78), rgba(247, 248, 250, 0.96));
+  border: 1px solid rgba(216, 180, 106, 0.22);
 }
 
 .law-item-changed .law-name {
   color: var(--navy);
+}
+
+.law-detail-card {
+  display: grid;
+  gap: 12px;
+}
+
+.law-date-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.law-date-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(23, 32, 51, 0.06);
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.law-date-chip-empty {
+  color: var(--muted);
+}
+
+.law-detail-meta {
+  margin-top: 0;
+}
+
+.law-relevance-note {
+  padding: 12px 13px;
+  border-radius: 16px;
+  background: rgba(12, 100, 77, 0.07);
+}
+
+.law-relevance-note span {
+  display: block;
+  margin-bottom: 6px;
+  color: #0c644d;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.law-relevance-note p {
+  margin: 0;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.law-card-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.law-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: var(--navy);
+  color: white;
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: 0 8px 18px rgba(23, 32, 51, 0.12);
+}
+
+.law-link-btn:hover,
+.law-link-btn:focus-visible {
+  color: white;
 }
 
 .law-change-summary-box {

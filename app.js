@@ -698,6 +698,135 @@ function renderChangedCategoryGroups(changedItems) {
     .join("");
 }
 
+function getLawSourceBasisLabel(item) {
+  const sourceType = safeText(item.source_type, "").toLowerCase();
+  const sourceNote = safeText(item.source_note, "");
+  const summary = safeText(item.summary, "");
+  const combined = `${sourceType} ${sourceNote} ${summary}`;
+
+  if (/effective|시행/.test(combined)) return "시행일 기준";
+  if (/promulg|revis|공포|개정/.test(combined)) return "공포·개정 기준";
+  return "알 수 없음";
+}
+
+function getLawDateEntries(item) {
+  const entries = [
+    ["시행일", item.effective_date],
+    ["공포일", item.promulgation_date],
+    ["개정일", item.revision_date],
+    ["기준일", item.source_date],
+  ].filter(([, value]) => safeText(value, ""));
+
+  const seen = new Set();
+  return entries.filter(([label, value]) => {
+    const key = `${label}:${safeText(value)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function getLawRelevanceMemo(item) {
+  const text = [
+    safeText(item.law_name, ""),
+    safeText(item.category, ""),
+    safeText(item.summary, ""),
+    safeText(item.change_summary, ""),
+  ].join(" ");
+
+  const rules = [
+    [/녹색건축|에너지절약/, "녹색건축 관련 검토가 필요해 보입니다."],
+    [/건축|인허가|국토계획|주택/, "건축 또는 인허가 검토와 관련될 수 있습니다."],
+    [/소방|피난|방화/, "소방 또는 피난 기준 검토와 관련될 수 있습니다."],
+    [/하수도|수도/, "기반시설 또는 설비 검토와 관련될 수 있습니다."],
+    [/안전|범죄예방|편의증진|장애인|노인|임산부/, "안전 또는 이용자 편의 검토와 관련될 수 있습니다."],
+    [/주차장|자전거|교통/, "교통 또는 주차 계획 검토와 관련될 수 있습니다."],
+  ];
+
+  const match = rules.find(([pattern]) => pattern.test(text));
+  return match ? match[1] : "실무 연관성은 법령명과 변경일 중심으로 한 번 더 확인해 보세요.";
+}
+
+function getLawCheckStatusLabel(item) {
+  return getLawSourceBasisLabel(item) === "공포·개정 기준" ? "참고" : "확인 필요";
+}
+
+function getLawDetailUrl(item) {
+  return safeText(item.detail_url || item.source_url, "");
+}
+
+function renderLawDateBadges(item) {
+  const entries = getLawDateEntries(item);
+  if (!entries.length) {
+    return `
+      <div class="law-date-row">
+        <span class="law-date-chip law-date-chip-empty">정보 없음</span>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="law-date-row">
+      ${entries.map(([label, value]) => `
+        <span class="law-date-chip">${escapeHtml(label)} ${escapeHtml(safeText(value))}</span>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderLawMetaGrid(item) {
+  return `
+    <div class="law-meta law-detail-meta">
+      <div>
+        <span>변경 기준</span>
+        <strong>${escapeHtml(getLawSourceBasisLabel(item))}</strong>
+      </div>
+      <div>
+        <span>확인 상태</span>
+        <strong>${escapeHtml(getLawCheckStatusLabel(item))}</strong>
+      </div>
+    </div>
+  `;
+}
+
+function renderLawRelevanceNote(item) {
+  return `
+    <div class="law-relevance-note">
+      <span>관련성 메모</span>
+      <p>${escapeHtml(getLawRelevanceMemo(item))}</p>
+    </div>
+  `;
+}
+
+function renderLawCardActions(item) {
+  const url = getLawDetailUrl(item);
+  if (!url) return "";
+
+  return `
+    <div class="law-card-actions">
+      <a class="law-link-btn" href="${escapeHtml(url)}" target="_blank" rel="noreferrer">원문 보기</a>
+    </div>
+  `;
+}
+
+function renderLawDetailCard(item) {
+  return `
+    <article class="law-item law-item-changed law-detail-card">
+      <div class="law-item-head">
+        <div>
+          <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
+          <span class="law-category">${safeHtml(item.category, "분류 없음")}</span>
+        </div>
+        <span class="law-status ${lawStatusClass(item)}">${escapeHtml(getLawCheckStatusLabel(item))}</span>
+      </div>
+      ${renderLawDateBadges(item)}
+      ${renderLawMetaGrid(item)}
+      ${renderLawRelevanceNote(item)}
+      ${renderLawCardActions(item)}
+    </article>
+  `;
+}
+
 function renderLawList(containerId, items, emptyMessage, options = {}) {
   const container = $(containerId);
   if (!container) return;
@@ -712,7 +841,7 @@ function renderLawList(containerId, items, emptyMessage, options = {}) {
     return;
   }
 
-  container.innerHTML = renderChangedCategoryGroups(changedItems);
+  container.innerHTML = changedItems.map(renderLawDetailCard).join("");
 }
 
 function parseLawDateValue(value) {
