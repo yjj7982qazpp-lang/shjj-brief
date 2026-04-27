@@ -3,61 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>법령 브리프</title>
+  <title>SHJJ Brief</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="stylesheet" href="./styles.css" />
   <meta name="theme-color" content="#111827" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="법령 브리프" />
+  <meta name="apple-mobile-web-app-title" content="SHJJ Brief" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="apple-touch-icon" href="./icon-180.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png" />
-
 </head>
 <body>
   <div class="app">
     <header class="topbar">
       <div>
         <p class="eyebrow">SHJJ PERSONAL ASSISTANT</p>
-        <h1>법령 브리프</h1>
+        <h1>SHJJ Brief</h1>
       </div>
       <button id="notifyBtn" class="top-action">알림</button>
     </header>
 
     <main>
-      <section id="homeSection" class="hero-card">
-        <div class="hero-top">
-          <div>
-            <p id="todayDate" class="date-text">오늘 날짜</p>
-            <h2 id="briefTitle">오늘 업무 흐름을 정리 중입니다.</h2>
-          </div>
-          <div class="hero-mark">
-            <span>BR</span>
-          </div>
-        </div>
-
-        <p id="briefText" class="brief-text">
-          날씨, 일정, 할 일을 기준으로 오늘 하루를 정리합니다.
-        </p>
-
-        <div class="hero-stats">
-          <div>
-            <span>일정</span>
-            <strong id="scheduleCount">0건</strong>
-          </div>
-          <div>
-            <span>할 일</span>
-            <strong id="taskCount">0건</strong>
-          </div>
-          <div>
-            <span>날씨</span>
-            <strong id="weatherMini">--°</strong>
-          </div>
-        </div>
-      </section>
-
       <section id="guideSection" class="card guide-card">
         <div class="section-head">
           <div>
@@ -68,7 +36,7 @@
 
         <div class="guide-grid">
           <article class="guide-item">
-            <div class="guide-icon">☂</div>
+            <div class="guide-icon">1</div>
             <div>
               <strong id="rainGuideTitle">강수 확인 중</strong>
               <p id="rainGuideText">오늘 비 가능성을 확인하고 있습니다.</p>
@@ -76,7 +44,7 @@
           </article>
 
           <article class="guide-item">
-            <div class="guide-icon">外</div>
+            <div class="guide-icon">2</div>
             <div>
               <strong id="outsideGuideTitle">외근 판단</strong>
               <p id="outsideGuideText">외근 가능 여부를 확인하고 있습니다.</p>
@@ -84,7 +52,7 @@
           </article>
 
           <article class="guide-item">
-            <div class="guide-icon">服</div>
+            <div class="guide-icon">3</div>
             <div>
               <strong id="clothesGuideTitle">옷차림</strong>
               <p id="clothesGuideText">기온 기준 옷차림을 확인하고 있습니다.</p>
@@ -93,54 +61,75 @@
         </div>
       </section>
 
+      <section id="homeSection" class="hero-card">
+        <div class="hero-top">
+          <div>
+            <p id="todayDate" class="date-text">오늘 날짜</p>
+          </div>
+          <div class="hero-mark">
+            <span>BR</span>
+          </div>
+        </div>
+
+        <div class="hero-stats hero-stats-compact">
+          <div>
+            <span>일정</span>
+            <strong id="scheduleCount">0건</strong>
+          </div>
+          <div>
+            <span>날씨</span>
+            <strong id="weatherMini">--°</strong>
+          </div>
+        </div>
+      </section>
+
       <section id="weatherSection" class="card weather-card">
-        <div class="section-head">
-          <div>
-            <p class="section-label">Weather</p>
-            <h3>오늘 날씨</h3>
-          </div>
-          <button id="refreshWeatherBtn" class="ghost-btn">새로고침</button>
-        </div>
+        <details class="weather-fold">
+          <summary class="weather-summary">
+            <div>
+              <p class="section-label">Weather</p>
+              <h3>오늘 날씨</h3>
+            </div>
+            <button id="refreshWeatherBtn" type="button" class="ghost-btn">새로고침</button>
+          </summary>
 
-        <div class="search-row">
-          <input id="cityInput" placeholder="도시 입력 예: 서울, 수원, 부산" />
-          <button id="searchCityBtn">검색</button>
-        </div>
+          <div class="weather-fold-body">
+            <div class="weather-main">
+              <div>
+                <p id="locationName" class="location-name">서울</p>
+                <h2 id="currentTemp">--°</h2>
+                <p id="weatherDesc">날씨 정보를 불러오는 중</p>
+              </div>
+              <div class="weather-visual">
+                <div class="sun"></div>
+                <div class="cloud"></div>
+              </div>
+            </div>
 
-        <div class="weather-main">
-          <div>
-            <p id="locationName" class="location-name">서울</p>
-            <h2 id="currentTemp">--°</h2>
-            <p id="weatherDesc">날씨 정보를 불러오는 중</p>
+            <div class="weather-metrics">
+              <div>
+                <span>최고/최저</span>
+                <strong id="highLow">--° / --°</strong>
+              </div>
+              <div>
+                <span>강수확률</span>
+                <strong id="rainProb">--%</strong>
+              </div>
+              <div class="rain-time-metric">
+                <span>강수 예상 시간</span>
+                <strong id="rainTime">확인 중</strong>
+              </div>
+              <div>
+                <span>습도</span>
+                <strong id="humidity">--%</strong>
+              </div>
+              <div>
+                <span>바람</span>
+                <strong id="wind">-- km/h</strong>
+              </div>
+            </div>
           </div>
-          <div class="weather-visual">
-            <div class="sun"></div>
-            <div class="cloud"></div>
-          </div>
-        </div>
-
-        <div class="weather-metrics">
-          <div>
-            <span>최고/최저</span>
-            <strong id="highLow">--° / --°</strong>
-          </div>
-          <div>
-            <span>강수확률</span>
-            <strong id="rainProb">--%</strong>
-          </div>
-          <div class="rain-time-metric">
-            <span>강수 예상 시간</span>
-            <strong id="rainTime">확인 중</strong>
-          </div>
-          <div>
-            <span>습도</span>
-            <strong id="humidity">--%</strong>
-          </div>
-          <div>
-            <span>바람</span>
-            <strong id="wind">-- km/h</strong>
-          </div>
-        </div>
+        </details>
       </section>
 
       <section id="scheduleSection" class="card">
@@ -149,7 +138,7 @@
             <p class="section-label">Calendar</p>
             <h3>오늘 일정</h3>
           </div>
-          <span class="status-chip">추후 캘린더 연동</span>
+          <span class="status-chip">수동 입력</span>
         </div>
 
         <div class="schedule-composer">
@@ -183,22 +172,6 @@
         <div id="scheduleList" class="list"></div>
       </section>
 
-      <section id="taskSection" class="card">
-        <div class="section-head">
-          <div>
-            <p class="section-label">Tasks</p>
-            <h3>오늘 할 일</h3>
-          </div>
-        </div>
-
-        <div class="title-row">
-          <input id="taskInput" placeholder="할 일 예: 오목초 레이아웃 수정" />
-          <button id="addTaskBtn">추가</button>
-        </div>
-
-        <div id="taskList" class="list"></div>
-      </section>
-
       <section id="workSection" class="card law-card">
         <div class="section-head">
           <div>
@@ -216,7 +189,15 @@
 
         <div class="law-action-box">
           <strong id="lawActionTitle">오늘 확인 포인트</strong>
-          <p id="lawActionText">변경 여부를 확인한 뒤 필요한 업무 메모를 남기세요.</p>
+          <p id="lawActionText">변경 여부를 확인한 뒤 필요한 법령 항목을 먼저 검토하세요.</p>
+        </div>
+
+        <div class="tracked-law-box compact">
+          <div class="tracked-law-head">
+            <strong>관심 법령 최신 업데이트 현황</strong>
+            <span id="trackedLawCount">전체 0건</span>
+          </div>
+          <p id="trackedLawUpdatedAt" class="tracked-law-meta">마지막 갱신 -</p>
         </div>
 
         <div class="law-summary-grid">
@@ -232,14 +213,6 @@
             <span>최근 30일</span>
             <strong id="lawMonthCount">0건</strong>
           </div>
-        </div>
-
-        <div class="tracked-law-box">
-          <div class="tracked-law-head">
-            <strong>관심 법령 최신 업데이트 현황</strong>
-            <span id="trackedLawCount">0개 추적 중</span>
-          </div>
-          <div id="trackedLawList" class="tracked-law-list"></div>
         </div>
 
         <div class="law-tabs">
@@ -259,29 +232,13 @@
         <div id="lawPanelMonth" class="law-panel">
           <div id="lawMonthList" class="law-list"></div>
         </div>
-
-        <details class="law-memo-box">
-          <summary>수동 확인 메모</summary>
-          <textarea id="lawMemo" placeholder="오늘 확인한 법령, 고시, 업무자료 메모"></textarea>
-        </details>
-      </section>
-
-      <section class="card">
-        <div class="section-head">
-          <div>
-            <p class="section-label">Memo</p>
-            <h3>업무 메모</h3>
-          </div>
-        </div>
-
-        <textarea id="workMemo" placeholder="아버님과 공유할 내용, 오늘 확인할 업무, 설계 메모 등을 적어두세요."></textarea>
       </section>
 
       <section id="settingsSection" class="card settings-card">
         <div class="section-head">
           <div>
             <p class="section-label">Settings</p>
-            <h3>앱 설정</h3>
+            <h3>앱 기본설정</h3>
           </div>
         </div>
 
@@ -290,23 +247,11 @@
             <span>기본 지역</span>
             <strong id="settingCityName">서울</strong>
           </div>
-          <div class="settings-row">
-            <span>캘린더 연동</span>
-            <strong>다음 단계</strong>
-          </div>
-          <div class="settings-row">
-            <span>아버님 공동 사용</span>
-            <strong>준비 중</strong>
-          </div>
-          <div class="settings-row">
-            <span>건축법 자동 요약</span>
-            <strong>자동화 연결 예정</strong>
-          </div>
         </div>
       </section>
 
       <button id="testNotifyBtn" class="notify-test-btn">
-        오늘 브리핑 테스트 알림 보내기
+        오늘 브리프 테스트 알림 보내기
       </button>
 
       <footer>
@@ -317,20 +262,20 @@
 
   <nav class="bottom-nav">
     <button class="bottom-nav-btn active" data-target="homeSection">
-      <span>⌂</span>
+      <span>홈</span>
       <strong>홈</strong>
     </button>
+    <button class="bottom-nav-btn" data-target="guideSection">
+      <span>가</span>
+      <strong>가이드</strong>
+    </button>
     <button class="bottom-nav-btn" data-target="scheduleSection">
-      <span>◷</span>
+      <span>일</span>
       <strong>일정</strong>
     </button>
-    <button class="bottom-nav-btn" data-target="taskSection">
-      <span>✓</span>
-      <strong>할 일</strong>
-    </button>
     <button class="bottom-nav-btn" data-target="workSection">
-      <span>▣</span>
-      <strong>업무</strong>
+      <span>법</span>
+      <strong>법령</strong>
     </button>
   </nav>
 

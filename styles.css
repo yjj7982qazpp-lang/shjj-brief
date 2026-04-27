@@ -228,6 +228,11 @@ h3 {
   margin-top: 22px;
 }
 
+.hero-stats-compact {
+  grid-template-columns: repeat(2, 1fr);
+  margin-top: 14px;
+}
+
 .hero-stats div {
   min-height: 72px;
   padding: 12px 11px;
@@ -403,6 +408,31 @@ textarea:focus {
   align-items: center;
   gap: 14px;
   margin: 8px 0 18px;
+}
+
+.weather-fold {
+  display: block;
+}
+
+.weather-fold > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.weather-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.weather-summary {
+  margin-bottom: 0;
+}
+
+.weather-fold-body {
+  margin-top: 14px;
 }
 
 .location-name {
@@ -759,7 +789,6 @@ footer {
 #guideSection,
 #weatherSection,
 #scheduleSection,
-#taskSection,
 #workSection,
 #settingsSection {
   scroll-margin-top: 92px;
@@ -968,6 +997,17 @@ footer {
   color: var(--muted);
   font-size: 12px;
   font-weight: 900;
+}
+
+.tracked-law-box.compact {
+  gap: 6px;
+}
+
+.tracked-law-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .tracked-law-list {

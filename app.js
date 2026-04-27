@@ -2,21 +2,17 @@
 
 const STORAGE_KEYS = {
   schedules: "shjj_brief_schedules_v4",
-  tasks: "shjj_brief_tasks_v4",
-  workMemo: "shjj_brief_work_memo_v4",
-  lawMemo: "shjj_brief_law_memo_v4",
   city: "shjj_brief_city_v4",
   lat: "shjj_brief_lat_v4",
   lon: "shjj_brief_lon_v4",
 };
 
 const state = {
-  city: localStorage.getItem(STORAGE_KEYS.city) || "서울",
-  latitude: Number(localStorage.getItem(STORAGE_KEYS.lat)) || 37.5665,
-  longitude: Number(localStorage.getItem(STORAGE_KEYS.lon)) || 126.9780,
+  city: "서울",
+  latitude: 37.5665,
+  longitude: 126.9780,
   weather: null,
   schedules: [],
-  tasks: [],
 };
 
 const weatherMap = {
@@ -269,36 +265,19 @@ function setupScheduleTimePicker() {
 
 function updateBrief() {
   const scheduleCount = state.schedules.length;
-  const undoneTasks = state.tasks.filter((task) => !task.done).length;
-
   setText("scheduleCount", `${scheduleCount}건`);
-  setText("taskCount", `${undoneTasks}건`);
 
   let tempText = "--°";
-  let weatherSummary = "날씨 정보를 불러오는 중입니다.";
 
   if (state.weather) {
     const current = state.weather.current;
     const daily = state.weather.daily;
-    const [title, desc] = weatherText(current.weather_code);
     const temp = round(current.temperature_2m);
-    const high = round(daily.temperature_2m_max[0]);
-    const low = round(daily.temperature_2m_min[0]);
-    const rain = round(daily.precipitation_probability_max[0]);
 
     tempText = `${temp}°`;
-    weatherSummary = `${state.city} ${temp}°, ${title}. 최고 ${high}° / 최저 ${low}°, 강수확률 ${rain}%. ${desc}`;
   }
 
   setText("weatherMini", tempText);
-
-  const title =
-    scheduleCount === 0 && undoneTasks === 0
-      ? "오늘은 정리 중심으로 가면 좋습니다."
-      : `오늘 일정 ${scheduleCount}건, 할 일 ${undoneTasks}건이 있습니다.`;
-
-  setText("briefTitle", title);
-  setText("briefText", `${weatherSummary} 중요한 일정부터 처리하세요.`);
 }
 
 function renderDailyGuide() {
@@ -348,7 +327,7 @@ function renderDailyGuide() {
 }
 
 function updateSettingsView() {
-  setText("settingCityName", state.city);
+  setText("settingCityName", "서울");
 }
 
 
@@ -719,61 +698,9 @@ function getTrackedLawStatus(item, lookup, apiStatus) {
   return { label: "최근 업데이트 없음", rank: 3, period: "none" };
 }
 
-function renderTrackedLaws(items, checkedAt, updateState = {}) {
-  const container = $("trackedLawList");
-  if (!container) return;
-
-  if (!Array.isArray(items) || items.length === 0) {
-    setText("trackedLawCount", "0개 추적 중");
-    container.innerHTML = `<div class="law-empty">관심 법령 추적 데이터가 없습니다.</div>`;
-    return;
-  }
-
-  const apiStatus = updateState.apiStatus || "";
-  const lookup = buildLawUpdateLookup(updateState.todayItems, updateState.weekItems, updateState.monthItems);
-  setText("trackedLawCount", `${items.length}개 추적 중`);
-
-  const groups = groupLawItemsByMajorGroup(items, true);
-
-  container.innerHTML = groups.map(({ label, items: groupItems }) => {
-    const decorated = groupItems.map((item) => {
-      const status = getTrackedLawStatus(item, lookup, apiStatus);
-      return { item, status };
-    }).sort((a, b) => {
-      if (a.status.rank !== b.status.rank) return a.status.rank - b.status.rank;
-      const priorityDiff = (Number(a.item.priority) || 3) - (Number(b.item.priority) || 3);
-      if (priorityDiff !== 0) return priorityDiff;
-      return safeText(a.item.law_name, "").localeCompare(safeText(b.item.law_name, ""), "ko");
-    });
-
-    const recent30Count = decorated.filter(({ status }) => status.rank <= 2).length;
-    const rows = decorated.map(({ item, status }) => {
-      const className = status.rank <= 2 ? "today-updated" : status.rank === 3 ? "no-update" : "needs-review";
-      return `
-        <article class="tracked-law-item ${className}">
-          <div>
-            <strong>${safeHtml(item.law_name)}</strong>
-            <span>${safeHtml(item.category, "기타")}</span>
-          </div>
-          <em>${escapeHtml(status.label)}</em>
-        </article>
-      `;
-    }).join("");
-
-    const body = rows || `<div class="law-empty">관심 법령이 없습니다.</div>`;
-
-    return `
-      <details class="tracked-law-group">
-        <summary class="tracked-law-title">
-          <strong>${escapeHtml(label)}</strong>
-          <span>${escapeHtml(`${recent30Count}건`)}</span>
-        </summary>
-        <div class="tracked-law-list">
-          ${body}
-        </div>
-      </details>
-    `;
-  }).join("");
+function renderTrackedLaws(items) {
+  const totalCount = Array.isArray(items) ? items.length : 0;
+  setText("trackedLawCount", `전체 ${totalCount}건`);
 }
 
 async function loadLawUpdates() {
@@ -825,17 +752,13 @@ async function loadLawUpdates() {
       "lawMetaSummary",
       `마지막 갱신 ${formatLawUpdatedAt(data.metadata.lastUpdated || data.updatedAt || "")} · 총 저장 ${Number(data.metadata.totalSavedCount) || monthCount}건`
     );
+    setText("trackedLawUpdatedAt", `마지막 갱신 ${formatLawUpdatedAt(data.metadata.lastUpdated || data.updatedAt || "")}`);
 
     setText("lawTodayCount", `${todayCount}건`);
     setText("lawWeekCount", `${weekCount}건`);
     setText("lawMonthCount", `${monthCount}건`);
     updateLawAction(todayCount, weekCount, monthCount, apiStatus, data.error || "");
-    renderTrackedLaws(watchedItems, data.checkedAt, {
-      apiStatus,
-      todayItems,
-      weekItems,
-      monthItems,
-    });
+    renderTrackedLaws(watchedItems);
 
     renderLawList(
       "lawTodayList",
@@ -861,13 +784,14 @@ async function loadLawUpdates() {
     setText("lawNotice", "법령 변경 데이터를 불러오지 못했습니다. 네트워크 또는 data/law_updates.json 파일을 확인하세요.");
     setText("lawCheckedAt", "확인일: -");
     setText("lawMetaSummary", "마지막 갱신 - · 총 저장 0건");
+    setText("trackedLawUpdatedAt", "마지막 갱신 -");
     setText("lawActionTitle", "확인 필요");
     setText("lawActionText", "자동 브리프를 표시하지 못했습니다. 오늘 업무 전 수동으로 주요 법령 변경 여부를 확인하세요.");
 
     renderLawList("lawTodayList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.", { apiStatus: "api_error" });
     renderLawList("lawWeekList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.", { apiStatus: "api_error" });
     renderLawList("lawMonthList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.", { apiStatus: "api_error" });
-    renderTrackedLaws([], "", { apiStatus: "api_error", todayItems: [], weekItems: [], monthItems: [] });
+    renderTrackedLaws([]);
   }
 }
 function setupLawTabs() {
@@ -1024,53 +948,6 @@ function renderSchedules() {
   updateBrief();
 }
 
-function renderTasks() {
-  const list = $("taskList");
-  clearChildren(list);
-
-  if (state.tasks.length === 0) {
-    list.appendChild(createEmptyListItem("등록된 할 일이 없습니다."));
-    updateBrief();
-    return;
-  }
-
-  state.tasks.forEach((task) => {
-    const row = document.createElement("div");
-    row.className = `item ${task.done ? "done" : ""}`;
-
-    const main = document.createElement("div");
-    main.className = "item-main";
-
-    const title = document.createElement("span");
-    title.className = "item-title";
-    title.textContent = safeText(task.title, "제목 없음");
-
-    const actions = document.createElement("div");
-    actions.className = "item-actions";
-
-    const toggleButton = createActionButton(task.done ? "해제" : "완료", "toggle-task", task.id, () => {
-      task.done = !task.done;
-      saveJson(STORAGE_KEYS.tasks, state.tasks);
-      renderTasks();
-      updateBrief();
-    });
-
-    const deleteButton = createActionButton("삭제", "delete-task", task.id, () => {
-      state.tasks = state.tasks.filter((item) => item.id !== task.id);
-      saveJson(STORAGE_KEYS.tasks, state.tasks);
-      renderTasks();
-      updateBrief();
-    });
-
-    main.appendChild(title);
-    actions.append(toggleButton, deleteButton);
-    row.append(main, actions);
-    list.appendChild(row);
-  });
-
-  updateBrief();
-}
-
 function addSchedule() {
   const title = $("scheduleTitleInput").value.trim();
 
@@ -1091,28 +968,6 @@ function addSchedule() {
   $("scheduleTitleInput").value = "";
   $("scheduleTitleInput").focus();
   renderSchedules();
-}
-
-function addTask() {
-  const title = $("taskInput").value.trim();
-
-  if (!title) {
-    alert("할 일을 입력하세요.");
-    $("taskInput").focus();
-    return;
-  }
-
-  state.tasks.push({
-    id: makeId(),
-    source: "manual",
-    title,
-    done: false,
-  });
-
-  saveJson(STORAGE_KEYS.tasks, state.tasks);
-  $("taskInput").value = "";
-  $("taskInput").focus();
-  renderTasks();
 }
 
 async function registerSW() {
@@ -1162,10 +1017,8 @@ async function showBriefNotification() {
   }
 
   const scheduleCount = state.schedules.length;
-  const taskCount = state.tasks.filter((task) => !task.done).length;
-
   const title = "SHJJ Brief · 오늘 브리핑";
-  const body = `${weatherLine}\n오늘 일정 ${scheduleCount}건 · 남은 할 일 ${taskCount}건`;
+  const body = `${weatherLine}\n오늘 일정 ${scheduleCount}건`;
 
   const reg = await navigator.serviceWorker.getRegistration();
 
@@ -1194,42 +1047,17 @@ function setupBottomNav() {
 }
 
 function bindEvents() {
-  $("searchCityBtn").addEventListener("click", async () => {
-    const city = $("cityInput").value.trim();
-    if (!city) return;
-
-    try {
-      await searchCity(city);
-      $("cityInput").value = "";
-    } catch {
-      alert("도시를 찾지 못했습니다. 예: 서울, 수원, 부산");
-    }
+  $("refreshWeatherBtn").addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    loadWeather();
   });
-
-  $("cityInput").addEventListener("keydown", (event) => {
-    if (event.key === "Enter") $("searchCityBtn").click();
-  });
-
-  $("refreshWeatherBtn").addEventListener("click", loadWeather);
   $("addScheduleBtn").addEventListener("click", addSchedule);
-  $("addTaskBtn").addEventListener("click", addTask);
   $("notifyBtn").addEventListener("click", requestNotification);
   $("testNotifyBtn").addEventListener("click", showBriefNotification);
 
   $("scheduleTitleInput").addEventListener("keydown", (event) => {
     if (event.key === "Enter") addSchedule();
-  });
-
-  $("taskInput").addEventListener("keydown", (event) => {
-    if (event.key === "Enter") addTask();
-  });
-
-  $("workMemo").addEventListener("input", () => {
-    localStorage.setItem(STORAGE_KEYS.workMemo, $("workMemo").value);
-  });
-
-  $("lawMemo").addEventListener("input", () => {
-    localStorage.setItem(STORAGE_KEYS.lawMemo, $("lawMemo").value);
   });
 }
 
@@ -1240,13 +1068,8 @@ async function init() {
   setupLawTabs();
 
   state.schedules = loadArray(STORAGE_KEYS.schedules);
-  state.tasks = loadArray(STORAGE_KEYS.tasks);
-
-  $("workMemo").value = localStorage.getItem(STORAGE_KEYS.workMemo) || "";
-  $("lawMemo").value = localStorage.getItem(STORAGE_KEYS.lawMemo) || "";
 
   renderSchedules();
-  renderTasks();
   bindEvents();
   await registerSW();
   await loadLawUpdates();
