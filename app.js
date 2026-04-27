@@ -497,18 +497,21 @@ async function loadLawUpdates() {
 
 function setupLawTabs() {
   document.querySelectorAll(".law-tab-btn").forEach((btn) => {
+    btn.setAttribute("role", "tab");
+    btn.setAttribute("aria-selected", String(btn.classList.contains("active")));
+
     btn.addEventListener("click", () => {
       const tab = btn.dataset.lawTab;
 
       document.querySelectorAll(".law-tab-btn").forEach((item) => {
-        item.classList.remove("active");
+        const selected = item === btn;
+        item.classList.toggle("active", selected);
+        item.setAttribute("aria-selected", String(selected));
       });
 
       document.querySelectorAll(".law-panel").forEach((panel) => {
         panel.classList.remove("active");
       });
-
-      btn.classList.add("active");
 
       if (tab === "today") $("lawPanelToday").classList.add("active");
       if (tab === "week") $("lawPanelWeek").classList.add("active");
