@@ -139,6 +139,31 @@ h3 {
   font-size: 13px;
   font-weight: 900;
   box-shadow: var(--shadow-soft);
+  transition: all 0.2s ease;
+}
+
+.top-action:active {
+  transform: scale(0.95);
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+@keyframes weatherFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.weather-card,
+.guide-card {
+  animation: weatherFade 0.3s ease;
 }
 
 .hero-card,
