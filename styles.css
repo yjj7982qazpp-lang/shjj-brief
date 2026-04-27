@@ -1489,13 +1489,19 @@ body {
   flex: 1 1 auto;
 }
 
+#workSection .section-head {
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
 #workSection .section-head h3 {
   max-width: 100%;
   font-size: 16px;
-  line-height: 1.16;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.24;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
   word-break: keep-all;
 }
 
