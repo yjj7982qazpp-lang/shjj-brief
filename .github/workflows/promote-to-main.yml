@@ -36,6 +36,45 @@ jobs:
         run: |
           git merge --no-ff "origin/${{ inputs.source_branch }}" -m "Promote ${{ inputs.source_branch }} to main"
 
+      - name: Normalize production labels
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Process index.html
+          const indexPath = 'index.html';
+          const indexContent = fs.readFileSync(indexPath, 'utf8');
+          const normalizedIndex = indexContent.replace(
+            /<title>SHJJ Brief - Preview [^<]*<\/title>/g,
+            '<title>SHJJ Brief - MAIN</title>'
+          );
+          fs.writeFileSync(indexPath, normalizedIndex, 'utf8');
+          console.log('✓ Normalized index.html title');
+          
+          // Process manifest.json if it has preview labels
+          const manifestPath = 'manifest.json';
+          const manifestContent = fs.readFileSync(manifestPath, 'utf8');
+          const manifest = JSON.parse(manifestContent);
+          
+          let modified = false;
+          if (manifest.name && manifest.name.match(/Preview/i)) {
+            manifest.name = 'SHJJ Brief - MAIN';
+            modified = true;
+          }
+          if (manifest.short_name && manifest.short_name.match(/Preview/i)) {
+            manifest.short_name = 'SHJJ Brief';
+            modified = true;
+          }
+          
+          if (modified) {
+            fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+            console.log('✓ Normalized manifest.json');
+          } else {
+            console.log('✓ manifest.json already in production state');
+          }
+          "
+
       - name: Validate app.js
         run: |
           node --check app.js
