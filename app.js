@@ -1091,6 +1091,169 @@ function renderLawDetailCard(item, index = 0) {
   `;
 }
 
+const LAW_CHANGE_FALLBACK_TEXT = "수집 데이터에 구체 변경 내용이 없습니다. 원문에서 세부 조항을 확인하세요.";
+
+function getLawChangedArticles(item) {
+  return Array.isArray(item?.changed_articles)
+    ? item.changed_articles.filter((article) =>
+        article && typeof article === "object" && (
+          safeText(article.article_number, "") ||
+          safeText(article.article_title, "") ||
+          safeText(article.article_content, "")
+        )
+      )
+    : [];
+}
+
+function getLawPrimaryContent(item) {
+  const changedArticles = getLawChangedArticles(item);
+  if (changedArticles.length) {
+    return {
+      type: "articles",
+      label: "변경 조문",
+      articles: changedArticles,
+    };
+  }
+
+  const sources = [
+    ["개정문", item.amendment_text],
+    ["제개정 이유", item.change_reason],
+    ["조문 내용", item.article_text],
+    ["변경 내용", item.change_summary],
+    ["요약", item.summary],
+  ];
+
+  const found = sources.find(([, value]) => safeText(value, ""));
+  if (!found) {
+    return {
+      type: "text",
+      label: "변경 내용",
+      text: LAW_CHANGE_FALLBACK_TEXT,
+      isFallback: true,
+    };
+  }
+
+  return {
+    type: "text",
+    label: found[0],
+    text: safeText(found[1], LAW_CHANGE_FALLBACK_TEXT),
+    isFallback: false,
+  };
+}
+
+function shouldShowLawContentMore(text) {
+  return safeText(text, "").length > 160;
+}
+
+function formatLawArticleHeading(article) {
+  const articleNumber = safeText(article.article_number, "");
+  const articleTitle = safeText(article.article_title, "");
+  return [articleNumber, articleTitle].filter(Boolean).join(" ");
+}
+
+function renderLawArticleMeta(article) {
+  const rows = [
+    ["변경유형", safeText(article.article_revision_type, "")],
+    ["조문시행일", safeText(article.article_effective_date, "")],
+  ].filter(([, value]) => value);
+
+  if (!rows.length) return "";
+
+  return `
+    <div class="law-article-meta">
+      ${rows.map(([label, value]) => `
+        <span class="law-article-meta-chip">${escapeHtml(label)}: ${escapeHtml(value)}</span>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderLawExpandableTextBlock(label, text, targetId, options = {}) {
+  const contentText = safeText(text, LAW_CHANGE_FALLBACK_TEXT);
+  const showMore = shouldShowLawContentMore(contentText);
+  const contentClass = showMore ? "law-change-summary-text is-collapsed" : "law-change-summary-text";
+  const moreButton = showMore
+    ? `<button type="button" class="law-more-btn" data-target="${escapeHtml(targetId)}" aria-expanded="false">더보기</button>`
+    : "";
+  const boxClass = options.boxClass ? `law-change-summary-box ${options.boxClass}` : "law-change-summary-box";
+  const extraClass = options.extraClass ? ` ${options.extraClass}` : "";
+
+  return `
+    <div class="${boxClass}${extraClass}">
+      <span>${escapeHtml(label)}</span>
+      <p class="${contentClass}">${escapeHtml(contentText)}</p>
+      ${moreButton}
+    </div>
+  `;
+}
+
+function renderLawChangedArticle(article, cardIndex, articleIndex) {
+  const heading = formatLawArticleHeading(article) || `변경 조문 ${articleIndex + 1}`;
+  const content = safeText(article.article_content, LAW_CHANGE_FALLBACK_TEXT);
+
+  return `
+    <article class="law-article-item">
+      <strong class="law-article-title">${escapeHtml(heading)}</strong>
+      ${renderLawArticleMeta(article)}
+      ${renderLawExpandableTextBlock("조문내용", content, `law-article-content-${cardIndex}-${articleIndex}`, {
+        boxClass: "law-article-content-box",
+      })}
+    </article>
+  `;
+}
+
+function renderLawPrimaryContent(item, index) {
+  const primaryContent = getLawPrimaryContent(item);
+  if (primaryContent.type === "articles") {
+    return `
+      <div id="${escapeHtml(`law-detail-content-${index}`)}" class="law-detail-content-wrap">
+        <div class="law-change-summary-box law-change-summary-box-articles">
+          <span>${escapeHtml(primaryContent.label)}</span>
+          <div class="law-article-list">
+            ${primaryContent.articles.map((article, articleIndex) => renderLawChangedArticle(article, index, articleIndex)).join("")}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div id="${escapeHtml(`law-detail-content-${index}`)}" class="law-detail-content-wrap">
+      ${renderLawExpandableTextBlock(
+        primaryContent.label,
+        primaryContent.text,
+        `law-detail-content-${index}`,
+        {
+          extraClass: primaryContent.isFallback ? "law-change-summary-box-fallback" : "",
+        }
+      )}
+    </div>
+  `;
+}
+
+function renderLawDetailCard(item, index = 0) {
+  const category = safeText(item.category, "");
+
+  return `
+    <details class="law-item law-item-changed law-detail-card">
+      <summary class="law-detail-summary" aria-controls="${escapeHtml(`law-detail-content-${index}`)}">
+        <div class="law-detail-summary-main">
+          <span class="law-name">${safeHtml(item.law_name, "?뺣낫 ?놁쓬")}</span>
+          ${category ? `<span class="law-category">${escapeHtml(category)}</span>` : ""}
+          <div class="law-date-row law-date-row-preview">
+            ${renderLawPreviewDates(item)}
+          </div>
+        </div>
+        <span class="law-toggle-indicator" aria-hidden="true">?닿린</span>
+      </summary>
+      <div class="law-detail-body">
+        ${renderLawPrimaryContent(item, index)}
+        ${renderLawCardActions(item)}
+      </div>
+    </details>
+  `;
+}
+
 function renderLawList(containerId, items, emptyMessage, options = {}) {
   const container = $(containerId);
   if (!container) return;

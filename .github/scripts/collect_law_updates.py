@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta, timezone
+from html import unescape
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import Request, urlopen
 import json
 import os
@@ -18,12 +19,18 @@ API_ENDPOINTS = [
     "https://www.law.go.kr/DRF/lawSearch.do",
     "http://www.law.go.kr/DRF/lawSearch.do",
 ]
+SERVICE_ENDPOINTS = [
+    "https://www.law.go.kr/DRF/lawService.do",
+    "http://www.law.go.kr/DRF/lawService.do",
+]
 API_TIMEOUT = 20
 API_RETRY_COUNT = 3
 API_RETRY_DELAY_SECONDS = 2
 API_DISPLAY = "100"
 KST = timezone(timedelta(hours=9))
 NAME_CLEANUP_RE = re.compile(r"[\s\W_]+", re.UNICODE)
+HTML_TAG_RE = re.compile(r"<[^>]+>")
+ARTICLE_NUMBER_RE = re.compile(r"^\d+$")
 
 
 class LawApiError(Exception):
@@ -133,6 +140,172 @@ def build_detail_url(raw_link):
     return f"https://www.law.go.kr/{raw_link.lstrip('/')}"
 
 
+def clean_text(value):
+    text = str(value or "").strip()
+    if not text:
+        return ""
+
+    text = unescape(text)
+    text = re.sub(r"(?i)<br\s*/?>", "\n", text)
+    text = re.sub(r"(?i)</p\s*>", "\n", text)
+    text = HTML_TAG_RE.sub("", text)
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = re.sub(r"[ \t]+\n", "\n", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def walk_nodes(value):
+    if isinstance(value, dict):
+        yield value
+        for nested in value.values():
+            yield from walk_nodes(nested)
+    elif isinstance(value, list):
+        for nested in value:
+            yield from walk_nodes(nested)
+
+
+def first_value(data, *keys):
+    for node in walk_nodes(data):
+        value = pick(node, *keys)
+        if value:
+            return clean_text(value)
+    return ""
+
+
+def format_output_date(value):
+    parsed = parse_date(value)
+    if parsed:
+        return to_output_date(parsed)
+    return clean_text(value)
+
+
+def is_changed_flag(value):
+    return clean_text(value).upper() in {"Y", "YES", "TRUE", "1"}
+
+
+def normalize_article_number(value):
+    text = clean_text(value)
+    if not text:
+        return ""
+    if ARTICLE_NUMBER_RE.match(text):
+        return f"제{text}조"
+    return text
+
+
+def parse_detail_query(item):
+    detail_url = item.get("detail_url") or item.get("source_url") or ""
+    if not detail_url:
+        return {}
+    return parse_qs(urlparse(detail_url).query)
+
+
+def extract_detail_params(item):
+    query = parse_detail_query(item)
+    source_target = "eflaw" if item.get("source_type") == "effective" else "law"
+    target = clean_text((query.get("target") or [source_target])[0]) or source_target
+    params = {
+        "target": target,
+        "type": "JSON",
+        "mobileYn": "",
+    }
+
+    law_id = clean_text((query.get("ID") or [item.get("law_id", "")])[0])
+    law_mst = clean_text((query.get("MST") or [item.get("law_mst", "")])[0])
+    if law_id:
+        params["ID"] = law_id
+    elif law_mst:
+        params["MST"] = law_mst
+    else:
+        return {}
+
+    if target == "eflaw":
+        effective_date = clean_text((query.get("efYd") or [item.get("effective_date", "")])[0])
+        digits = re.sub(r"\D", "", effective_date)
+        if digits:
+            params["efYd"] = digits[:8]
+
+    return params
+
+
+def build_article_record(node):
+    article_number = normalize_article_number(
+        pick(node, "조문번호", "조문번호문자열", "joNo", "JO")
+    )
+    article_title = clean_text(
+        pick(node, "조문제목", "조제목", "joTitle", "articleTitle")
+    )
+    article_effective_date = format_output_date(
+        pick(node, "조문시행일자", "조문시행일자문자열", "articleEffectiveDate")
+    )
+    article_revision_type = clean_text(
+        pick(node, "조문제개정유형", "제개정구분명", "articleRevisionType")
+    )
+    article_changed = clean_text(
+        pick(node, "조문변경여부", "articleChangedYn")
+    )
+    article_content = clean_text(
+        pick(node, "조문내용", "조내용", "joContent", "articleContent")
+    )
+    article_flag = clean_text(pick(node, "조문여부", "joYn"))
+
+    if not any([article_number, article_title, article_effective_date, article_revision_type, article_content]):
+        return None
+    if article_flag and article_flag.upper() != "Y":
+        return None
+    if not is_changed_flag(article_changed) and not article_revision_type:
+        return None
+
+    return {
+        "article_number": article_number,
+        "article_title": article_title,
+        "article_effective_date": article_effective_date,
+        "article_revision_type": article_revision_type,
+        "article_content": article_content,
+        "article_changed": article_changed or ("Y" if article_revision_type else ""),
+    }
+
+
+def extract_changed_articles(detail_data):
+    seen = set()
+    articles = []
+
+    for node in walk_nodes(detail_data):
+        if not isinstance(node, dict):
+            continue
+        article = build_article_record(node)
+        if not article:
+            continue
+        key = (
+            article.get("article_number", ""),
+            article.get("article_title", ""),
+            article.get("article_effective_date", ""),
+            article.get("article_revision_type", ""),
+            article.get("article_content", ""),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        articles.append(article)
+
+    return articles
+
+
+def build_article_text(changed_articles):
+    parts = []
+    for article in changed_articles:
+        heading = " ".join(
+            value
+            for value in [article.get("article_number", ""), article.get("article_title", "")]
+            if value
+        ).strip()
+        if heading:
+            parts.append(heading)
+        if article.get("article_content"):
+            parts.append(article["article_content"])
+    return "\n\n".join(parts).strip()
+
+
 def summarize_attempts(attempts):
     parts = []
     for attempt in attempts[:5]:
@@ -170,10 +343,10 @@ def fetch_api_once(base_url, params, label):
         ])
 
 
-def fetch_api(params, label):
+def fetch_api_from_endpoints(endpoints, params, label):
     attempts = []
 
-    for base_url in API_ENDPOINTS:
+    for base_url in endpoints:
         for retry_index in range(API_RETRY_COUNT):
             try:
                 return fetch_api_once(base_url, params, label)
@@ -210,6 +383,10 @@ def fetch_api(params, label):
     raise LawApiError(attempts)
 
 
+def fetch_api(params, label):
+    return fetch_api_from_endpoints(API_ENDPOINTS, params, label)
+
+
 def fetch_law_search(oc, target, extra_params, label, law_name):
     params = {
         "OC": oc,
@@ -220,6 +397,15 @@ def fetch_law_search(oc, target, extra_params, label, law_name):
         **extra_params,
     }
     return fetch_api(params, label)
+
+
+def fetch_law_detail(oc, item):
+    params = extract_detail_params(item)
+    if not params:
+        raise ValueError("detail_params_missing")
+
+    params["OC"] = oc
+    return fetch_api_from_endpoints(SERVICE_ENDPOINTS, params, "detail")
 
 
 def fetch_effective_laws(oc, law_name, start_day, end_day):
@@ -309,6 +495,11 @@ def convert_api_item(item, watched_map, source_type, source_note):
         "impact": "높음" if priority == 1 else "확인 필요",
         "change_summary": f"{summary} {' '.join(detail_parts)}".strip(),
         "source_url": detail_url,
+        "detail_fetch_status": "pending",
+        "amendment_text": "",
+        "change_reason": "",
+        "changed_articles": [],
+        "article_text": "",
     }
 
 
@@ -379,6 +570,57 @@ def filter_query_items(raw_items, watched_law_name, watched_map, source_type, so
         filtered.append(converted)
 
     return filtered
+
+
+def extract_detail_fields(detail_data):
+    changed_articles = extract_changed_articles(detail_data)
+    article_text = build_article_text(changed_articles)
+    if not article_text:
+        article_text = first_value(detail_data, "조문내용", "조내용", "joContent", "articleContent")
+
+    amendment_text = first_value(detail_data, "개정문내용", "amendmentText")
+    change_reason = first_value(detail_data, "제개정이유내용", "changeReason", "개정이유", "제개정이유")
+    has_detail = any([amendment_text, change_reason, changed_articles, article_text])
+
+    return {
+        "amendment_text": amendment_text,
+        "change_reason": change_reason,
+        "changed_articles": changed_articles,
+        "article_text": article_text,
+        "detail_fetch_status": "success" if has_detail else "empty",
+    }
+
+
+def enrich_items_with_detail(oc, items):
+    detail_cache = {}
+    enriched_items = []
+
+    for item in items:
+        enriched = dict(item)
+        cache_key = json.dumps(extract_detail_params(item), ensure_ascii=False, sort_keys=True)
+        if not cache_key or cache_key == "{}":
+            enriched["detail_fetch_status"] = "failed"
+            enriched_items.append(enriched)
+            continue
+
+        cached = detail_cache.get(cache_key)
+        if cached is None:
+            try:
+                cached = extract_detail_fields(fetch_law_detail(oc, item))
+            except (LawApiError, ValueError):
+                cached = {
+                    "amendment_text": "",
+                    "change_reason": "",
+                    "changed_articles": [],
+                    "article_text": "",
+                    "detail_fetch_status": "failed",
+                }
+            detail_cache[cache_key] = cached
+
+        enriched.update(cached)
+        enriched_items.append(enriched)
+
+    return enriched_items
 
 
 def build_tracked_laws(today, watched_laws, all_items, previous_data, failed_law_names):
@@ -550,6 +792,7 @@ def build_payload(
             "oc_mode": "secret" if os.environ.get("LAW_OC", "").strip() else "missing",
             "display": int(API_DISPLAY),
             "max_api_calls_per_law": 2,
+            "detail_requests_per_result_item": 1,
             "retry_count": API_RETRY_COUNT,
             "errors": errors or [],
         },
@@ -619,7 +862,7 @@ def collect_for_watched_law(oc, watched_law_name, watched_map, start_30, today):
             }
         )
 
-    return dedupe(items), law_errors, successful_queries, query_counts
+    return enrich_items_with_detail(oc, dedupe(items)), law_errors, successful_queries, query_counts
 
 
 def print_collection_log(watched_laws, per_law_logs, total_effective_count, total_promulgated_count, total_saved_count):
