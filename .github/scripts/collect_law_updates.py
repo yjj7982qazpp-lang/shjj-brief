@@ -32,6 +32,16 @@ NAME_CLEANUP_RE = re.compile(r"[\s\W_]+", re.UNICODE)
 HTML_TAG_RE = re.compile(r"<[^>]+>")
 ARTICLE_NUMBER_RE = re.compile(r"^\d+$")
 JO_SECTION_KEYS = {"조문", "jo", "lsJo"}
+ARTICLE_REFERENCE_UNIT_RE = (
+    r"제\s*\d+\s*조"
+    r"(?:의\s*\d+)?"
+    r"(?:\s*제\s*\d+\s*항)?"
+    r"(?:\s*제\s*\d+\s*호)?"
+    r"(?:\s*[가-힣]\s*목)?"
+)
+ARTICLE_REFERENCE_RE = re.compile(
+    rf"({ARTICLE_REFERENCE_UNIT_RE}(?:\s*부터\s*{ARTICLE_REFERENCE_UNIT_RE}\s*까지)?)"
+)
 CHANGED_FLAG_VALUES = {
     "y",
     "yes",
@@ -63,7 +73,7 @@ def write_json(payload):
     if isinstance(payload, dict):
         items = payload.get("items")
         if isinstance(items, list):
-            payload["items"] = [ensure_detail_debug_fields(item) for item in items]
+            payload["items"] = [ensure_detail_debug_fields(ensure_article_references(item)) for item in items]
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(
@@ -563,6 +573,77 @@ def ensure_detail_debug_fields(item):
     if not normalized.get("detail_fetch_status"):
         normalized["detail_fetch_status"] = "pending"
 
+    article_references = normalized.get("article_references", [])
+    if not isinstance(article_references, list):
+        article_references = []
+    normalized["article_references"] = article_references
+
+    return normalized
+
+
+def normalize_article_reference_label(value):
+    text = clean_text(value)
+    if not text:
+        return ""
+    return re.sub(r"\s+", "", text)
+
+
+def stringify_article_reference_source(value):
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return clean_text(value)
+    if isinstance(value, (dict, list, tuple)):
+        try:
+            return clean_text(json.dumps(value, ensure_ascii=False))
+        except (TypeError, ValueError):
+            return clean_text(str(value))
+    return clean_text(value)
+
+
+def build_article_reference_snippet(text, start, end, radius=100):
+    source_text = stringify_article_reference_source(text)
+    if not source_text:
+        return ""
+    left = max(0, start - radius)
+    right = min(len(source_text), end + radius)
+    snippet = source_text[left:right].strip()
+    return re.sub(r"\s+", " ", snippet)
+
+
+def extract_article_references(*field_pairs):
+    references = []
+    seen_labels = set()
+
+    for source_field, text in field_pairs:
+        source_text = stringify_article_reference_source(text)
+        if not source_text:
+            continue
+
+        for match in ARTICLE_REFERENCE_RE.finditer(source_text):
+            label = normalize_article_reference_label(match.group(1))
+            if not label or label in seen_labels:
+                continue
+            seen_labels.add(label)
+            references.append(
+                {
+                    "article_label": label,
+                    "source_field": source_field,
+                    "snippet": build_article_reference_snippet(source_text, match.start(), match.end()),
+                }
+            )
+
+    return references
+
+
+def ensure_article_references(item):
+    normalized = dict(item or {})
+    references = extract_article_references(
+        ("amendment_text", normalized.get("amendment_text", "")),
+        ("change_reason", normalized.get("change_reason", "")),
+        ("article_text", normalized.get("article_text", "")),
+    )
+    normalized["article_references"] = references
     return normalized
 
 
@@ -775,6 +856,7 @@ def convert_api_item(item, watched_map, source_type, source_note):
         "change_reason": "",
         "changed_articles": [],
         "article_text": "",
+        "article_references": [],
         "detail_article_count": 0,
         "detail_debug_keys": [],
         "detail_first_article_keys": [],
@@ -859,20 +941,26 @@ def extract_detail_fields(detail_data):
 
     amendment_text = first_value(detail_data, "개정문내용", "amendmentText")
     change_reason = first_value(detail_data, "제개정이유내용", "changeReason", "개정이유", "제개정이유")
+    article_references = extract_article_references(
+        ("amendment_text", amendment_text),
+        ("change_reason", change_reason),
+        ("article_text", article_text),
+    )
     has_detail = any([amendment_text, change_reason, changed_articles, article_text])
     detail_debug_keys = collect_debug_keys(detail_data)
     detail_first_article_keys = collect_node_keys(article_candidates[0]) if article_candidates else []
 
-    return ensure_detail_debug_fields({
+    return ensure_detail_debug_fields(ensure_article_references({
         "amendment_text": amendment_text,
         "change_reason": change_reason,
         "changed_articles": changed_articles,
         "article_text": article_text,
+        "article_references": article_references,
         "detail_article_count": len(article_candidates),
         "detail_debug_keys": detail_debug_keys,
         "detail_first_article_keys": detail_first_article_keys,
         "detail_fetch_status": "success" if has_detail else "empty",
-    })
+    }))
 
 
 def enrich_items_with_detail(oc, items):
@@ -880,32 +968,33 @@ def enrich_items_with_detail(oc, items):
     enriched_items = []
 
     for item in items:
-        enriched = ensure_detail_debug_fields(item)
+        enriched = ensure_detail_debug_fields(ensure_article_references(item))
         cache_key = json.dumps(extract_detail_params(item), ensure_ascii=False, sort_keys=True)
         if not cache_key or cache_key == "{}":
             enriched["detail_fetch_status"] = "failed"
-            enriched_items.append(ensure_detail_debug_fields(enriched))
+            enriched_items.append(ensure_detail_debug_fields(ensure_article_references(enriched)))
             continue
 
         cached = detail_cache.get(cache_key)
         if cached is None:
             try:
-                cached = ensure_detail_debug_fields(extract_detail_fields(fetch_law_detail(oc, item)))
+                cached = ensure_detail_debug_fields(ensure_article_references(extract_detail_fields(fetch_law_detail(oc, item))))
             except (LawApiError, ValueError):
-                cached = ensure_detail_debug_fields({
+                cached = ensure_detail_debug_fields(ensure_article_references({
                     "amendment_text": "",
                     "change_reason": "",
                     "changed_articles": [],
                     "article_text": "",
+                    "article_references": [],
                     "detail_article_count": 0,
                     "detail_debug_keys": [],
                     "detail_first_article_keys": [],
                     "detail_fetch_status": "failed",
-                })
+                }))
             detail_cache[cache_key] = cached
 
         enriched.update(cached)
-        enriched_items.append(ensure_detail_debug_fields(enriched))
+        enriched_items.append(ensure_detail_debug_fields(ensure_article_references(enriched)))
 
     return enriched_items
 
@@ -1020,7 +1109,7 @@ def build_payload(
     start_7 = today - timedelta(days=6)
     start_30 = today - timedelta(days=29)
 
-    normalized_items = [ensure_detail_debug_fields(item) for item in dedupe(all_items)]
+    normalized_items = [ensure_detail_debug_fields(ensure_article_references(item)) for item in dedupe(all_items)]
     sorted_items = sorted(normalized_items, key=item_sort_key)
     today_items = filter_window(sorted_items, today, today)
     last_7_days_items = filter_window(sorted_items, start_7, today)
