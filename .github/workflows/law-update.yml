@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -27,6 +29,9 @@ jobs:
           LAW_OC: ${{ secrets.LAW_OC }}
         run: python .github/scripts/collect_law_updates.py
 
+      - name: Inspect generated changes
+        run: git status --short
+
       - name: Commit and push changes
         run: |
           git config user.name "github-actions"
@@ -36,5 +41,6 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Auto update law brief data"
-            git push
+            git pull --rebase origin main
+            git push origin main
           fi
