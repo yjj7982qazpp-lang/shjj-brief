@@ -1,14 +1,22 @@
 {
   "checked_at": "2026-04-27",
-  "updated_at": "2026-04-27 15:36:04 KST",
+  "updated_at": "2026-04-27 16:02:31 KST",
   "timezone": "Asia/Seoul",
-  "synced_at": "2026-04-27 15:36:04 KST",
+  "synced_at": "2026-04-27 16:02:31 KST",
   "api_status": "partial_success",
   "source": "법제처 국가법령정보 Open API (eflaw / law / lsJoHstInf)",
   "basis": "KST 기준 오늘/최근 7일/최근 30일 법령 업데이트",
   "scope": "시행일, 공포일, 조문 개정 이력을 결합해 법령 변경을 정리합니다.",
   "notice": "일부 API 조회에 실패했지만 가능한 범위의 법령 데이터를 반영했습니다.",
-  "error": "today_effective:request_error:<urlopen error [Errno 104] Connection reset by peer>",
+  "error": "",
+  "error_detail": [
+    {
+      "label": "today_effective",
+      "code": "request_error",
+      "message": "https://www.law.go.kr/DRF/lawSearch.do <urlopen error [Errno 104] Connection reset by peer>",
+      "attempt": 1
+    }
+  ],
   "watched_laws": [
     {
       "name": "범죄예방 건축기준 고시",
@@ -9019,7 +9027,8 @@
       {
         "label": "today_effective",
         "code": "request_error",
-        "message": "<urlopen error [Errno 104] Connection reset by peer>"
+        "message": "https://www.law.go.kr/DRF/lawSearch.do <urlopen error [Errno 104] Connection reset by peer>",
+        "attempt": 1
       }
     ]
   }
