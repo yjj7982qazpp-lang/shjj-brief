@@ -31,6 +31,15 @@ KST = timezone(timedelta(hours=9))
 NAME_CLEANUP_RE = re.compile(r"[\s\W_]+", re.UNICODE)
 HTML_TAG_RE = re.compile(r"<[^>]+>")
 ARTICLE_NUMBER_RE = re.compile(r"^\d+$")
+CHANGED_FLAG_VALUES = {
+    "y",
+    "yes",
+    "true",
+    "1",
+    "변경",
+    "있음",
+    "개정",
+}
 
 
 class LawApiError(Exception):
@@ -50,6 +59,11 @@ def read_json(path, fallback):
 
 
 def write_json(payload):
+    if isinstance(payload, dict):
+        items = payload.get("items")
+        if isinstance(items, list):
+            payload["items"] = [ensure_detail_debug_fields(item) for item in items]
+
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
@@ -181,7 +195,12 @@ def format_output_date(value):
 
 
 def is_changed_flag(value):
-    return clean_text(value).upper() in {"Y", "YES", "TRUE", "1"}
+    text = clean_text(value)
+    if not text:
+        return False
+
+    lowered = text.lower()
+    return lowered in CHANGED_FLAG_VALUES or text in CHANGED_FLAG_VALUES
 
 
 def normalize_article_number(value):
@@ -191,6 +210,99 @@ def normalize_article_number(value):
     if ARTICLE_NUMBER_RE.match(text):
         return f"제{text}조"
     return text
+
+
+def collect_debug_keys(data, limit=40):
+    keys = []
+    seen = set()
+    for node in walk_nodes(data):
+        if not isinstance(node, dict):
+            continue
+        for key in node.keys():
+            key_text = clean_text(key)
+            if not key_text or key_text in seen:
+                continue
+            seen.add(key_text)
+            keys.append(key_text)
+            if len(keys) >= limit:
+                return keys
+    return keys
+
+
+def collect_node_keys(node):
+    if not isinstance(node, dict):
+        return []
+    return [
+        key_text
+        for key_text in (clean_text(key) for key in node.keys())
+        if key_text
+    ]
+
+
+def has_article_content_signal(article_number, article_title, article_effective_date, article_revision_type, article_content):
+    return any([article_number, article_title, article_effective_date, article_revision_type, article_content])
+
+
+def has_article_change_signal(article_changed, article_revision_type, article_effective_date, article_content):
+    if is_changed_flag(article_changed):
+        return True
+    if article_revision_type:
+        return True
+    if article_effective_date and article_content:
+        return True
+    return False
+
+
+def has_article_candidate_shape(node):
+    if not isinstance(node, dict):
+        return False
+
+    keys = set(collect_node_keys(node))
+    if not keys:
+        return False
+
+    candidate_keys = {
+        "조문",
+        "조문단위",
+        "조문내용",
+        "법령본문",
+        "law",
+        "jo",
+        "lsJo",
+        "조문변경여부",
+        "article_changed",
+        "joNo",
+        "joTitle",
+        "articleNo",
+        "articleTitle",
+        "articleContent",
+        "articleRevisionType",
+    }
+    if keys & candidate_keys:
+        return True
+
+    article_number = normalize_article_number(
+        pick(node, "조문번호", "조문번호문자열", "조번호", "조항번호", "joNo", "JO", "articleNo", "article_number")
+    )
+    article_title = clean_text(
+        pick(node, "조문제목", "조제목", "조항제목", "joTitle", "articleTitle", "article_title")
+    )
+    article_effective_date = format_output_date(
+        pick(node, "조문시행일자", "조문시행일자문자열", "시행일자", "articleEffectiveDate", "effectiveDate", "article_effective_date")
+    )
+    article_revision_type = clean_text(
+        pick(node, "조문제개정유형", "조문개정유형", "개정유형", "제개정구분명", "개정구분", "articleRevisionType", "revisionType", "article_revision_type")
+    )
+    article_content = clean_text(
+        pick(node, "조문내용", "조내용", "article_text", "joContent", "articleContent", "content")
+    )
+    return has_article_content_signal(
+        article_number,
+        article_title,
+        article_effective_date,
+        article_revision_type,
+        article_content,
+    )
 
 
 def parse_detail_query(item):
@@ -230,30 +342,93 @@ def extract_detail_params(item):
 
 def build_article_record(node):
     article_number = normalize_article_number(
-        pick(node, "조문번호", "조문번호문자열", "joNo", "JO")
+        pick(
+            node,
+            "조문번호",
+            "조문번호문자열",
+            "조번호",
+            "조항번호",
+            "joNo",
+            "JO",
+            "articleNo",
+            "article_number",
+        )
     )
     article_title = clean_text(
-        pick(node, "조문제목", "조제목", "joTitle", "articleTitle")
+        pick(
+            node,
+            "조문제목",
+            "조제목",
+            "조항제목",
+            "joTitle",
+            "articleTitle",
+            "article_title",
+        )
     )
     article_effective_date = format_output_date(
-        pick(node, "조문시행일자", "조문시행일자문자열", "articleEffectiveDate")
+        pick(
+            node,
+            "조문시행일자",
+            "조문시행일자문자열",
+            "시행일자",
+            "articleEffectiveDate",
+            "effectiveDate",
+            "article_effective_date",
+        )
     )
     article_revision_type = clean_text(
-        pick(node, "조문제개정유형", "제개정구분명", "articleRevisionType")
+        pick(
+            node,
+            "조문제개정유형",
+            "조문개정유형",
+            "개정유형",
+            "제개정구분명",
+            "개정구분",
+            "articleRevisionType",
+            "revisionType",
+            "article_revision_type",
+        )
     )
     article_changed = clean_text(
-        pick(node, "조문변경여부", "articleChangedYn")
+        pick(
+            node,
+            "조문변경여부",
+            "변경여부",
+            "articleChangedYn",
+            "article_changed",
+            "changedYn",
+            "changed",
+        )
     )
     article_content = clean_text(
-        pick(node, "조문내용", "조내용", "joContent", "articleContent")
+        pick(
+            node,
+            "조문내용",
+            "조내용",
+            "article_text",
+            "joContent",
+            "articleContent",
+            "content",
+        )
     )
-    article_flag = clean_text(pick(node, "조문여부", "joYn"))
+    article_flag = clean_text(pick(node, "조문여부", "joYn", "articleYn"))
 
-    if not any([article_number, article_title, article_effective_date, article_revision_type, article_content]):
+    if not has_article_content_signal(
+        article_number,
+        article_title,
+        article_effective_date,
+        article_revision_type,
+        article_content,
+    ):
         return None
     if article_flag and article_flag.upper() != "Y":
         return None
-    if not is_changed_flag(article_changed) and not article_revision_type:
+    if not has_article_change_signal(
+        article_changed,
+        article_revision_type,
+        article_effective_date,
+        article_content,
+    ):
         return None
 
     return {
@@ -289,6 +464,68 @@ def extract_changed_articles(detail_data):
         articles.append(article)
 
     return articles
+
+
+def extract_article_candidates(detail_data):
+    candidates = []
+    seen = set()
+
+    for node in walk_nodes(detail_data):
+        if not isinstance(node, dict):
+            continue
+        if not has_article_candidate_shape(node):
+            continue
+
+        keys = tuple(collect_node_keys(node))
+        if not keys:
+            continue
+        if keys in seen:
+            continue
+        seen.add(keys)
+        candidates.append(node)
+
+    return candidates
+
+
+def extract_article_text(detail_data):
+    return first_value(
+        detail_data,
+        "조문내용",
+        "조내용",
+        "조문단위",
+        "조문",
+        "법령본문",
+        "joContent",
+        "articleContent",
+        "article_text",
+    )
+
+
+def ensure_detail_debug_fields(item):
+    normalized = dict(item or {})
+
+    article_count = normalized.get("detail_article_count", 0)
+    try:
+        article_count = int(article_count or 0)
+    except (TypeError, ValueError):
+        article_count = 0
+
+    debug_keys = normalized.get("detail_debug_keys", [])
+    if not isinstance(debug_keys, list):
+        debug_keys = []
+
+    first_article_keys = normalized.get("detail_first_article_keys", [])
+    if not isinstance(first_article_keys, list):
+        first_article_keys = []
+
+    normalized["detail_article_count"] = article_count
+    normalized["detail_debug_keys"] = debug_keys
+    normalized["detail_first_article_keys"] = first_article_keys
+
+    if not normalized.get("detail_fetch_status"):
+        normalized["detail_fetch_status"] = "pending"
+
+    return normalized
 
 
 def build_article_text(changed_articles):
@@ -500,6 +737,9 @@ def convert_api_item(item, watched_map, source_type, source_note):
         "change_reason": "",
         "changed_articles": [],
         "article_text": "",
+        "detail_article_count": 0,
+        "detail_debug_keys": [],
+        "detail_first_article_keys": [],
     }
 
 
@@ -573,22 +813,28 @@ def filter_query_items(raw_items, watched_law_name, watched_map, source_type, so
 
 
 def extract_detail_fields(detail_data):
+    article_candidates = extract_article_candidates(detail_data)
     changed_articles = extract_changed_articles(detail_data)
     article_text = build_article_text(changed_articles)
     if not article_text:
-        article_text = first_value(detail_data, "조문내용", "조내용", "joContent", "articleContent")
+        article_text = extract_article_text(detail_data)
 
     amendment_text = first_value(detail_data, "개정문내용", "amendmentText")
     change_reason = first_value(detail_data, "제개정이유내용", "changeReason", "개정이유", "제개정이유")
     has_detail = any([amendment_text, change_reason, changed_articles, article_text])
+    detail_debug_keys = collect_debug_keys(detail_data)
+    detail_first_article_keys = collect_node_keys(article_candidates[0]) if article_candidates else []
 
-    return {
+    return ensure_detail_debug_fields({
         "amendment_text": amendment_text,
         "change_reason": change_reason,
         "changed_articles": changed_articles,
         "article_text": article_text,
+        "detail_article_count": len(article_candidates),
+        "detail_debug_keys": detail_debug_keys,
+        "detail_first_article_keys": detail_first_article_keys,
         "detail_fetch_status": "success" if has_detail else "empty",
-    }
+    })
 
 
 def enrich_items_with_detail(oc, items):
@@ -596,29 +842,32 @@ def enrich_items_with_detail(oc, items):
     enriched_items = []
 
     for item in items:
-        enriched = dict(item)
+        enriched = ensure_detail_debug_fields(item)
         cache_key = json.dumps(extract_detail_params(item), ensure_ascii=False, sort_keys=True)
         if not cache_key or cache_key == "{}":
             enriched["detail_fetch_status"] = "failed"
-            enriched_items.append(enriched)
+            enriched_items.append(ensure_detail_debug_fields(enriched))
             continue
 
         cached = detail_cache.get(cache_key)
         if cached is None:
             try:
-                cached = extract_detail_fields(fetch_law_detail(oc, item))
+                cached = ensure_detail_debug_fields(extract_detail_fields(fetch_law_detail(oc, item)))
             except (LawApiError, ValueError):
-                cached = {
+                cached = ensure_detail_debug_fields({
                     "amendment_text": "",
                     "change_reason": "",
                     "changed_articles": [],
                     "article_text": "",
+                    "detail_article_count": 0,
+                    "detail_debug_keys": [],
+                    "detail_first_article_keys": [],
                     "detail_fetch_status": "failed",
-                }
+                })
             detail_cache[cache_key] = cached
 
         enriched.update(cached)
-        enriched_items.append(enriched)
+        enriched_items.append(ensure_detail_debug_fields(enriched))
 
     return enriched_items
 
@@ -733,7 +982,8 @@ def build_payload(
     start_7 = today - timedelta(days=6)
     start_30 = today - timedelta(days=29)
 
-    sorted_items = sorted(dedupe(all_items), key=item_sort_key)
+    normalized_items = [ensure_detail_debug_fields(item) for item in dedupe(all_items)]
+    sorted_items = sorted(normalized_items, key=item_sort_key)
     today_items = filter_window(sorted_items, today, today)
     last_7_days_items = filter_window(sorted_items, start_7, today)
     last_30_days_items = filter_window(sorted_items, start_30, today)
