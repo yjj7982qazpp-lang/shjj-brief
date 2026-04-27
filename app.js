@@ -57,7 +57,9 @@ function formatRainTime(date) {
     new Date().toLocaleDateString("ko-KR", { day: "numeric" })
     ? "오늘"
     : "내일";
-  return `${label} ${date.getHours()}시`;
+  const hour = date.getHours();
+  const dayPart = hour >= 18 ? " 밤" : "";
+  return `${label}${dayPart} ${hour}시`;
 }
 
 function formatRainRange(start, end) {
