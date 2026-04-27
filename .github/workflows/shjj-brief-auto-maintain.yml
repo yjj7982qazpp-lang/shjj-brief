@@ -1,0 +1,62 @@
+﻿name: shjj-brief AI Auto Maintain
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "20 9 * * *"
+      timezone: "Asia/Seoul"
+
+permissions:
+  contents: write
+
+jobs:
+  auto-maintain:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout ai-auto-dev
+        uses: actions/checkout@v5
+        with:
+          ref: ai-auto-dev
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Codex auto maintain
+        id: run_codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .github/codex/prompts/shjj-brief-auto-maintain.md
+          output-file: codex-output.md
+          sandbox: workspace-write
+          safety-strategy: drop-sudo
+          effort: high
+
+      - name: Validate files
+        run: |
+          python -m json.tool manifest.json > /dev/null
+          python -m json.tool data/law_updates.json > /dev/null
+          python -m json.tool .github/scripts/watched_laws.json > /dev/null
+          node --check app.js
+
+      - name: Commit changes to ai-auto-dev
+        run: |
+          git config user.name "shjj-ai-automation"
+          git config user.email "actions@github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "chore: automated shjj-brief maintenance"
+            git push origin HEAD:ai-auto-dev
+          else
+            echo "No changes to commit."
+          fi
+
+      - name: Write report summary
+        if: always()
+        run: |
+          echo "## shjj-brief 자동 점검 결과" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f codex-output.md ]; then
+            cat codex-output.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Codex output file not found." >> $GITHUB_STEP_SUMMARY
+          fi

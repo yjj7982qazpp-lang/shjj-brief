@@ -101,17 +101,17 @@
   },
   {
     "name": "녹색건축물 조성 지원법",
-    "category": "녹색건축·에너지",
+    "category": "녹색건축ㆍ에너지",
     "priority": 1
   },
   {
     "name": "녹색건축물 조성 지원법 시행령",
-    "category": "녹색건축·에너지",
+    "category": "녹색건축ㆍ에너지",
     "priority": 1
   },
   {
     "name": "녹색건축물 조성 지원법 시행규칙",
-    "category": "녹색건축·에너지",
+    "category": "녹색건축ㆍ에너지",
     "priority": 2
   },
   {
@@ -176,32 +176,32 @@
   },
   {
     "name": "건축서비스산업 진흥법",
-    "category": "설계공모·건축서비스",
+    "category": "설계공모ㆍ건축서비스",
     "priority": 2
   },
   {
     "name": "건축서비스산업 진흥법 시행령",
-    "category": "설계공모·건축서비스",
+    "category": "설계공모ㆍ건축서비스",
     "priority": 2
   },
   {
     "name": "건축서비스산업 진흥법 시행규칙",
-    "category": "설계공모·건축서비스",
+    "category": "설계공모ㆍ건축서비스",
     "priority": 2
   },
   {
-    "name": "석면안전관리법",
-    "category": "석면·감리",
+    "name": "승강기 안전관리법",
+    "category": "승강기ㆍ감리",
     "priority": 2
   },
   {
-    "name": "석면안전관리법 시행령",
-    "category": "석면·감리",
+    "name": "승강기 안전관리법 시행령",
+    "category": "승강기ㆍ감리",
     "priority": 2
   },
   {
-    "name": "석면안전관리법 시행규칙",
-    "category": "석면·감리",
+    "name": "승강기 안전관리법 시행규칙",
+    "category": "승강기ㆍ감리",
     "priority": 2
   }
 ]
