@@ -439,10 +439,11 @@ function renderLawAccordionGroup(title, items, renderItem, options = {}) {
 }
 
 function renderLawEmptyState(apiStatus, message) {
-  const statusText = apiStatus === "success" ? "API 성공 0건" : "API 실패 0건";
+  const successLike = apiStatus === "success" || apiStatus === "no_data" || apiStatus === "partial_success";
+  const statusText = successLike ? "API 성공 0건" : "API 실패 0건";
 
   return `
-    <div class="law-empty law-empty-status ${apiStatus === "success" ? "success" : "error"}">
+    <div class="law-empty law-empty-status ${successLike ? "success" : "error"}">
       ${escapeHtml(`${statusText} · ${message}`)}
     </div>
   `;
@@ -550,7 +551,60 @@ function formatLawDate(value) {
   return text.replace(/-/g, ".");
 }
 
-function renderTrackedLaws(items, checkedAt) {
+function normalizeLawName(value) {
+  return safeText(value, "")
+    .replace(/s+/g, "")
+    .replace(/[()·ㆍ,]/g, "")
+    .trim();
+}
+
+function buildLawUpdateLookup(todayItems, weekItems, monthItems) {
+  const lookup = new Map();
+  const periods = [
+    { key: "today", rank: 0, label: "오늘 변경 1건", items: todayItems },
+    { key: "week", rank: 1, label: "최근 7일 변경 1건", items: weekItems },
+    { key: "month", rank: 2, label: "최근 30일 변경 1건", items: monthItems },
+  ];
+
+  periods.forEach(({ key, rank, label, items }) => {
+    (items || []).forEach((item) => {
+      const name = normalizeLawName(item.law_name);
+      if (!name) return;
+
+      const sourceDate = item.source_date || item.effective_date || item.promulgation_date || "";
+      const previous = lookup.get(name);
+      const previousDate = previous ? (previous.sourceDate || "") : "";
+      if (!previous || rank < previous.rank || (rank === previous.rank && sourceDate > previousDate)) {
+        lookup.set(name, { key, rank, label, sourceDate, item });
+      }
+    });
+  });
+
+  return lookup;
+}
+
+function getTrackedLawStatus(item, lookup, apiStatus) {
+  const name = normalizeLawName(item?.law_name);
+  const hasReadableData = !!name && !!safeText(item?.law_name, "");
+  const unavailable = apiStatus && apiStatus !== "success" && apiStatus !== "partial_success" && apiStatus !== "no_data";
+
+  if (!hasReadableData) {
+    return { label: "데이터 확인 필요", rank: 4, period: "error" };
+  }
+
+  if (unavailable) {
+    return { label: "데이터 확인 필요", rank: 4, period: "error" };
+  }
+
+  const matched = lookup.get(name);
+  if (matched) {
+    return matched;
+  }
+
+  return { label: "최근 업데이트 없음", rank: 3, period: "none" };
+}
+
+function renderTrackedLaws(items, checkedAt, updateState = {}) {
   const container = $("trackedLawList");
   if (!container) return;
 
@@ -560,29 +614,33 @@ function renderTrackedLaws(items, checkedAt) {
     return;
   }
 
+  const apiStatus = updateState.apiStatus || "";
+  const lookup = buildLawUpdateLookup(updateState.todayItems, updateState.weekItems, updateState.monthItems);
   setText("trackedLawCount", `${items.length}개 추적 중`);
 
   const groups = groupLawItemsByMajorGroup(items);
 
   container.innerHTML = groups.map(({ name, items: groupItems }) => {
-    const todayCount = groupItems.filter((item) => item.status === "today_updated" || item.latest_update_date === checkedAt).length;
+    const decorated = groupItems.map((item) => {
+      const status = getTrackedLawStatus(item, lookup, apiStatus);
+      return { item, status };
+    }).sort((a, b) => {
+      if (a.status.rank !== b.status.rank) return a.status.rank - b.status.rank;
+      const priorityDiff = (Number(a.item.priority) || 3) - (Number(b.item.priority) || 3);
+      if (priorityDiff !== 0) return priorityDiff;
+      return safeText(a.item.law_name, "").localeCompare(safeText(b.item.law_name, ""), "ko");
+    });
 
-    const rows = groupItems.map((item) => {
-      const isToday = item.status === "today_updated" || item.latest_update_date === checkedAt;
-      const dateText = formatLawDate(item.latest_update_date);
-      const statusText = isToday
-        ? "오늘 업데이트"
-        : dateText
-          ? `최근 업데이트: ${dateText}`
-          : "최근 업데이트: 확인 필요";
-
+    const recent30Count = decorated.filter(({ status }) => status.rank <= 2).length;
+    const rows = decorated.map(({ item, status }) => {
+      const className = status.rank <= 2 ? "today-updated" : status.rank === 3 ? "no-update" : "needs-review";
       return `
-        <article class="tracked-law-item ${isToday ? "today-updated" : ""}">
+        <article class="tracked-law-item ${className}">
           <div>
             <strong>${safeHtml(item.law_name)}</strong>
             <span>${safeHtml(item.category, "기타")}</span>
           </div>
-          <em>${escapeHtml(statusText)}</em>
+          <em>${escapeHtml(status.label)}</em>
         </article>
       `;
     }).join("");
@@ -591,7 +649,7 @@ function renderTrackedLaws(items, checkedAt) {
       <details class="tracked-law-group">
         <summary class="tracked-law-title">
           <strong>${escapeHtml(name)}</strong>
-          <span>${escapeHtml(`${groupItems.length}개${todayCount > 0 ? ` · 오늘 ${todayCount}건` : ""}`)}</span>
+          <span>${escapeHtml(`${recent30Count}건${recent30Count > 0 ? " · 최근 변경 있음" : ""}`)}</span>
         </summary>
         <div class="tracked-law-list">
           ${rows}
@@ -611,9 +669,9 @@ async function loadLawUpdates() {
     const todayItems = data.today_items ?? data.today ?? [];
     const weekItems = data.last_7_days_items ?? data.last_7_days ?? [];
     const monthItems = data.last_30_days_items ?? data.last_30_days ?? [];
-    const todayCount = Number(data.today_count ?? data.summary?.today_changes ?? countChanged(todayItems)) || 0;
-    const weekCount = Number(data.last_7_days_count ?? data.summary?.last_7_days_changes ?? countChanged(weekItems)) || 0;
-    const monthCount = Number(data.last_30_days_count ?? data.summary?.last_30_days_changes ?? countChanged(monthItems)) || 0;
+    const todayCount = Number(data.today_count ?? data.summary?.today_changes ?? todayItems.length) || 0;
+    const weekCount = Number(data.last_7_days_count ?? data.summary?.last_7_days_changes ?? weekItems.length) || 0;
+    const monthCount = Number(data.last_30_days_count ?? data.summary?.last_30_days_changes ?? monthItems.length) || 0;
     const apiStatus = data.api_status || "";
     const apiStatusLabel = {
       success: "정상",
@@ -639,7 +697,12 @@ async function loadLawUpdates() {
     setText("lawWeekCount", `${weekCount}건`);
     setText("lawMonthCount", `${monthCount}건`);
     updateLawAction(todayCount, weekCount, monthCount, apiStatus, data.error || "");
-    renderTrackedLaws(data.tracked_laws, data.checked_at);
+    renderTrackedLaws(data.tracked_laws, data.checked_at, {
+      apiStatus,
+      todayItems,
+      weekItems,
+      monthItems,
+    });
 
     renderLawList(
       "lawTodayList",
@@ -670,7 +733,7 @@ async function loadLawUpdates() {
     renderLawList("lawTodayList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.", { apiStatus: "api_error" });
     renderLawList("lawWeekList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.", { apiStatus: "api_error" });
     renderLawList("lawMonthList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.", { apiStatus: "api_error" });
-    renderTrackedLaws([], "");
+    renderTrackedLaws([], "", { apiStatus: "api_error", todayItems: [], weekItems: [], monthItems: [] });
   }
 }
 function setupLawTabs() {
