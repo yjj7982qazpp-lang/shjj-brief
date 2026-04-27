@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 import json
 import os
 
@@ -11,7 +12,10 @@ SCRIPTS_DIR = Path(__file__).resolve().parent
 WATCHED_PATH = SCRIPTS_DIR / "watched_laws.json"
 OUTPUT_PATH = ROOT / "data" / "law_updates.json"
 
-LAW_API_URL = "http://www.law.go.kr/DRF/lawSearch.do"
+LAW_API_URLS = [
+    "https://www.law.go.kr/DRF/lawSearch.do",
+    "http://www.law.go.kr/DRF/lawSearch.do",
+]
 KST = timezone(timedelta(hours=9))
 
 HIGH_PRIORITY_RULES = [
@@ -27,6 +31,12 @@ HIGH_PRIORITY_RULES = [
     ("녹색", "환경ㆍ에너지"),
     ("시설물", "시설물 안전"),
 ]
+
+
+class LawApiError(Exception):
+    def __init__(self, attempts):
+        super().__init__("법제처 API 호출 실패")
+        self.attempts = attempts
 
 
 def read_json(path, fallback):
@@ -113,26 +123,75 @@ def build_detail_url(raw_link):
     return f"https://www.law.go.kr{raw_link}"
 
 
+def fetch_law_api(params, label):
+    api_url = LAW_API_URLS[0]
+    scheme = api_url.split(":", 1)[0]
+    url = f"{api_url}?{urlencode(params)}"
+    request = Request(
+        url,
+        headers={
+            "User-Agent": "SHJJ-Brief-LawCollector/1.0",
+            "Accept": "application/json",
+        },
+    )
+
+    try:
+        with urlopen(request, timeout=20) as response:
+            raw = response.read().decode("utf-8", errors="replace")
+
+        try:
+            return json.loads(raw), None
+        except json.JSONDecodeError as error:
+            return {}, {
+                "label": label,
+                "scheme": scheme,
+                "code": "json_decode_error",
+                "message": str(error),
+                "raw_sample": raw[:300],
+            }
+    except HTTPError as error:
+        raw = error.read().decode("utf-8", errors="replace") if error.fp else ""
+        return {}, {
+            "label": label,
+            "scheme": scheme,
+            "code": "http_error",
+            "message": f"HTTP {error.code}",
+            "raw_sample": raw[:300],
+        }
+    except (TimeoutError, URLError, OSError) as error:
+        return {}, {
+            "label": label,
+            "scheme": scheme,
+            "code": "request_error",
+            "message": str(error),
+        }
+
+
 def fetch_today_effective_laws(oc, target_day):
     day_text = yyyymmdd(target_day)
-    params = {
+    return fetch_law_api({
         "OC": oc,
         "target": "eflaw",
         "type": "JSON",
         "efYd": f"{day_text}~{day_text}",
         "display": "100",
         "sort": "efdes",
-    }
-    url = f"{LAW_API_URL}?{urlencode(params)}"
-    request = Request(url, headers={"User-Agent": "SHJJ-Brief-LawCollector/1.0"})
-
-    with urlopen(request, timeout=20) as response:
-        raw = response.read().decode("utf-8", errors="replace")
-
-    return json.loads(raw)
+    }, "today_effective")
 
 
-def convert_api_item(item, watched_map):
+def fetch_today_changed_laws(oc, target_day):
+    day_text = yyyymmdd(target_day)
+    return fetch_law_api({
+        "OC": oc,
+        "target": "lsHstInf",
+        "type": "JSON",
+        "regDt": day_text,
+        "display": "100",
+        "page": "1",
+    }, "today_promulgated_or_revised")
+
+
+def convert_api_item(item, watched_map, source_type):
     law_name = pick(item, "법령명한글", "법령명", "lawNm", "법령명한글HTML")
     ministry = pick(item, "소관부처명", "소관부처", "ministry")
     law_type = pick(item, "법령구분명", "법령구분", "lawType")
@@ -143,7 +202,11 @@ def convert_api_item(item, watched_map):
     category, priority = classify_law(law_name, ministry, watched_map)
     summary_parts = []
 
-    if revision_type:
+    if source_type == "promulgated_or_revised" and revision_type:
+        summary_parts.append(f"{revision_type} 법령이 오늘 공포/개정 목록에서 확인되었습니다.")
+    elif source_type == "promulgated_or_revised":
+        summary_parts.append("오늘 공포/개정된 법령으로 확인되었습니다.")
+    elif revision_type:
         summary_parts.append(f"{revision_type} 법령이 오늘 시행됩니다.")
     else:
         summary_parts.append("오늘 시행되는 현행법령으로 확인되었습니다.")
@@ -165,7 +228,8 @@ def convert_api_item(item, watched_map):
         "effective_date": effective_date,
         "summary": summary,
         "detail_url": detail_url,
-        "source": "법제처 현행법령 시행일 목록",
+        "source": "법제처 오늘 공포/개정 법령" if source_type == "promulgated_or_revised" else "법제처 현행법령 시행일 목록",
+        "source_type": source_type,
         "priority": priority,
         "status": "changed",
         "status_label": "변경 있음",
@@ -195,33 +259,39 @@ def dedupe(items):
     return result
 
 
-def build_payload(today, watched_laws, items, sync_status, notice, errors=None):
+def build_payload(today, watched_laws, effective_items, changed_items, sync_status, notice, errors=None):
     now_text = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S KST")
-    sorted_items = sorted(items, key=lambda item: (item.get("priority", 9), item.get("law_name", "")))
+    effective_sorted = sorted(effective_items, key=lambda item: (item.get("priority", 9), item.get("law_name", "")))
+    changed_sorted = sorted(changed_items, key=lambda item: (item.get("priority", 9), item.get("law_name", "")))
+    combined_items = dedupe(effective_sorted + changed_sorted)
 
     return {
         "checked_at": today.isoformat(),
         "synced_at": now_text,
         "sync_status": sync_status,
-        "basis": "현행법령 시행일 목록 조회",
-        "scope": "법제처 현행법령 시행일 목록에서 오늘 시행되는 법령을 조회합니다.",
+        "basis": "현행법령 시행일 목록 및 오늘 공포/개정 법령 조회",
+        "scope": "법제처 API에서 오늘 시행 법령과 오늘 공포/개정 법령을 구분해 조회합니다.",
         "notice": notice,
         "watched_laws": watched_laws,
         "summary": {
-            "today_changes": len(sorted_items),
-            "last_7_days_changes": len(sorted_items),
-            "last_30_days_changes": len(sorted_items),
+            "today_changes": len(combined_items),
+            "today_effective_changes": len(effective_sorted),
+            "today_promulgated_or_revised_changes": len(changed_sorted),
+            "last_7_days_changes": len(combined_items),
+            "last_30_days_changes": len(combined_items),
         },
-        "today": sorted_items,
-        "last_7_days": sorted_items,
-        "last_30_days": sorted_items,
+        "today": effective_sorted,
+        "today_effective": effective_sorted,
+        "today_promulgated_or_revised": changed_sorted,
+        "last_7_days": combined_items,
+        "last_30_days": combined_items,
         "collector": {
-            "version": "law_collector_eflaw_v1",
-            "api": LAW_API_URL,
-            "target": "eflaw",
+            "version": "law_collector_today_dual_v1",
+            "api": LAW_API_URLS[0],
+            "targets": ["eflaw", "lsHstInf"],
             "oc_mode": "secret" if os.environ.get("LAW_OC", "").strip() else "missing",
             "display": 100,
-            "sort": "efdes",
+            "max_api_calls": 2,
             "errors": errors or [],
         },
     }
@@ -241,7 +311,8 @@ def main():
         payload = build_payload(
             today=today,
             watched_laws=watched_laws,
-            items=[],
+            effective_items=[],
+            changed_items=[],
             sync_status="missing_law_oc",
             notice="LAW_OC 환경변수가 설정되지 않아 법제처 API 조회를 건너뛰었습니다.",
             errors=[{"code": "missing_law_oc", "message": "GitHub Secrets에 LAW_OC를 설정하면 자동 수집이 실행됩니다."}],
@@ -251,31 +322,55 @@ def main():
         return
 
     try:
-        data = fetch_today_effective_laws(oc, today)
-        items = dedupe([
-            convert_api_item(item, watched_map)
-            for item in extract_items(data)
+        effective_data, effective_error = fetch_today_effective_laws(oc, today)
+        changed_data, changed_error = fetch_today_changed_laws(oc, today)
+        errors = [error for error in [effective_error, changed_error] if error]
+        effective_items = dedupe([
+            convert_api_item(item, watched_map, "effective")
+            for item in extract_items(effective_data)
             if isinstance(item, dict)
         ])
+        changed_items = dedupe([
+            convert_api_item(item, watched_map, "promulgated_or_revised")
+            for item in extract_items(changed_data)
+            if isinstance(item, dict)
+        ])
+        sync_status = "api_error" if errors and not effective_items and not changed_items else "success"
+        notice = "오늘 시행 법령과 오늘 공포/개정 법령 조회 결과입니다."
+        if not effective_items and not changed_items and not errors:
+            notice = "오늘 시행 또는 공포/개정된 법령이 없습니다."
         payload = build_payload(
             today=today,
             watched_laws=watched_laws,
-            items=items,
-            sync_status="success",
-            notice="법제처 API 기준 오늘 시행되는 법령 조회 결과입니다.",
+            effective_items=effective_items,
+            changed_items=changed_items,
+            sync_status=sync_status,
+            notice=notice,
+            errors=errors,
+        )
+    except LawApiError as error:
+        payload = build_payload(
+            today=today,
+            watched_laws=watched_laws,
+            effective_items=[],
+            changed_items=[],
+            sync_status="api_error",
+            notice="법제처 API 조회 중 오류가 발생했습니다. 수동 확인이 필요합니다.",
+            errors=error.attempts,
         )
     except Exception as error:
         payload = build_payload(
             today=today,
             watched_laws=watched_laws,
-            items=[],
+            effective_items=[],
+            changed_items=[],
             sync_status="api_error",
             notice="법제처 API 조회 중 오류가 발생했습니다. 수동 확인이 필요합니다.",
             errors=[{"code": "api_error", "message": str(error)}],
         )
 
     write_json(payload)
-    print(f"법제처 오늘 시행 법령 수집 완료: {payload['summary']['today_changes']}건")
+    print(f"법제처 오늘 법령 수집 완료: {payload['summary']['today_changes']}건")
 
 
 if __name__ == "__main__":
