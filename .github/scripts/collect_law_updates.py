@@ -21,27 +21,14 @@ API_ENDPOINTS = [
 API_TIMEOUT = 20
 API_RETRY_COUNT = 3
 API_RETRY_DELAY_SECONDS = 2
+API_DISPLAY = "100"
 KST = timezone(timedelta(hours=9))
 NAME_CLEANUP_RE = re.compile(r"[\s\W_]+", re.UNICODE)
-
-HIGH_PRIORITY_RULES = [
-    ("건축", "건축"),
-    ("도시", "도시계획"),
-    ("주택", "주택"),
-    ("국토", "국토"),
-    ("안전", "안전"),
-    ("소방", "소방"),
-    ("화재", "소방"),
-    ("환경", "환경"),
-    ("에너지", "에너지"),
-    ("녹색", "환경ㆍ에너지"),
-    ("시설물", "시설물 안전"),
-]
 
 
 class LawApiError(Exception):
     def __init__(self, attempts):
-        super().__init__("법제처 API 호출 실패")
+        super().__init__("Law API request failed")
         self.attempts = attempts
 
 
@@ -129,12 +116,6 @@ def classify_law(law_name, ministry, watched_map):
     watched = watched_map.get(normalize_name(law_name))
     if watched:
         return watched.get("category", "기타"), watched.get("priority", 3)
-
-    target_text = f"{law_name} {ministry}"
-    for keyword, category in HIGH_PRIORITY_RULES:
-        if keyword in target_text:
-            return category, 1
-
     return "기타", 3
 
 
@@ -150,11 +131,12 @@ def build_detail_url(raw_link):
 
 def summarize_attempts(attempts):
     parts = []
-    for attempt in attempts[:3]:
-        label = attempt.get("label", "api")
+    for attempt in attempts[:5]:
+        law_name = attempt.get("law_name", "unknown")
+        query_type = attempt.get("query_type", "query")
         code = attempt.get("code", "error")
         message = attempt.get("message", "")
-        parts.append(f"{label}:{code}:{message}")
+        parts.append(f"{law_name}:{query_type}:{code}:{message}")
     return " | ".join(parts)
 
 
@@ -163,7 +145,7 @@ def fetch_api_once(base_url, params, label):
     request = Request(
         url,
         headers={
-            "User-Agent": "SHJJ-Brief-LawCollector/2.1",
+            "User-Agent": "SHJJ-Brief-LawCollector/3.0",
             "Accept": "application/json",
         },
     )
@@ -190,7 +172,7 @@ def fetch_api(params, label):
     for base_url in API_ENDPOINTS:
         for retry_index in range(API_RETRY_COUNT):
             try:
-                return fetch_api_once(base_url, params, label), attempts
+                return fetch_api_once(base_url, params, label)
             except HTTPError as error:
                 raw = error.read().decode("utf-8", errors="replace") if error.fp else ""
                 attempts.append(
@@ -224,72 +206,58 @@ def fetch_api(params, label):
     raise LawApiError(attempts)
 
 
-def fetch_law_search(oc, target, extra_params, label):
+def fetch_law_search(oc, target, extra_params, label, law_name):
     params = {
         "OC": oc,
         "target": target,
         "type": "JSON",
         "search": "1",
+        "query": law_name,
         **extra_params,
     }
     return fetch_api(params, label)
 
 
-def fetch_effective_laws(oc, day):
-    day_text = to_api_date(day)
+def fetch_effective_laws(oc, law_name, start_day, end_day):
     return fetch_law_search(
         oc,
         "eflaw",
         {
-            "efYd": f"{day_text}~{day_text}",
-            "display": "100",
+            "efYd": f"{to_api_date(start_day)}~{to_api_date(end_day)}",
+            "display": API_DISPLAY,
             "page": "1",
             "sort": "efdes",
         },
-        "today_effective",
+        "effective",
+        law_name,
     )
 
 
-def fetch_promulgated_laws(oc):
+def fetch_promulgated_laws(oc, law_name):
     return fetch_law_search(
         oc,
         "law",
         {
-            "display": "100",
+            "display": API_DISPLAY,
             "page": "1",
             "sort": "ddes",
         },
-        "today_promulgated",
-    )
-
-
-def fetch_history_laws(oc, start_day, end_day):
-    return fetch_law_search(
-        oc,
-        "lsJoHstInf",
-        {
-            "fromRegDt": to_api_date(start_day),
-            "toRegDt": to_api_date(end_day),
-            "display": "100",
-            "page": "1",
-        },
-        "today_history",
+        "promulgated",
+        law_name,
     )
 
 
 def source_date_for(item, source_type):
     if source_type == "effective":
         return parse_date(pick(item, "시행일자", "effectiveDate"))
-    if source_type == "promulgated":
-        return parse_date(pick(item, "공포일자", "promulgationDate"))
-    return parse_date(pick(item, "조문개정일", "조문시행일", "공포일자", "시행일자"))
+    return parse_date(pick(item, "공포일자", "promulgationDate", "시행일자", "effectiveDate"))
 
 
 def convert_api_item(item, watched_map, source_type, source_note):
     law_name = pick(item, "법령명한글", "법령명", "lawNm", "법령명한글HTML")
     ministry = pick(item, "소관부처명", "소관부처", "ministry")
     law_type = pick(item, "법령구분명", "법령구분", "lawType")
-    revision_type = pick(item, "제개정구분명", "제개정구분", "revisionType")
+    revision_type = pick(item, "개정구분명", "개정구분", "revisionType")
     promulgation_date_obj = parse_date(pick(item, "공포일자", "promulgationDate"))
     effective_date_obj = parse_date(pick(item, "시행일자", "effectiveDate"))
     promulgation_date = to_output_date(promulgation_date_obj) if promulgation_date_obj else ""
@@ -300,23 +268,21 @@ def convert_api_item(item, watched_map, source_type, source_note):
     source_date_text = to_output_date(source_date) if source_date else ""
 
     if source_type == "effective":
-        summary = "오늘 시행되는 현행법령으로 확인되었습니다."
-    elif source_type == "promulgated":
-        summary = "오늘 공포된 현행법령으로 확인되었습니다."
+        summary = "최근 30일 시행일 기준 변경 법령입니다."
+        source = "law.go.kr eflaw"
     else:
-        summary = "조문 개정 이력에서 확인된 법령 변경입니다."
+        summary = "최근 30일 공포/개정 기준 변경 법령입니다."
+        source = "law.go.kr law"
 
     detail_parts = []
     if revision_type:
-        detail_parts.append(f"{revision_type} 법령입니다.")
+        detail_parts.append(f"{revision_type} 법령")
     if ministry:
-        detail_parts.append(f"소관부처는 {ministry}입니다.")
+        detail_parts.append(f"소관부처 {ministry}")
     if law_type:
-        detail_parts.append(f"법령구분은 {law_type}입니다.")
+        detail_parts.append(f"법령구분 {law_type}")
     if source_note:
         detail_parts.append(source_note)
-
-    summary = f"{summary} {' '.join(detail_parts)}".strip()
 
     return {
         "law_name": law_name,
@@ -326,15 +292,9 @@ def convert_api_item(item, watched_map, source_type, source_note):
         "revision_type": revision_type,
         "promulgation_date": promulgation_date,
         "effective_date": effective_date,
-        "summary": summary,
+        "summary": f"{summary} {' '.join(detail_parts)}".strip(),
         "detail_url": detail_url,
-        "source": (
-            "법제처 eflaw(시행일) 목록"
-            if source_type == "effective"
-            else "법제처 law(공포일) 목록"
-            if source_type == "promulgated"
-            else "법제처 lsJoHstInf(조문 개정 이력)"
-        ),
+        "source": source,
         "source_type": source_type,
         "source_note": source_note,
         "source_date": source_date_text,
@@ -343,13 +303,17 @@ def convert_api_item(item, watched_map, source_type, source_note):
         "status_label": "변경 있음",
         "amendment_type": revision_type,
         "impact": "높음" if priority == 1 else "확인 필요",
-        "change_summary": summary,
+        "change_summary": f"{summary} {' '.join(detail_parts)}".strip(),
         "source_url": detail_url,
     }
 
 
 def item_sort_key(item):
-    date = parse_date(item.get("source_date")) or parse_date(item.get("effective_date")) or parse_date(item.get("promulgation_date"))
+    date = (
+        parse_date(item.get("source_date"))
+        or parse_date(item.get("effective_date"))
+        or parse_date(item.get("promulgation_date"))
+    )
     return (
         item.get("priority", 9),
         -(date.toordinal() if date else 0),
@@ -362,6 +326,7 @@ def item_key(item):
     return (
         normalize_name(item.get("law_name")),
         item.get("source_date", ""),
+        item.get("source_type", ""),
         item.get("revision_type", ""),
         item.get("effective_date", ""),
         item.get("promulgation_date", ""),
@@ -391,7 +356,28 @@ def filter_window(items, start_day, end_day):
     return result
 
 
-def build_tracked_laws(today, watched_laws, all_items, previous_data):
+def is_same_law_name(left, right):
+    return normalize_name(left) == normalize_name(right)
+
+
+def filter_query_items(raw_items, watched_law_name, watched_map, source_type, source_note, start_day, end_day):
+    filtered = []
+
+    for item in raw_items:
+        law_name = pick(item, "법령명한글", "법령명", "lawNm", "법령명한글HTML")
+        if not is_same_law_name(law_name, watched_law_name):
+            continue
+
+        converted = convert_api_item(item, watched_map, source_type, source_note)
+        source_date = parse_date(converted.get("source_date"))
+        if not source_date or not (start_day <= source_date <= end_day):
+            continue
+        filtered.append(converted)
+
+    return filtered
+
+
+def build_tracked_laws(today, watched_laws, all_items, previous_data, failed_law_names):
     watched_map = {
         normalize_name(item.get("name")): item
         for item in watched_laws
@@ -412,10 +398,11 @@ def build_tracked_laws(today, watched_laws, all_items, previous_data):
         current_date = parse_date(item.get("source_date"))
         previous = latest_by_law.get(key)
         previous_date = parse_date(previous.get("source_date")) if previous else None
-        if not previous or (current_date and previous_date and current_date > previous_date):
+        if previous is None or (current_date and previous_date and current_date > previous_date):
             latest_by_law[key] = item
 
     today_text = to_output_date(today)
+    failed_set = {normalize_name(name) for name in failed_law_names}
     tracked = []
 
     for law in watched_laws:
@@ -433,30 +420,34 @@ def build_tracked_laws(today, watched_laws, all_items, previous_data):
             effective_date = latest.get("effective_date", previous.get("effective_date", ""))
             ministry = latest.get("ministry", previous.get("ministry", ""))
             detail_url = latest.get("detail_url", previous.get("detail_url", ""))
-        elif previous_date and previous_date != "확인 필요":
+        elif latest_date:
+            status = "recent_updated"
+            final_date = latest_date
+            final_type = latest.get("source", previous.get("latest_update_type", ""))
+            effective_date = latest.get("effective_date", previous.get("effective_date", ""))
+            ministry = latest.get("ministry", previous.get("ministry", ""))
+            detail_url = latest.get("detail_url", previous.get("detail_url", ""))
+        elif previous_date and previous_date not in ("", "확인 필요"):
             status = previous.get("status", "watching") or "watching"
             final_date = previous_date
             final_type = previous.get("latest_update_type", "")
             effective_date = previous.get("effective_date", "")
             ministry = previous.get("ministry", "")
             detail_url = previous.get("detail_url", "")
-        elif latest_date:
-            status = "recent_updated"
-            final_date = latest_date
-            final_type = latest.get("source", "")
-            effective_date = latest.get("effective_date", "")
-            ministry = latest.get("ministry", "")
-            detail_url = latest.get("detail_url", "")
-        else:
+        elif key in failed_set:
             status = "check_required"
             final_date = "확인 필요"
             final_type = previous.get("latest_update_type", "")
             effective_date = previous.get("effective_date", "")
             ministry = previous.get("ministry", "")
             detail_url = previous.get("detail_url", "")
-
-        if final_date == previous_date and previous_date not in ("", "확인 필요") and status != "today_updated":
-            status = previous.get("status", "watching") or "watching"
+        else:
+            status = "watching"
+            final_date = ""
+            final_type = previous.get("latest_update_type", "")
+            effective_date = previous.get("effective_date", "")
+            ministry = previous.get("ministry", "")
+            detail_url = previous.get("detail_url", "")
 
         tracked.append(
             {
@@ -482,6 +473,9 @@ def build_payload(
     tracked_laws,
     api_status,
     notice,
+    total_checked_laws,
+    failed_laws,
+    partial_failed_laws,
     error_text="",
     errors=None,
 ):
@@ -495,8 +489,6 @@ def build_payload(
     last_30_days_items = filter_window(sorted_items, start_30, today)
     today_effective_items = [item for item in today_items if item.get("source_type") == "effective"]
     today_promulgated_or_revised_items = [item for item in today_items if item.get("source_type") != "effective"]
-    watched_names = {normalize_name(item.get("name")) for item in watched_laws if isinstance(item, dict)}
-    other_changes = [item for item in last_30_days_items if normalize_name(item.get("law_name")) not in watched_names]
 
     return {
         "checked_at": today.isoformat(),
@@ -504,9 +496,9 @@ def build_payload(
         "timezone": "Asia/Seoul",
         "synced_at": now_text,
         "api_status": api_status,
-        "source": "법제처 국가법령정보 Open API (eflaw / law / lsJoHstInf)",
-        "basis": "KST 기준 오늘/최근 7일/최근 30일 법령 업데이트",
-        "scope": "시행일, 공포일, 조문 개정 이력을 결합해 법령 변경을 정리합니다.",
+        "source": "국가법령정보 Open API watched_laws query mode",
+        "basis": "KST 기준 관심 법령명별 오늘 / 최근 7일 / 최근 30일 변경",
+        "scope": "관심 법령만 API query로 조회하고 그 결과만 저장합니다.",
         "notice": notice,
         "error": error_text,
         "error_detail": errors or [],
@@ -515,7 +507,7 @@ def build_payload(
             "today_changes": len(today_items),
             "today_effective_changes": len(today_effective_items),
             "today_promulgated_or_revised_changes": len(today_promulgated_or_revised_items),
-            "other_changes": len(other_changes),
+            "other_changes": 0,
             "last_7_days_changes": len(last_7_days_items),
             "last_30_days_changes": len(last_30_days_items),
         },
@@ -531,25 +523,88 @@ def build_payload(
         "last_7_days": last_7_days_items,
         "last_30_days": last_30_days_items,
         "changed_laws": today_items,
-        "other_changes": other_changes,
+        "other_changes": [],
         "tracked_laws": tracked_laws,
+        "total_checked_laws": total_checked_laws,
+        "failed_laws": failed_laws,
+        "partial_failed_laws": partial_failed_laws,
         "collector": {
-            "version": "law_collector_kst_windows_v2",
+            "version": "law_collector_kst_watched_only_v3",
             "api": "https://www.law.go.kr/DRF/lawSearch.do",
-            "targets": ["eflaw", "law", "lsJoHstInf"],
+            "targets": ["eflaw", "law"],
+            "query_mode": "watched_laws_only",
             "oc_mode": "secret" if os.environ.get("LAW_OC", "").strip() else "missing",
-            "display": 100,
-            "max_api_calls": 3,
-            "history_note": "lsJoHstInf는 전일 기준일 수 있습니다.",
+            "display": int(API_DISPLAY),
+            "max_api_calls_per_law": 2,
+            "retry_count": API_RETRY_COUNT,
             "errors": errors or [],
         },
     }
+
+
+def collect_for_watched_law(oc, watched_law_name, watched_map, start_30, today):
+    items = []
+    law_errors = []
+    successful_queries = 0
+
+    try:
+        effective_data = fetch_effective_laws(oc, watched_law_name, start_30, today)
+        items.extend(
+            filter_query_items(
+                extract_items(effective_data),
+                watched_law_name,
+                watched_map,
+                "effective",
+                "시행일 기준 조회 결과입니다.",
+                start_30,
+                today,
+            )
+        )
+        successful_queries += 1
+    except LawApiError as error:
+        law_errors.append(
+            {
+                "law_name": watched_law_name,
+                "query_type": "effective",
+                "code": "request_failed",
+                "message": summarize_attempts(error.attempts) or "request_failed",
+                "attempts": error.attempts,
+            }
+        )
+
+    try:
+        promulgated_data = fetch_promulgated_laws(oc, watched_law_name)
+        items.extend(
+            filter_query_items(
+                extract_items(promulgated_data),
+                watched_law_name,
+                watched_map,
+                "promulgated",
+                "공포/개정일 기준 조회 결과입니다.",
+                start_30,
+                today,
+            )
+        )
+        successful_queries += 1
+    except LawApiError as error:
+        law_errors.append(
+            {
+                "law_name": watched_law_name,
+                "query_type": "promulgated",
+                "code": "request_failed",
+                "message": summarize_attempts(error.attempts) or "request_failed",
+                "attempts": error.attempts,
+            }
+        )
+
+    return dedupe(items), law_errors, successful_queries
 
 
 def main():
     watched_laws = safe_dict_list(read_json(WATCHED_PATH, []))
     previous_data = read_json(OUTPUT_PATH, {})
     today = today_kst()
+    start_30 = today - timedelta(days=29)
     oc = os.environ.get("LAW_OC", "").strip()
     watched_map = {
         normalize_name(law.get("name")): law
@@ -562,108 +617,75 @@ def main():
             today=today,
             watched_laws=watched_laws,
             all_items=[],
-            tracked_laws=build_tracked_laws(today, watched_laws, [], previous_data),
+            tracked_laws=build_tracked_laws(today, watched_laws, [], previous_data, []),
             api_status="missing_law_oc",
-            notice="LAW_OC 환경변수가 설정되지 않아 법제처 API 조회를 건너뛰었습니다.",
-            error_text="LAW_OC 미설정",
+            notice="LAW_OC 환경변수가 없어 법제처 API를 조회하지 않았습니다.",
+            total_checked_laws=len(watched_laws),
+            failed_laws=[],
+            partial_failed_laws=[],
+            error_text="missing_law_oc",
             errors=[
                 {
                     "code": "missing_law_oc",
-                    "message": "GitHub Secrets에 LAW_OC를 설정하면 자동 수집이 실행됩니다.",
+                    "message": "GitHub Secrets 또는 환경변수에 LAW_OC가 필요합니다.",
                 }
             ],
         )
         write_json(payload)
-        print("LAW_OC 미설정: 안전 상태 JSON을 저장했습니다.")
+        print("LAW_OC missing: wrote safe placeholder JSON.")
         return
 
-    errors = []
     all_items = []
-    api_hits = 0
+    error_details = []
+    failed_laws = []
+    partial_failed_laws = []
+    any_successful_query = False
 
-    try:
-        effective_data, effective_attempts = fetch_api(
-            {
-                "OC": oc,
-                "target": "eflaw",
-                "type": "JSON",
-                "search": "1",
-                "efYd": f"{to_api_date(today)}~{to_api_date(today)}",
-                "display": "100",
-                "page": "1",
-                "sort": "efdes",
-            },
-            "today_effective",
+    for watched_law in watched_laws:
+        law_name = str(watched_law.get("name", "")).strip()
+        if not law_name:
+            continue
+
+        law_items, law_errors, successful_queries = collect_for_watched_law(
+            oc,
+            law_name,
+            watched_map,
+            start_30,
+            today,
         )
-        api_hits += 1
-        errors.extend(effective_attempts)
-        all_items.extend(
-            convert_api_item(
-                item,
-                watched_map=watched_map,
-                source_type="effective",
-                source_note="시행일 기준 당일 조회 결과입니다.",
-            )
-            for item in extract_items(effective_data)
-        )
-    except LawApiError as error:
-        errors.extend(error.attempts)
+        all_items.extend(law_items)
+        error_details.extend(law_errors)
 
-    try:
-        promulgated_data, promulgated_attempts = fetch_promulgated_laws(oc)
-        api_hits += 1
-        errors.extend(promulgated_attempts)
-        all_items.extend(
-            convert_api_item(
-                item,
-                watched_map=watched_map,
-                source_type="promulgated",
-                source_note="공포일 기준 현행법령 목록입니다.",
-            )
-            for item in extract_items(promulgated_data)
-        )
-    except LawApiError as error:
-        errors.extend(error.attempts)
+        if successful_queries > 0:
+            any_successful_query = True
 
-    try:
-        history_start = today - timedelta(days=29)
-        history_data, history_attempts = fetch_history_laws(oc, history_start, today)
-        api_hits += 1
-        errors.extend(history_attempts)
-        all_items.extend(
-            convert_api_item(
-                item,
-                watched_map=watched_map,
-                source_type="history",
-                source_note="조문 개정 이력은 전일 기준일 수 있습니다.",
-            )
-            for item in extract_items(history_data)
-        )
-    except LawApiError as error:
-        errors.extend(error.attempts)
+        if successful_queries == 0 and law_errors:
+            failed_laws.append(law_name)
+        elif successful_queries < 2 and law_errors:
+            partial_failed_laws.append(law_name)
 
-    all_items = [item for item in all_items if item.get("law_name")]
-    tracked_laws = build_tracked_laws(today, watched_laws, all_items, previous_data)
+    all_items = [item for item in dedupe(all_items) if item.get("law_name")]
+    tracked_laws = build_tracked_laws(today, watched_laws, all_items, previous_data, failed_laws)
 
-    today_items = filter_window(sorted(dedupe(all_items), key=item_sort_key), today, today)
-    last_7_days_items = filter_window(sorted(dedupe(all_items), key=item_sort_key), today - timedelta(days=6), today)
-    last_30_days_items = filter_window(sorted(dedupe(all_items), key=item_sort_key), today - timedelta(days=29), today)
+    today_items = filter_window(all_items, today, today)
+    last_7_days_items = filter_window(all_items, today - timedelta(days=6), today)
+    last_30_days_items = filter_window(all_items, start_30, today)
 
-    if not errors and not today_items and not last_7_days_items and not last_30_days_items:
-        api_status = "no_data"
-        notice = "오늘 해당 법령 없음"
-        error_text = ""
-    elif errors and (today_items or last_7_days_items or last_30_days_items):
+    if error_details and any_successful_query:
         api_status = "partial_success"
-        notice = "일부 API 조회에 실패했지만 가능한 범위의 법령 데이터를 반영했습니다."
+        notice = "관심 법령 조회 중 일부 실패가 있었지만 성공한 결과는 반영했습니다."
         error_text = ""
-    elif errors:
+    elif error_details:
         api_status = "api_error"
-        notice = "법제처 API 조회 중 오류가 발생했습니다. 수동 확인이 필요합니다."
+        notice = "관심 법령 API 조회에 실패했습니다. 수동 확인이 필요합니다."
         error_text = "api_request_failed"
+    elif not today_items and not last_7_days_items and not last_30_days_items:
+        api_status = "no_data"
+        notice = "관심 법령 기준 오늘 / 최근 7일 / 최근 30일 변경이 없습니다."
+        error_text = ""
     else:
         api_status = "success"
-        notice = "오늘 시행 법령과 오늘 공포/개정 법령 조회 결과입니다."
+        notice = "관심 법령 기준 변경 결과를 반영했습니다."
         error_text = ""
 
     payload = build_payload(
@@ -673,16 +695,19 @@ def main():
         tracked_laws=tracked_laws,
         api_status=api_status,
         notice=notice,
+        total_checked_laws=len(watched_laws),
+        failed_laws=failed_laws,
+        partial_failed_laws=partial_failed_laws,
         error_text=error_text,
-        errors=errors,
+        errors=error_details,
     )
 
     write_json(payload)
     print(
-        "법제처 오늘 법령 수집 완료: "
-        f"{payload['summary']['today_changes']}건 / "
-        f"7일 {payload['summary']['last_7_days_changes']}건 / "
-        f"30일 {payload['summary']['last_30_days_changes']}건"
+        "Watched laws collected: "
+        f"today {payload['today_count']} / "
+        f"7 days {payload['last_7_days_count']} / "
+        f"30 days {payload['last_30_days_count']}"
     )
 
 

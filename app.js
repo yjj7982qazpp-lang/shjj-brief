@@ -718,7 +718,10 @@ async function loadLawUpdates() {
 
     const noticeText = data.notice || data.scope || "시행일 기준으로 오늘 확인할 법령 변경을 정리합니다.";
     const errorSuffix = data.error ? ` (${data.error})` : "";
-    const diagnosticText = `전체 API 오늘 ${todayItemsRaw.length}건 / 7일 ${weekItemsRaw.length}건 / 30일 ${monthItemsRaw.length}건 · 관심 법령 오늘 ${todayCount}건 / 7일 ${weekCount}건 / 30일 ${monthCount}건`;
+    const totalCheckedLaws = Number(data.total_checked_laws) || watchedItems.length;
+    const failedLaws = Array.isArray(data.failed_laws) ? data.failed_laws.length : 0;
+    const partialFailedLaws = Array.isArray(data.partial_failed_laws) ? data.partial_failed_laws.length : 0;
+    const diagnosticText = `관심 법령 ${totalCheckedLaws}건 확인 · 부분 실패 ${partialFailedLaws}건 · 실패 ${failedLaws}건`;
     setText("lawNotice", `${noticeText}${apiStatus && apiStatus !== "success" ? errorSuffix : ""} · ${diagnosticText}`);
 
     const updatedAtText = data.updated_at ? ` · 갱신: ${data.updated_at}` : data.synced_at ? ` · 갱신: ${data.synced_at}` : "";
