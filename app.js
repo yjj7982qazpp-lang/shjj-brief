@@ -537,6 +537,45 @@ function renderLawList(containerId, items, emptyMessage) {
   container.innerHTML = html;
 }
 
+function formatLawDate(value) {
+  const text = safeText(value, "");
+  if (!text) return "";
+  return text.replace(/-/g, ".");
+}
+
+function renderTrackedLaws(items, checkedAt) {
+  const container = $("trackedLawList");
+  if (!container) return;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    setText("trackedLawCount", "0개 추적 중");
+    container.innerHTML = `<div class="law-empty">${escapeHtml("관심 법령 추적 데이터가 없습니다.")}</div>`;
+    return;
+  }
+
+  setText("trackedLawCount", `${items.length}개 추적 중`);
+
+  container.innerHTML = items.map((item) => {
+    const isToday = item.status === "today_updated" || item.latest_update_date === checkedAt;
+    const dateText = formatLawDate(item.latest_update_date);
+    const statusText = isToday
+      ? "오늘 업데이트"
+      : dateText
+        ? `최근 업데이트: ${dateText}`
+        : "최근 업데이트 이력 없음";
+
+    return `
+      <article class="tracked-law-item ${isToday ? "today-updated" : ""}">
+        <div>
+          <strong>${safeHtml(item.law_name)}</strong>
+          <span>${safeHtml(item.category, "기타")}</span>
+        </div>
+        <em>${escapeHtml(statusText)}</em>
+      </article>
+    `;
+  }).join("");
+}
+
 async function loadLawUpdates() {
   try {
     const res = await fetch("./data/law_updates.json", { cache: "no-store" });
@@ -557,6 +596,7 @@ async function loadLawUpdates() {
     setText("lawWeekCount", `${weekCount}건`);
     setText("lawMonthCount", `${monthCount}건`);
     updateLawAction(todayCount, weekCount, monthCount);
+    renderTrackedLaws(data.tracked_laws, data.checked_at);
 
     renderLawList(
       "lawTodayList",
@@ -584,6 +624,7 @@ async function loadLawUpdates() {
     renderLawList("lawTodayList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.");
     renderLawList("lawWeekList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.");
     renderLawList("lawMonthList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.");
+    renderTrackedLaws([], "");
   }
 }
 

@@ -163,7 +163,7 @@ def fetch_law_api(params, label):
             "label": label,
             "scheme": scheme,
             "code": "request_error",
-            "message": str(error),
+            "message": str(error)[:180],
         }
 
 
@@ -240,6 +240,59 @@ def convert_api_item(item, watched_map, source_type):
     }
 
 
+def get_update_date(item):
+    return item.get("promulgation_date") or item.get("effective_date") or ""
+
+
+def build_tracked_laws(today, watched_laws, effective_items, changed_items, previous_data):
+    previous_map = {
+        normalize(item.get("law_name")): item
+        for item in previous_data.get("tracked_laws", [])
+        if isinstance(item, dict) and item.get("law_name")
+    }
+    update_map = {}
+
+    for item in effective_items:
+        update_map[normalize(item.get("law_name"))] = item
+
+    for item in changed_items:
+        update_map[normalize(item.get("law_name"))] = item
+
+    tracked = []
+    today_text = today.isoformat()
+
+    for law in watched_laws:
+        name = law.get("name", "")
+        key = normalize(name)
+        previous = previous_map.get(key, {})
+        update = update_map.get(key)
+        latest_update_date = (
+            today_text if update else
+            previous.get("latest_update_date", "")
+        )
+        status = "today_updated" if update else "watching"
+        if not update and not latest_update_date:
+            status = "check_required"
+
+        tracked.append({
+            "law_name": name,
+            "category": law.get("category", previous.get("category", "기타")),
+            "latest_update_date": latest_update_date,
+            "latest_update_type": update.get("source", previous.get("latest_update_type", "")) if update else previous.get("latest_update_type", ""),
+            "effective_date": update.get("effective_date", previous.get("effective_date", "")) if update else previous.get("effective_date", ""),
+            "ministry": update.get("ministry", previous.get("ministry", "")) if update else previous.get("ministry", ""),
+            "status": status,
+            "priority": law.get("priority", previous.get("priority", 3)),
+            "detail_url": update.get("detail_url", previous.get("detail_url", "")) if update else previous.get("detail_url", ""),
+        })
+
+    return tracked
+
+
+def is_watched_item(item, watched_map):
+    return normalize(item.get("law_name")) in watched_map
+
+
 def dedupe(items):
     seen = set()
     result = []
@@ -259,11 +312,23 @@ def dedupe(items):
     return result
 
 
-def build_payload(today, watched_laws, effective_items, changed_items, sync_status, notice, errors=None):
+def build_payload(today, watched_laws, effective_items, changed_items, tracked_laws, sync_status, notice, errors=None):
     now_text = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S KST")
-    effective_sorted = sorted(effective_items, key=lambda item: (item.get("priority", 9), item.get("law_name", "")))
-    changed_sorted = sorted(changed_items, key=lambda item: (item.get("priority", 9), item.get("law_name", "")))
+    watched_map = {
+        normalize(item.get("name")): item
+        for item in watched_laws
+        if isinstance(item, dict) and item.get("name")
+    }
+    effective_matched = [item for item in effective_items if is_watched_item(item, watched_map)]
+    changed_matched = [item for item in changed_items if is_watched_item(item, watched_map)]
+    other_changes = [
+        item for item in dedupe(effective_items + changed_items)
+        if not is_watched_item(item, watched_map)
+    ]
+    effective_sorted = sorted(effective_matched, key=lambda item: (item.get("priority", 9), item.get("law_name", "")))
+    changed_sorted = sorted(changed_matched, key=lambda item: (item.get("priority", 9), item.get("law_name", "")))
     combined_items = dedupe(effective_sorted + changed_sorted)
+    other_sorted = sorted(other_changes, key=lambda item: (item.get("law_name", ""), item.get("effective_date", "")))
 
     return {
         "checked_at": today.isoformat(),
@@ -277,12 +342,15 @@ def build_payload(today, watched_laws, effective_items, changed_items, sync_stat
             "today_changes": len(combined_items),
             "today_effective_changes": len(effective_sorted),
             "today_promulgated_or_revised_changes": len(changed_sorted),
+            "other_changes": len(other_sorted),
             "last_7_days_changes": len(combined_items),
             "last_30_days_changes": len(combined_items),
         },
-        "today": effective_sorted,
+        "today": combined_items,
         "today_effective": effective_sorted,
         "today_promulgated_or_revised": changed_sorted,
+        "other_changes": other_sorted,
+        "tracked_laws": tracked_laws,
         "last_7_days": combined_items,
         "last_30_days": combined_items,
         "collector": {
@@ -299,6 +367,7 @@ def build_payload(today, watched_laws, effective_items, changed_items, sync_stat
 
 def main():
     watched_laws = read_json(WATCHED_PATH, [])
+    previous_data = read_json(OUTPUT_PATH, {})
     watched_map = {
         normalize(item.get("name")): item
         for item in watched_laws
@@ -313,6 +382,7 @@ def main():
             watched_laws=watched_laws,
             effective_items=[],
             changed_items=[],
+            tracked_laws=build_tracked_laws(today, watched_laws, [], [], previous_data),
             sync_status="missing_law_oc",
             notice="LAW_OC 환경변수가 설정되지 않아 법제처 API 조회를 건너뛰었습니다.",
             errors=[{"code": "missing_law_oc", "message": "GitHub Secrets에 LAW_OC를 설정하면 자동 수집이 실행됩니다."}],
@@ -344,6 +414,7 @@ def main():
             watched_laws=watched_laws,
             effective_items=effective_items,
             changed_items=changed_items,
+            tracked_laws=build_tracked_laws(today, watched_laws, effective_items, changed_items, previous_data),
             sync_status=sync_status,
             notice=notice,
             errors=errors,
@@ -354,6 +425,7 @@ def main():
             watched_laws=watched_laws,
             effective_items=[],
             changed_items=[],
+            tracked_laws=build_tracked_laws(today, watched_laws, [], [], previous_data),
             sync_status="api_error",
             notice="법제처 API 조회 중 오류가 발생했습니다. 수동 확인이 필요합니다.",
             errors=error.attempts,
@@ -364,6 +436,7 @@ def main():
             watched_laws=watched_laws,
             effective_items=[],
             changed_items=[],
+            tracked_laws=build_tracked_laws(today, watched_laws, [], [], previous_data),
             sync_status="api_error",
             notice="법제처 API 조회 중 오류가 발생했습니다. 수동 확인이 필요합니다.",
             errors=[{"code": "api_error", "message": str(error)}],
