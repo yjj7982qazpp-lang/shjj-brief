@@ -1,4 +1,4 @@
-const $ = (id) => document.getElementById(id);
+﻿const $ = (id) => document.getElementById(id);
 
 const STORAGE_KEYS = {
   schedules: "shjj_brief_schedules_v4",
@@ -405,7 +405,7 @@ function getLawMajorGroup(item) {
   return "기타";
 }
 
-function groupLawItemsByMajorGroup(items) {
+function groupLawItemsByMajorGroup(items, includeEmpty = false) {
   const grouped = new Map(LAW_MAJOR_GROUPS.map((name) => [name, []]));
 
   (items || []).forEach((item) => {
@@ -414,8 +414,18 @@ function groupLawItemsByMajorGroup(items) {
   });
 
   return LAW_MAJOR_GROUPS
-    .map((name) => ({ name, items: grouped.get(name) || [] }))
-    .filter((group) => group.items.length > 0);
+    .map((name) => ({
+      key: name,
+      label: {
+        건축: "건축",
+        도시주택: "도시·주택",
+        소방안전: "소방·안전",
+        교통기타: "교통·주차",
+        기타: "기타",
+      }[name] || name,
+      items: grouped.get(name) || [],
+    }))
+    .filter((group) => includeEmpty || group.items.length > 0);
 }
 
 function renderLawAccordionGroup(title, items, renderItem, options = {}) {
@@ -553,9 +563,20 @@ function formatLawDate(value) {
 
 function normalizeLawName(value) {
   return safeText(value, "")
-    .replace(/s+/g, "")
+    .replace(/\s+/g, "")
     .replace(/[()·ㆍ,]/g, "")
     .trim();
+}
+
+function buildWatchedNameSet(items) {
+  return new Set((items || [])
+    .map((item) => normalizeLawName(item?.law_name || item?.name))
+    .filter(Boolean));
+}
+
+function filterWatchedItems(items, watchedSet) {
+  if (!Array.isArray(items) || watchedSet.size === 0) return [];
+  return items.filter((item) => watchedSet.has(normalizeLawName(item?.law_name)));
 }
 
 function buildLawUpdateLookup(todayItems, weekItems, monthItems) {
@@ -618,9 +639,9 @@ function renderTrackedLaws(items, checkedAt, updateState = {}) {
   const lookup = buildLawUpdateLookup(updateState.todayItems, updateState.weekItems, updateState.monthItems);
   setText("trackedLawCount", `${items.length}개 추적 중`);
 
-  const groups = groupLawItemsByMajorGroup(items);
+  const groups = groupLawItemsByMajorGroup(items, true);
 
-  container.innerHTML = groups.map(({ name, items: groupItems }) => {
+  container.innerHTML = groups.map(({ label, items: groupItems }) => {
     const decorated = groupItems.map((item) => {
       const status = getTrackedLawStatus(item, lookup, apiStatus);
       return { item, status };
@@ -645,14 +666,16 @@ function renderTrackedLaws(items, checkedAt, updateState = {}) {
       `;
     }).join("");
 
+    const body = rows || `<div class="law-empty">관심 법령이 없습니다.</div>`;
+
     return `
       <details class="tracked-law-group">
         <summary class="tracked-law-title">
-          <strong>${escapeHtml(name)}</strong>
-          <span>${escapeHtml(`${recent30Count}건${recent30Count > 0 ? " · 최근 변경 있음" : ""}`)}</span>
+          <strong>${escapeHtml(label)}</strong>
+          <span>${escapeHtml(`${recent30Count}건`)}</span>
         </summary>
         <div class="tracked-law-list">
-          ${rows}
+          ${body}
         </div>
       </details>
     `;
@@ -665,13 +688,20 @@ async function loadLawUpdates() {
     if (!res.ok) throw new Error("law_updates.json 로딩 실패");
 
     const data = await res.json();
+    const watchedItems = Array.isArray(data.tracked_laws) ? data.tracked_laws : [];
+    const watchedSet = buildWatchedNameSet(watchedItems);
 
-    const todayItems = data.today_items ?? data.today ?? [];
-    const weekItems = data.last_7_days_items ?? data.last_7_days ?? [];
-    const monthItems = data.last_30_days_items ?? data.last_30_days ?? [];
-    const todayCount = Number(data.today_count ?? data.summary?.today_changes ?? todayItems.length) || 0;
-    const weekCount = Number(data.last_7_days_count ?? data.summary?.last_7_days_changes ?? weekItems.length) || 0;
-    const monthCount = Number(data.last_30_days_count ?? data.summary?.last_30_days_changes ?? monthItems.length) || 0;
+    const todayItemsRaw = data.today_items ?? data.today ?? [];
+    const weekItemsRaw = data.last_7_days_items ?? data.last_7_days ?? [];
+    const monthItemsRaw = data.last_30_days_items ?? data.last_30_days ?? [];
+
+    const todayItems = filterWatchedItems(todayItemsRaw, watchedSet);
+    const weekItems = filterWatchedItems(weekItemsRaw, watchedSet);
+    const monthItems = filterWatchedItems(monthItemsRaw, watchedSet);
+
+    const todayCount = todayItems.length;
+    const weekCount = weekItems.length;
+    const monthCount = monthItems.length;
     const apiStatus = data.api_status || "";
     const apiStatusLabel = {
       success: "정상",
@@ -697,7 +727,7 @@ async function loadLawUpdates() {
     setText("lawWeekCount", `${weekCount}건`);
     setText("lawMonthCount", `${monthCount}건`);
     updateLawAction(todayCount, weekCount, monthCount, apiStatus, data.error || "");
-    renderTrackedLaws(data.tracked_laws, data.checked_at, {
+    renderTrackedLaws(watchedItems, data.checked_at, {
       apiStatus,
       todayItems,
       weekItems,
