@@ -1,16 +1,89 @@
-﻿const $ = (id) => document.getElementById(id);
+/* Structure
+ * - Weather
+ * - Daily Guide
+ * - Schedule
+ * - Law Brief
+ * - Navigation
+ */
+
+const $ = (id) => document.getElementById(id);
+const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
 const STORAGE_KEYS = {
   schedules: "shjj_brief_schedules_v4",
-  city: "shjj_brief_city_v4",
-  lat: "shjj_brief_lat_v4",
-  lon: "shjj_brief_lon_v4",
 };
 
-const state = {
+const DEFAULT_LOCATION = {
   city: "서울",
   latitude: 37.5665,
   longitude: 126.9780,
+};
+
+const WEATHER_COPY = {
+  loading: "날씨 정보를 불러오는 중",
+  failed: "날씨 정보를 불러오지 못했습니다.",
+  fallbackTitle: "날씨 정보",
+  fallbackDesc: "날씨 정보를 확인했습니다.",
+};
+
+const LAW_MESSAGES = {
+  defaultBasis: "시행일 기준",
+  defaultNotice: "시행일 기준으로 오늘 확인할 법령 변경을 정리합니다.",
+  loadFailed: "법령 변경 데이터를 불러오지 못했습니다. 네트워크 또는 data/law_updates.json 파일을 확인하세요.",
+  loadFailedDetail: "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.",
+  emptyToday: "오늘 변경이 없습니다.",
+  emptyWeek: "최근 7일 기준 변경이 없습니다.",
+  emptyMonth: "최근 30일 기준 변경이 없습니다.",
+};
+
+const LAW_TAB_PANELS = {
+  today: "lawPanelToday",
+  week: "lawPanelWeek",
+  month: "lawPanelMonth",
+};
+
+const WEATHER_FIELD_PARAMS = {
+  current: [
+    "temperature_2m",
+    "relative_humidity_2m",
+    "apparent_temperature",
+    "weather_code",
+    "wind_speed_10m",
+  ],
+  daily: [
+    "weather_code",
+    "temperature_2m_max",
+    "temperature_2m_min",
+    "precipitation_probability_max",
+  ],
+  hourly: [
+    "precipitation_probability",
+    "precipitation",
+  ],
+};
+
+const QUICK_SCHEDULE_TIMES = ["09:00", "10:00", "11:00", "13:30", "14:00", "15:00", "16:00", "17:00"];
+const SCHEDULE_MINUTES = ["00", "10", "20", "30", "40", "50"];
+const LAW_MAJOR_GROUPS = ["건축", "도시주택", "소방안전", "교통기타", "기타"];
+const LAW_GROUP_LABELS = {
+  건축: "건축",
+  도시주택: "도시·주택",
+  소방안전: "소방·안전",
+  교통기타: "교통·주차",
+  기타: "기타",
+};
+const LAW_API_STATUS_LABELS = {
+  success: "정상",
+  partial_success: "부분 성공",
+  no_data: "0건",
+  missing_law_oc: "OC 필요",
+  api_error: "오류",
+};
+
+const state = {
+  city: DEFAULT_LOCATION.city,
+  latitude: DEFAULT_LOCATION.latitude,
+  longitude: DEFAULT_LOCATION.longitude,
   weather: null,
   schedules: [],
 };
@@ -39,13 +112,105 @@ const weatherMap = {
   99: ["강한 우박 동반 천둥", "안전을 우선하세요."],
 };
 
-function weatherText(code) {
-  return weatherMap[code] || ["날씨 정보", "날씨 정보를 확인했습니다."];
+function setText(id, text) {
+  const el = $(id);
+  if (el) el.textContent = text;
+}
+
+function clearChildren(el) {
+  if (el) el.textContent = "";
+}
+
+function bindEvent(el, type, handler) {
+  if (el) el.addEventListener(type, handler);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;",
+  })[char]);
 }
 
 function round(value) {
   if (value === null || value === undefined || Number.isNaN(value)) return "--";
   return Math.round(value);
+}
+
+function safeText(value, fallback = "-") {
+  if (value === null || value === undefined || value === "") return fallback;
+  return value;
+}
+
+function safeHtml(value, fallback = "-") {
+  return escapeHtml(safeText(value, fallback));
+}
+
+function loadJson(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveJson(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function loadArray(key) {
+  const value = loadJson(key, []);
+  return Array.isArray(value) ? value : [];
+}
+
+function pad2(value) {
+  return String(value).padStart(2, "0");
+}
+
+function makeId() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+function createActionButton(label, className, id, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = className;
+  button.dataset.id = id;
+  button.textContent = label;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function createEmptyListItem(message) {
+  const row = document.createElement("div");
+  row.className = "item";
+
+  const main = document.createElement("div");
+  main.className = "item-main";
+
+  const title = document.createElement("span");
+  title.className = "item-title";
+  title.textContent = message;
+
+  main.appendChild(title);
+  row.appendChild(main);
+  return row;
+}
+
+function activateButtonGroup(buttons, activeButton) {
+  buttons.forEach((button) => {
+    const isActive = button === activeButton;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+}
+
+function weatherText(code) {
+  return weatherMap[code] || [WEATHER_COPY.fallbackTitle, WEATHER_COPY.fallbackDesc];
 }
 
 function formatRainTime(date) {
@@ -90,11 +255,13 @@ function getRainTimeSummary(weather) {
     const lastGroup = acc[acc.length - 1];
     const previous = lastGroup?.[lastGroup.length - 1];
     const isNear = previous && slot.date - previous.date <= 90 * 60 * 1000;
+
     if (isNear) {
       lastGroup.push(slot);
     } else {
       acc.push([slot]);
     }
+
     return acc;
   }, []);
 
@@ -115,110 +282,192 @@ function getRainTimeSummary(weather) {
   return `${formatRainRange(start, end)} ${intensity}`;
 }
 
-function setText(id, text) {
-  const el = $(id);
-  if (el) el.textContent = text;
+function buildWeatherParams() {
+  return new URLSearchParams({
+    latitude: state.latitude,
+    longitude: state.longitude,
+    current: WEATHER_FIELD_PARAMS.current.join(","),
+    daily: WEATHER_FIELD_PARAMS.daily.join(","),
+    hourly: WEATHER_FIELD_PARAMS.hourly.join(","),
+    timezone: "auto",
+    forecast_days: "2",
+  });
 }
 
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    "\"": "&quot;",
-    "'": "&#39;",
-  })[char]);
+function getWeatherSnapshot() {
+  if (!state.weather) return null;
+
+  const current = state.weather.current;
+  const daily = state.weather.daily;
+
+  return {
+    current,
+    daily,
+    temp: round(current.temperature_2m),
+    high: round(daily.temperature_2m_max[0]),
+    low: round(daily.temperature_2m_min[0]),
+    rain: round(daily.precipitation_probability_max[0]),
+    wind: round(current.wind_speed_10m),
+  };
 }
 
-function loadJson(key, fallback) {
-  try {
-    return JSON.parse(localStorage.getItem(key)) || fallback;
-  } catch {
-    return fallback;
-  }
+function renderWeather() {
+  const snapshot = getWeatherSnapshot();
+  if (!snapshot) return;
+
+  const [title, desc] = weatherText(snapshot.current.weather_code);
+  setText("locationName", state.city);
+  setText("currentTemp", `${snapshot.temp}°`);
+  setText("weatherDesc", `${title} · ${desc}`);
+  setText("highLow", `${snapshot.high}° / ${snapshot.low}°`);
+  setText("rainProb", `${snapshot.rain}%`);
+  setText("rainTime", getRainTimeSummary(state.weather));
+  setText("humidity", `${round(snapshot.current.relative_humidity_2m)}%`);
+  setText("wind", `${snapshot.wind} km/h`);
 }
 
-function saveJson(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+function getGuideCopy(snapshot) {
+  const rainGuide = snapshot.rain >= 60
+    ? {
+      title: "우산 필요 가능성 높음",
+      text: `강수확률 ${snapshot.rain}%입니다. 외근이나 이동 시 우산을 챙기세요.`,
+    }
+    : snapshot.rain >= 30
+      ? {
+        title: "비 가능성 있음",
+        text: `강수확률 ${snapshot.rain}%입니다. 접이식 우산 정도는 고려하세요.`,
+      }
+      : {
+        title: "비 걱정은 낮음",
+        text: `강수확률 ${snapshot.rain}%입니다. 우산 필요성은 낮아 보입니다.`,
+      };
+
+  const outsideGuide = (snapshot.rain >= 60 || snapshot.wind >= 30)
+    ? {
+      title: "외근 일정은 여유 있게",
+      text: `바람 ${snapshot.wind}km/h, 강수확률 ${snapshot.rain}%입니다. 이동 시간을 넉넉하게 잡으세요.`,
+    }
+    : {
+      title: "외근 진행 무난",
+      text: "현장 확인이나 외부 미팅 진행에 큰 부담은 낮아 보입니다.",
+    };
+
+  const clothesGuide = snapshot.low <= 5
+    ? {
+      title: "아침 저녁 보온 필요",
+      text: `최저 ${snapshot.low}°입니다. 겉옷을 챙기는 편이 좋습니다.`,
+    }
+    : snapshot.high >= 28
+      ? {
+        title: "더위 대비 필요",
+        text: `최고 ${snapshot.high}°입니다. 가벼운 옷차림과 수분 섭취를 신경 쓰세요.`,
+      }
+      : snapshot.high - snapshot.low >= 10
+        ? {
+          title: "일교차 주의",
+          text: `최고 ${snapshot.high}°, 최저 ${snapshot.low}°입니다. 얇은 겉옷을 조절하는 방식이 좋습니다.`,
+        }
+        : {
+          title: "무난한 옷차림",
+          text: `현재 ${snapshot.temp}°, 최고 ${snapshot.high}° / 최저 ${snapshot.low}°입니다. 일반적인 외출복으로 무난합니다.`,
+        };
+
+  return { rainGuide, outsideGuide, clothesGuide };
 }
 
-function loadArray(key) {
-  const value = loadJson(key, []);
-  return Array.isArray(value) ? value : [];
+function renderDailyGuide() {
+  const snapshot = getWeatherSnapshot();
+  if (!snapshot) return;
+
+  const { rainGuide, outsideGuide, clothesGuide } = getGuideCopy(snapshot);
+  setText("rainGuideTitle", rainGuide.title);
+  setText("rainGuideText", rainGuide.text);
+  setText("outsideGuideTitle", outsideGuide.title);
+  setText("outsideGuideText", outsideGuide.text);
+  setText("clothesGuideTitle", clothesGuide.title);
+  setText("clothesGuideText", clothesGuide.text);
 }
 
-function clearChildren(el) {
-  el.textContent = "";
+async function loadWeather() {
+  setText("weatherDesc", WEATHER_COPY.loading);
+  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${buildWeatherParams().toString()}`);
+  if (!res.ok) throw new Error("날씨 로딩 실패");
+
+  state.weather = await res.json();
+  renderWeather();
+  renderDailyGuide();
+  updateSettingsView();
+  updateBrief();
 }
 
-function createEmptyListItem(message) {
-  const row = document.createElement("div");
-  row.className = "item";
-
-  const main = document.createElement("div");
-  main.className = "item-main";
-
-  const title = document.createElement("span");
-  title.className = "item-title";
-  title.textContent = message;
-
-  main.appendChild(title);
-  row.appendChild(main);
-
-  return row;
-}
-
-function createActionButton(label, className, id, onClick) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = className;
-  button.dataset.id = id;
-  button.textContent = label;
-  button.addEventListener("click", onClick);
-  return button;
-}
-
-function makeId() {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-  return String(Date.now()) + "_" + Math.random().toString(16).slice(2);
-}
-
-function pad2(value) {
-  return String(value).padStart(2, "0");
+function handleWeatherLoadError() {
+  state.weather = null;
+  setText("weatherDesc", WEATHER_COPY.failed);
+  updateSettingsView();
+  updateBrief();
 }
 
 function updateDate() {
   const now = new Date();
-  const text = now.toLocaleDateString("ko-KR", {
+  setText("todayDate", now.toLocaleDateString("ko-KR", {
     year: "numeric",
     month: "long",
     day: "numeric",
     weekday: "long",
-  });
-  setText("todayDate", text);
+  }));
+}
+
+function updateSettingsView() {
+  setText("settingCityName", DEFAULT_LOCATION.city);
 }
 
 function getSelectedScheduleTime() {
-  const hour = $("scheduleHourSelect").value || "09";
-  const minute = $("scheduleMinuteSelect").value || "00";
+  const hour = $("scheduleHourSelect")?.value || "09";
+  const minute = $("scheduleMinuteSelect")?.value || "00";
   return `${hour}:${minute}`;
 }
 
 function updateSelectedScheduleTime() {
   const time = getSelectedScheduleTime();
   setText("selectedScheduleTime", time);
-
-  document.querySelectorAll(".quick-time-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.time === time);
+  $$(".quick-time-btn").forEach((button) => {
+    button.classList.toggle("active", button.dataset.time === time);
   });
 }
 
 function setScheduleTime(time) {
   const [hour, minute] = time.split(":");
-  $("scheduleHourSelect").value = hour;
-  $("scheduleMinuteSelect").value = minute;
+  const hourSelect = $("scheduleHourSelect");
+  const minuteSelect = $("scheduleMinuteSelect");
+
+  if (hourSelect) hourSelect.value = hour;
+  if (minuteSelect) minuteSelect.value = minute;
+
   updateSelectedScheduleTime();
-  $("scheduleTitleInput").focus();
+  $("scheduleTitleInput")?.focus();
+}
+
+function buildScheduleTimeOptions(select, values, formatter) {
+  clearChildren(select);
+  values.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = formatter(value);
+    select.appendChild(option);
+  });
+}
+
+function buildQuickTimeButtons(container) {
+  clearChildren(container);
+  QUICK_SCHEDULE_TIMES.forEach((time) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "quick-time-btn";
+    button.dataset.time = time;
+    button.textContent = time;
+    button.addEventListener("click", () => setScheduleTime(time));
+    container.appendChild(button);
+  });
 }
 
 function setupScheduleTimePicker() {
@@ -226,127 +475,110 @@ function setupScheduleTimePicker() {
   const minuteSelect = $("scheduleMinuteSelect");
   const quickGrid = $("quickTimeGrid");
 
-  clearChildren(hourSelect);
-  clearChildren(minuteSelect);
-  clearChildren(quickGrid);
+  if (!hourSelect || !minuteSelect || !quickGrid) return;
 
-  for (let h = 6; h <= 23; h++) {
-    const option = document.createElement("option");
-    option.value = pad2(h);
-    option.textContent = `${pad2(h)}시`;
-    hourSelect.appendChild(option);
-  }
-
-  ["00", "10", "20", "30", "40", "50"].forEach((m) => {
-    const option = document.createElement("option");
-    option.value = m;
-    option.textContent = `${m}분`;
-    minuteSelect.appendChild(option);
-  });
+  buildScheduleTimeOptions(
+    hourSelect,
+    Array.from({ length: 18 }, (_, index) => pad2(index + 6)),
+    (value) => `${value}시`
+  );
+  buildScheduleTimeOptions(minuteSelect, SCHEDULE_MINUTES, (value) => `${value}분`);
+  buildQuickTimeButtons(quickGrid);
 
   hourSelect.value = "09";
   minuteSelect.value = "00";
-
-  ["09:00", "10:00", "11:00", "13:30", "14:00", "15:00", "16:00", "17:00"].forEach((time) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "quick-time-btn";
-    btn.dataset.time = time;
-    btn.textContent = time;
-    btn.addEventListener("click", () => setScheduleTime(time));
-    quickGrid.appendChild(btn);
-  });
-
-  hourSelect.addEventListener("change", updateSelectedScheduleTime);
-  minuteSelect.addEventListener("change", updateSelectedScheduleTime);
-
+  bindEvent(hourSelect, "change", updateSelectedScheduleTime);
+  bindEvent(minuteSelect, "change", updateSelectedScheduleTime);
   updateSelectedScheduleTime();
 }
 
+function createScheduleRow(item) {
+  const row = document.createElement("div");
+  row.className = "item";
+
+  const main = document.createElement("div");
+  main.className = "item-main";
+
+  const time = document.createElement("span");
+  time.className = "item-time";
+  time.textContent = safeText(item.time, "--:--");
+
+  const title = document.createElement("span");
+  title.className = "item-title";
+  title.textContent = safeText(item.title, "제목 없음");
+
+  const actions = document.createElement("div");
+  actions.className = "item-actions";
+
+  const deleteButton = createActionButton("삭제", "delete-schedule", item.id, () => {
+    removeSchedule(item.id);
+  });
+
+  main.append(time, title);
+  actions.appendChild(deleteButton);
+  row.append(main, actions);
+  return row;
+}
+
+function sortSchedules(items) {
+  return [...items].sort((a, b) => safeText(a.time, "").localeCompare(safeText(b.time, "")));
+}
+
 function updateBrief() {
-  const scheduleCount = state.schedules.length;
-  setText("scheduleCount", `${scheduleCount}건`);
-
-  let tempText = "--°";
-
-  if (state.weather) {
-    const current = state.weather.current;
-    const daily = state.weather.daily;
-    const temp = round(current.temperature_2m);
-
-    tempText = `${temp}°`;
-  }
-
-  setText("weatherMini", tempText);
+  setText("scheduleCount", `${state.schedules.length}건`);
 }
 
-function renderDailyGuide() {
-  if (!state.weather) return;
+function renderSchedules() {
+  const list = $("scheduleList");
+  if (!list) return;
 
-  const current = state.weather.current;
-  const daily = state.weather.daily;
+  clearChildren(list);
 
-  const temp = round(current.temperature_2m);
-  const high = round(daily.temperature_2m_max[0]);
-  const low = round(daily.temperature_2m_min[0]);
-  const rain = round(daily.precipitation_probability_max[0]);
-  const wind = round(current.wind_speed_10m);
-
-  if (rain >= 60) {
-    setText("rainGuideTitle", "우산 필요 가능성 높음");
-    setText("rainGuideText", `강수확률 ${rain}%입니다. 외근이나 이동 시 우산을 챙기세요.`);
-  } else if (rain >= 30) {
-    setText("rainGuideTitle", "비 가능성 있음");
-    setText("rainGuideText", `강수확률 ${rain}%입니다. 접이식 우산 정도는 고려하세요.`);
-  } else {
-    setText("rainGuideTitle", "비 걱정은 낮음");
-    setText("rainGuideText", `강수확률 ${rain}%입니다. 우산 필요성은 낮아 보입니다.`);
+  if (state.schedules.length === 0) {
+    list.appendChild(createEmptyListItem("등록된 일정이 없습니다."));
+    updateBrief();
+    return;
   }
 
-  if (rain >= 60 || wind >= 30) {
-    setText("outsideGuideTitle", "외근 일정은 여유 있게");
-    setText("outsideGuideText", `바람 ${wind}km/h, 강수확률 ${rain}%입니다. 이동 시간을 넉넉하게 잡으세요.`);
-  } else {
-    setText("outsideGuideTitle", "외근 진행 무난");
-    setText("outsideGuideText", "현장 확인이나 외부 미팅 진행에 큰 부담은 낮아 보입니다.");
-  }
-
-  if (low <= 5) {
-    setText("clothesGuideTitle", "아침 저녁 보온 필요");
-    setText("clothesGuideText", `최저 ${low}°입니다. 겉옷을 챙기는 편이 좋습니다.`);
-  } else if (high >= 28) {
-    setText("clothesGuideTitle", "더위 대비 필요");
-    setText("clothesGuideText", `최고 ${high}°입니다. 가벼운 옷차림과 수분 섭취를 신경 쓰세요.`);
-  } else if (high - low >= 10) {
-    setText("clothesGuideTitle", "일교차 주의");
-    setText("clothesGuideText", `최고 ${high}°, 최저 ${low}°입니다. 얇은 겉옷을 조절하는 방식이 좋습니다.`);
-  } else {
-    setText("clothesGuideTitle", "무난한 옷차림");
-    setText("clothesGuideText", `현재 ${temp}°, 최고 ${high}° / 최저 ${low}°입니다. 일반적인 외출복으로 무난합니다.`);
-  }
+  sortSchedules(state.schedules).forEach((item) => {
+    list.appendChild(createScheduleRow(item));
+  });
+  updateBrief();
 }
 
-function updateSettingsView() {
-  setText("settingCityName", "서울");
+function removeSchedule(scheduleId) {
+  state.schedules = state.schedules.filter((schedule) => schedule.id !== scheduleId);
+  saveJson(STORAGE_KEYS.schedules, state.schedules);
+  renderSchedules();
 }
 
+function addSchedule() {
+  const input = $("scheduleTitleInput");
+  const title = input?.value.trim() || "";
 
-function countChanged(items) {
-  if (!Array.isArray(items)) return 0;
-  return items.filter((item) => item.status !== "no_change").length;
+  if (!title) {
+    alert("일정 내용을 입력하세요.");
+    input?.focus();
+    return;
+  }
+
+  state.schedules.push({
+    id: makeId(),
+    source: "manual",
+    time: getSelectedScheduleTime(),
+    title,
+  });
+
+  saveJson(STORAGE_KEYS.schedules, state.schedules);
+  if (input) {
+    input.value = "";
+    input.focus();
+  }
+  renderSchedules();
 }
 
 function lawStatusClass(item) {
   return item.status === "no_change" ? "" : "changed";
-}
-
-function safeText(value, fallback = "-") {
-  if (value === null || value === undefined || value === "") return fallback;
-  return value;
-}
-
-function safeHtml(value, fallback = "-") {
-  return escapeHtml(safeText(value, fallback));
 }
 
 function getLawChangeSummary(item) {
@@ -356,8 +588,6 @@ function getLawChangeSummary(item) {
   );
 }
 
-const LAW_MAJOR_GROUPS = ["건축", "도시주택", "소방안전", "교통기타", "기타"];
-
 function getLawMajorGroup(item) {
   const text = [
     safeText(item.category, ""),
@@ -365,43 +595,23 @@ function getLawMajorGroup(item) {
     safeText(item.law_type, ""),
   ].join(" ");
 
-  if (/건축|녹색건축|피난|방화|에너지절약|범죄예방|건축물관리|면적|높이/.test(text)) {
-    return "건축";
-  }
-
-  if (/주택|국토|도시|공동주택|계획|이용|하수도/.test(text)) {
-    return "도시주택";
-  }
-
-  if (/소방|안전|시설물|편의증진|장애인|노인|임산부|층간|바닥충격음/.test(text)) {
-    return "소방안전";
-  }
-
-  if (/교통|주차장|자전거|도로|차량|자동차/.test(text)) {
-    return "교통기타";
-  }
-
+  if (/건축|녹색건축|피난|방화|에너지절약|범죄예방|건축물관리|면적|높이/.test(text)) return "건축";
+  if (/주택|국토|도시|공동주택|계획|이용|하수도/.test(text)) return "도시주택";
+  if (/소방|안전|시설물|편의증진|장애인|노인|임산부|층간|바닥충격음/.test(text)) return "소방안전";
+  if (/교통|주차장|자전거|도로|차량|자동차/.test(text)) return "교통기타";
   return "기타";
 }
 
 function groupLawItemsByMajorGroup(items, includeEmpty = false) {
   const grouped = new Map(LAW_MAJOR_GROUPS.map((name) => [name, []]));
-
   (items || []).forEach((item) => {
-    const groupName = getLawMajorGroup(item);
-    grouped.get(groupName).push(item);
+    grouped.get(getLawMajorGroup(item)).push(item);
   });
 
   return LAW_MAJOR_GROUPS
     .map((name) => ({
       key: name,
-      label: {
-        건축: "건축",
-        도시주택: "도시·주택",
-        소방안전: "소방·안전",
-        교통기타: "교통·주차",
-        기타: "기타",
-      }[name] || name,
+      label: LAW_GROUP_LABELS[name] || name,
       items: grouped.get(name) || [],
     }))
     .filter((group) => includeEmpty || group.items.length > 0);
@@ -438,19 +648,6 @@ function renderLawEmptyState(apiStatus, message) {
   `;
 }
 
-function renderChangedCategoryGroups(changedItems) {
-  if (!changedItems.length) return "";
-
-  const groups = groupLawItemsByMajorGroup(changedItems);
-
-  return groups.map(({ label, items }) => renderLawAccordionGroup(
-    label,
-    items,
-    renderChangedItem,
-    { countLabel: "건" }
-  )).join("");
-}
-
 function renderChangedItem(item) {
   return `
     <article class="law-item law-item-changed">
@@ -459,7 +656,7 @@ function renderChangedItem(item) {
           <span class="law-name">${safeHtml(item.law_name)}</span>
           <span class="law-category">${safeHtml(item.category, "분류 없음")}</span>
         </div>
-        <span class="law-status changed">${safeHtml(item.status_label, "변경 있음")}</span>
+        <span class="law-status ${lawStatusClass(item)}">${safeHtml(item.status_label, "변경 있음")}</span>
       </div>
 
       <div class="law-meta">
@@ -493,28 +690,12 @@ function renderChangedItem(item) {
   `;
 }
 
-function updateLawAction(todayCount, weekCount, monthCount, apiStatus, apiError) {
-  if (todayCount > 0) {
-    setText("lawActionTitle", "오늘 즉시 확인");
-    setText("lawActionText", `오늘 시행 변경 ${todayCount}건이 있습니다. 법령명, 시행일, 변경 후 요약을 먼저 확인하세요.`);
-    return;
-  }
+function renderChangedCategoryGroups(changedItems) {
+  if (!changedItems.length) return "";
 
-  if (weekCount > 0) {
-    setText("lawActionTitle", "최근 변경 재확인");
-    setText("lawActionText", `오늘 신규 변경은 없지만 최근 7일 내 변경 ${weekCount}건이 있습니다. 진행 중인 인허가와 관련 여부를 확인하세요.`);
-    return;
-  }
-
-  if (apiStatus && apiStatus !== "success") {
-    const suffix = apiError ? ` (${apiError})` : "";
-    setText("lawActionTitle", "API 조회 확인");
-    setText("lawActionText", `오늘 변경 0건처럼 보여도 실제로는 API 상태가 ${apiStatus}입니다. 최신성부터 다시 확인하세요.${suffix}`);
-    return;
-  }
-
-  setText("lawActionTitle", "정기 확인 완료");
-  setText("lawActionText", `오늘 신규 변경이 없습니다. 감시 법령 ${monthCount > 0 ? "최근 30일 변경 이력" : "목록"}을 훑고 필요한 메모만 남기세요.`);
+  return groupLawItemsByMajorGroup(changedItems)
+    .map(({ label, items }) => renderLawAccordionGroup(label, items, renderChangedItem, { countLabel: "건" }))
+    .join("");
 }
 
 function renderLawList(containerId, items, emptyMessage, options = {}) {
@@ -532,12 +713,6 @@ function renderLawList(containerId, items, emptyMessage, options = {}) {
   }
 
   container.innerHTML = renderChangedCategoryGroups(changedItems);
-}
-
-function formatLawDate(value) {
-  const text = safeText(value, "");
-  if (!text) return "";
-  return text.replace(/-/g, ".");
 }
 
 function parseLawDateValue(value) {
@@ -592,7 +767,7 @@ function normalizeLawUpdatesData(rawData) {
       weekItemsRaw: filterItemsByDateRange(rawData, startOfWeek, endOfToday),
       monthItemsRaw: rawData,
       apiStatus: "",
-      basis: "시행일 기준",
+      basis: LAW_MESSAGES.defaultBasis,
       notice: "",
       error: "",
       totalCheckedLaws: 0,
@@ -613,8 +788,6 @@ function normalizeLawUpdatesData(rawData) {
   endOfToday.setHours(23, 59, 59, 999);
   const startOfWeek = new Date(today);
   startOfWeek.setDate(today.getDate() - 6);
-  const startOfMonth = new Date(today);
-  startOfMonth.setDate(today.getDate() - 29);
 
   return {
     metadata,
@@ -623,8 +796,8 @@ function normalizeLawUpdatesData(rawData) {
     weekItemsRaw: data.last_7_days_items ?? data.last_7_days ?? filterItemsByDateRange(allItems, startOfWeek, endOfToday),
     monthItemsRaw: data.last_30_days_items ?? data.last_30_days ?? allItems,
     apiStatus: data.api_status || "",
-    basis: data.basis || "시행일 기준",
-    notice: data.notice || data.scope || "시행일 기준으로 오늘 확인할 법령 변경을 정리합니다.",
+    basis: data.basis || LAW_MESSAGES.defaultBasis,
+    notice: data.notice || data.scope || LAW_MESSAGES.defaultNotice,
     error: data.error || "",
     totalCheckedLaws: Number(data.total_checked_laws) || Number(metadata.watchedLawCount) || watchedItems.length,
     failedLaws: Array.isArray(data.failed_laws) ? data.failed_laws.length : 0,
@@ -642,9 +815,11 @@ function normalizeLawName(value) {
 }
 
 function buildWatchedNameSet(items) {
-  return new Set((items || [])
-    .map((item) => normalizeLawName(item?.law_name || item?.name))
-    .filter(Boolean));
+  return new Set(
+    (items || [])
+      .map((item) => normalizeLawName(item?.law_name || item?.name))
+      .filter(Boolean)
+  );
 }
 
 function filterWatchedItems(items, watchedSet) {
@@ -652,55 +827,88 @@ function filterWatchedItems(items, watchedSet) {
   return items.filter((item) => watchedSet.has(normalizeLawName(item?.law_name)));
 }
 
-function buildLawUpdateLookup(todayItems, weekItems, monthItems) {
-  const lookup = new Map();
-  const periods = [
-    { key: "today", rank: 0, label: "오늘 변경 1건", items: todayItems },
-    { key: "week", rank: 1, label: "최근 7일 변경 1건", items: weekItems },
-    { key: "month", rank: 2, label: "최근 30일 변경 1건", items: monthItems },
-  ];
-
-  periods.forEach(({ key, rank, label, items }) => {
-    (items || []).forEach((item) => {
-      const name = normalizeLawName(item.law_name);
-      if (!name) return;
-
-      const sourceDate = item.source_date || item.effective_date || item.promulgation_date || "";
-      const previous = lookup.get(name);
-      const previousDate = previous ? (previous.sourceDate || "") : "";
-      if (!previous || rank < previous.rank || (rank === previous.rank && sourceDate > previousDate)) {
-        lookup.set(name, { key, rank, label, sourceDate, item });
-      }
-    });
-  });
-
-  return lookup;
-}
-
-function getTrackedLawStatus(item, lookup, apiStatus) {
-  const name = normalizeLawName(item?.law_name);
-  const hasReadableData = !!name && !!safeText(item?.law_name, "");
-  const unavailable = apiStatus && apiStatus !== "success" && apiStatus !== "partial_success" && apiStatus !== "no_data";
-
-  if (!hasReadableData) {
-    return { label: "데이터 확인 필요", rank: 4, period: "error" };
-  }
-
-  if (unavailable) {
-    return { label: "데이터 확인 필요", rank: 4, period: "error" };
-  }
-
-  const matched = lookup.get(name);
-  if (matched) {
-    return matched;
-  }
-
-  return { label: "최근 업데이트 없음", rank: 3, period: "none" };
-}
-
 function renderTrackedLaws(items) {
   const totalCount = Array.isArray(items) ? items.length : 0;
   setText("trackedLawCount", `전체 ${totalCount}건`);
+}
+
+function updateLawAction(todayCount, weekCount, monthCount, apiStatus, apiError) {
+  if (todayCount > 0) {
+    setText("lawActionTitle", "오늘 즉시 확인");
+    setText("lawActionText", `오늘 시행 변경 ${todayCount}건이 있습니다. 법령명, 시행일, 변경 후 요약을 먼저 확인하세요.`);
+    return;
+  }
+
+  if (weekCount > 0) {
+    setText("lawActionTitle", "최근 변경 재확인");
+    setText("lawActionText", `오늘 신규 변경은 없지만 최근 7일 내 변경 ${weekCount}건이 있습니다. 진행 중인 인허가와 관련 여부를 확인하세요.`);
+    return;
+  }
+
+  if (apiStatus && apiStatus !== "success") {
+    const suffix = apiError ? ` (${apiError})` : "";
+    setText("lawActionTitle", "API 조회 확인");
+    setText("lawActionText", `오늘 변경 0건처럼 보여도 실제로는 API 상태가 ${apiStatus}입니다. 최신성부터 다시 확인하세요.${suffix}`);
+    return;
+  }
+
+  setText("lawActionTitle", "정기 확인 완료");
+  setText("lawActionText", `오늘 신규 변경이 없습니다. 감시 법령 ${monthCount > 0 ? "최근 30일 변경 이력" : "목록"}을 훑고 필요한 메모만 남기세요.`);
+}
+
+function getFilteredLawLists(data) {
+  const watchedSet = buildWatchedNameSet(data.watchedItems);
+  const filterByWatched = (items) => (watchedSet.size ? filterWatchedItems(items, watchedSet) : items);
+
+  return {
+    todayItems: filterByWatched(data.todayItemsRaw),
+    weekItems: filterByWatched(data.weekItemsRaw),
+    monthItems: filterByWatched(data.monthItemsRaw),
+  };
+}
+
+function updateLawSummaryCounts(todayCount, weekCount, monthCount) {
+  setText("lawTodayCount", `${todayCount}건`);
+  setText("lawWeekCount", `${weekCount}건`);
+  setText("lawMonthCount", `${monthCount}건`);
+}
+
+function renderLawHeader(data, monthCount) {
+  const apiStatusLabel = LAW_API_STATUS_LABELS[data.apiStatus] || "";
+  const basisText = data.apiStatus && data.apiStatus !== "success"
+    ? `${data.basis} · ${apiStatusLabel || data.apiStatus}`
+    : data.basis;
+
+  const errorSuffix = data.error ? ` (${data.error})` : "";
+  const diagnosticText = `관심 법령 ${data.totalCheckedLaws}건 확인 · 부분 실패 ${data.partialFailedLaws}건 · 실패 ${data.failedLaws}건`;
+  const updatedAt = data.metadata.lastUpdated || data.updatedAt || "";
+  const savedCount = Number(data.metadata.totalSavedCount) || monthCount;
+
+  setText("lawBasisChip", basisText);
+  setText("lawNotice", `${data.notice}${data.apiStatus && data.apiStatus !== "success" ? errorSuffix : ""} · ${diagnosticText}`);
+  setText("lawCheckedAt", `확인일: ${safeText(data.checkedAt)}${data.updatedAt ? ` · 갱신: ${safeText(data.updatedAt)}` : ""}`);
+  setText("lawMetaSummary", `마지막 갱신 ${formatLawUpdatedAt(updatedAt)} · 총 저장 ${savedCount}건`);
+  setText("trackedLawUpdatedAt", `마지막 갱신 ${formatLawUpdatedAt(updatedAt)}`);
+}
+
+function renderLawSections(data, todayItems, weekItems, monthItems) {
+  renderLawList("lawTodayList", todayItems, LAW_MESSAGES.emptyToday, { apiStatus: data.apiStatus });
+  renderLawList("lawWeekList", weekItems, LAW_MESSAGES.emptyWeek, { apiStatus: data.apiStatus });
+  renderLawList("lawMonthList", monthItems, LAW_MESSAGES.emptyMonth, { apiStatus: data.apiStatus });
+}
+
+function renderLawLoadFailure() {
+  setText("lawNotice", LAW_MESSAGES.loadFailed);
+  setText("lawCheckedAt", "확인일: -");
+  setText("lawMetaSummary", "마지막 갱신 - · 총 저장 0건");
+  setText("trackedLawUpdatedAt", "마지막 갱신 -");
+  setText("lawActionTitle", "확인 필요");
+  setText("lawActionText", "자동 브리프를 표시하지 못했습니다. 오늘 업무 전 수동으로 주요 법령 변경 여부를 확인하세요.");
+
+  renderLawList("lawTodayList", [], LAW_MESSAGES.loadFailedDetail, { apiStatus: "api_error" });
+  renderLawList("lawWeekList", [], LAW_MESSAGES.loadFailedDetail, { apiStatus: "api_error" });
+  renderLawList("lawMonthList", [], LAW_MESSAGES.loadFailedDetail, { apiStatus: "api_error" });
+  renderTrackedLaws([]);
 }
 
 async function loadLawUpdates() {
@@ -708,285 +916,51 @@ async function loadLawUpdates() {
     const res = await fetch("./data/law_updates.json", { cache: "no-store" });
     if (!res.ok) throw new Error("law_updates.json 로딩 실패");
 
-    const rawData = await res.json();
-    const data = normalizeLawUpdatesData(rawData);
-    const watchedItems = data.watchedItems;
-    const watchedSet = buildWatchedNameSet(watchedItems);
-
-    const todayItemsRaw = data.todayItemsRaw;
-    const weekItemsRaw = data.weekItemsRaw;
-    const monthItemsRaw = data.monthItemsRaw;
-
-    const todayItems = watchedSet.size ? filterWatchedItems(todayItemsRaw, watchedSet) : todayItemsRaw;
-    const weekItems = watchedSet.size ? filterWatchedItems(weekItemsRaw, watchedSet) : weekItemsRaw;
-    const monthItems = watchedSet.size ? filterWatchedItems(monthItemsRaw, watchedSet) : monthItemsRaw;
-
+    const data = normalizeLawUpdatesData(await res.json());
+    const { todayItems, weekItems, monthItems } = getFilteredLawLists(data);
     const todayCount = todayItems.length;
     const weekCount = weekItems.length;
     const monthCount = monthItems.length;
-    const apiStatus = data.apiStatus;
-    const apiStatusLabel = {
-      success: "정상",
-      partial_success: "부분 성공",
-      no_data: "0건",
-      missing_law_oc: "OC 필요",
-      api_error: "오류",
-    }[apiStatus] || "";
 
-    setText("lawBasisChip", data.basis);
-    if (apiStatus && apiStatus !== "success") {
-      setText("lawBasisChip", `${data.basis} · ${apiStatusLabel || apiStatus}`);
-    }
-
-    const noticeText = data.notice;
-    const errorSuffix = data.error ? ` (${data.error})` : "";
-    const totalCheckedLaws = data.totalCheckedLaws;
-    const failedLaws = data.failedLaws;
-    const partialFailedLaws = data.partialFailedLaws;
-    const diagnosticText = `관심 법령 ${totalCheckedLaws}건 확인 · 부분 실패 ${partialFailedLaws}건 · 실패 ${failedLaws}건`;
-    setText("lawNotice", `${noticeText}${apiStatus && apiStatus !== "success" ? errorSuffix : ""} · ${diagnosticText}`);
-
-    const updatedAtText = data.updatedAt ? ` · 갱신: ${safeText(data.updatedAt)}` : "";
-    setText("lawCheckedAt", `확인일: ${safeText(data.checkedAt)}${updatedAtText}`);
-    setText(
-      "lawMetaSummary",
-      `마지막 갱신 ${formatLawUpdatedAt(data.metadata.lastUpdated || data.updatedAt || "")} · 총 저장 ${Number(data.metadata.totalSavedCount) || monthCount}건`
-    );
-    setText("trackedLawUpdatedAt", `마지막 갱신 ${formatLawUpdatedAt(data.metadata.lastUpdated || data.updatedAt || "")}`);
-
-    setText("lawTodayCount", `${todayCount}건`);
-    setText("lawWeekCount", `${weekCount}건`);
-    setText("lawMonthCount", `${monthCount}건`);
-    updateLawAction(todayCount, weekCount, monthCount, apiStatus, data.error || "");
-    renderTrackedLaws(watchedItems);
-
-    renderLawList(
-      "lawTodayList",
-      todayItems,
-      "오늘 변경이 없습니다.",
-      { apiStatus, error: data.error || "" }
-    );
-
-    renderLawList(
-      "lawWeekList",
-      weekItems,
-      "최근 7일 기준 변경이 없습니다.",
-      { apiStatus, error: data.error || "" }
-    );
-
-    renderLawList(
-      "lawMonthList",
-      monthItems,
-      "최근 30일 기준 변경이 없습니다.",
-      { apiStatus, error: data.error || "" }
-    );
-  } catch (error) {
-    setText("lawNotice", "법령 변경 데이터를 불러오지 못했습니다. 네트워크 또는 data/law_updates.json 파일을 확인하세요.");
-    setText("lawCheckedAt", "확인일: -");
-    setText("lawMetaSummary", "마지막 갱신 - · 총 저장 0건");
-    setText("trackedLawUpdatedAt", "마지막 갱신 -");
-    setText("lawActionTitle", "확인 필요");
-    setText("lawActionText", "자동 브리프를 표시하지 못했습니다. 오늘 업무 전 수동으로 주요 법령 변경 여부를 확인하세요.");
-
-    renderLawList("lawTodayList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.", { apiStatus: "api_error" });
-    renderLawList("lawWeekList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.", { apiStatus: "api_error" });
-    renderLawList("lawMonthList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.", { apiStatus: "api_error" });
-    renderTrackedLaws([]);
+    renderLawHeader(data, monthCount);
+    updateLawSummaryCounts(todayCount, weekCount, monthCount);
+    updateLawAction(todayCount, weekCount, monthCount, data.apiStatus, data.error || "");
+    renderTrackedLaws(data.watchedItems);
+    renderLawSections(data, todayItems, weekItems, monthItems);
+  } catch {
+    renderLawLoadFailure();
   }
 }
+
+function activateLawTab(tab) {
+  const buttons = $$(".law-tab-btn");
+  const activeButton = buttons.find((button) => button.dataset.lawTab === tab);
+  if (!activeButton) return;
+
+  activateButtonGroup(buttons, activeButton);
+  $$(".law-panel").forEach((panel) => panel.classList.remove("active"));
+  $(LAW_TAB_PANELS[tab])?.classList.add("active");
+}
+
 function setupLawTabs() {
-  document.querySelectorAll(".law-tab-btn").forEach((btn) => {
-    btn.setAttribute("role", "tab");
-    btn.setAttribute("aria-selected", String(btn.classList.contains("active")));
-
-    btn.addEventListener("click", () => {
-      const tab = btn.dataset.lawTab;
-
-      document.querySelectorAll(".law-tab-btn").forEach((item) => {
-        const selected = item === btn;
-        item.classList.toggle("active", selected);
-        item.setAttribute("aria-selected", String(selected));
-      });
-
-      document.querySelectorAll(".law-panel").forEach((panel) => {
-        panel.classList.remove("active");
-      });
-
-      if (tab === "today") $("lawPanelToday").classList.add("active");
-      if (tab === "week") $("lawPanelWeek").classList.add("active");
-      if (tab === "month") $("lawPanelMonth").classList.add("active");
-    });
+  const buttons = $$(".law-tab-btn");
+  buttons.forEach((button) => {
+    button.setAttribute("role", "tab");
+    button.setAttribute("aria-selected", String(button.classList.contains("active")));
+    bindEvent(button, "click", () => activateLawTab(button.dataset.lawTab));
   });
-}
-
-async function searchCity(name) {
-  const query = encodeURIComponent(name.trim());
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=1&language=ko&format=json`;
-
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("도시 검색 실패");
-
-  const data = await res.json();
-  if (!data.results || data.results.length === 0) {
-    throw new Error("검색 결과 없음");
-  }
-
-  const city = data.results[0];
-
-  state.city = city.admin1 ? `${city.name}, ${city.admin1}` : city.name;
-  state.latitude = city.latitude;
-  state.longitude = city.longitude;
-
-  localStorage.setItem(STORAGE_KEYS.city, state.city);
-  localStorage.setItem(STORAGE_KEYS.lat, String(state.latitude));
-  localStorage.setItem(STORAGE_KEYS.lon, String(state.longitude));
-
-  await loadWeather();
-}
-
-async function loadWeather() {
-  setText("weatherDesc", "날씨 정보를 불러오는 중");
-
-  const params = new URLSearchParams({
-    latitude: state.latitude,
-    longitude: state.longitude,
-    current: [
-      "temperature_2m",
-      "relative_humidity_2m",
-      "apparent_temperature",
-      "weather_code",
-      "wind_speed_10m"
-    ].join(","),
-    daily: [
-      "weather_code",
-      "temperature_2m_max",
-      "temperature_2m_min",
-      "precipitation_probability_max"
-    ].join(","),
-    hourly: [
-      "precipitation_probability",
-      "precipitation"
-    ].join(","),
-    timezone: "auto",
-    forecast_days: "2"
-  });
-
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
-  if (!res.ok) throw new Error("날씨 로딩 실패");
-
-  const data = await res.json();
-  state.weather = data;
-
-  renderWeather();
-  renderDailyGuide();
-  updateSettingsView();
-  updateBrief();
-}
-
-function handleWeatherLoadError() {
-  state.weather = null;
-  setText("weatherDesc", "날씨 정보를 불러오지 못했습니다.");
-  updateSettingsView();
-  updateBrief();
-}
-
-function renderWeather() {
-  if (!state.weather) return;
-
-  const current = state.weather.current;
-  const daily = state.weather.daily;
-  const [title, desc] = weatherText(current.weather_code);
-
-  setText("locationName", state.city);
-  setText("currentTemp", `${round(current.temperature_2m)}°`);
-  setText("weatherDesc", `${title} · ${desc}`);
-  setText("highLow", `${round(daily.temperature_2m_max[0])}° / ${round(daily.temperature_2m_min[0])}°`);
-  setText("rainProb", `${round(daily.precipitation_probability_max[0])}%`);
-  setText("rainTime", getRainTimeSummary(state.weather));
-  setText("humidity", `${round(current.relative_humidity_2m)}%`);
-  setText("wind", `${round(current.wind_speed_10m)} km/h`);
-}
-
-function renderSchedules() {
-  const list = $("scheduleList");
-  clearChildren(list);
-
-  if (state.schedules.length === 0) {
-    list.appendChild(createEmptyListItem("등록된 일정이 없습니다."));
-    updateBrief();
-    return;
-  }
-
-  const sorted = [...state.schedules].sort((a, b) =>
-    safeText(a.time, "").localeCompare(safeText(b.time, ""))
-  );
-
-  sorted.forEach((item) => {
-    const row = document.createElement("div");
-    row.className = "item";
-
-    const main = document.createElement("div");
-    main.className = "item-main";
-
-    const time = document.createElement("span");
-    time.className = "item-time";
-    time.textContent = safeText(item.time, "--:--");
-
-    const title = document.createElement("span");
-    title.className = "item-title";
-    title.textContent = safeText(item.title, "제목 없음");
-
-    const actions = document.createElement("div");
-    actions.className = "item-actions";
-
-    const deleteButton = createActionButton("삭제", "delete-schedule", item.id, () => {
-      state.schedules = state.schedules.filter((schedule) => schedule.id !== item.id);
-      saveJson(STORAGE_KEYS.schedules, state.schedules);
-      renderSchedules();
-      updateBrief();
-    });
-
-    main.append(time, title);
-    actions.appendChild(deleteButton);
-    row.append(main, actions);
-    list.appendChild(row);
-  });
-
-  updateBrief();
-}
-
-function addSchedule() {
-  const title = $("scheduleTitleInput").value.trim();
-
-  if (!title) {
-    alert("일정 내용을 입력하세요.");
-    $("scheduleTitleInput").focus();
-    return;
-  }
-
-  state.schedules.push({
-    id: makeId(),
-    source: "manual",
-    time: getSelectedScheduleTime(),
-    title,
-  });
-
-  saveJson(STORAGE_KEYS.schedules, state.schedules);
-  $("scheduleTitleInput").value = "";
-  $("scheduleTitleInput").focus();
-  renderSchedules();
 }
 
 async function registerSW() {
-  if ("serviceWorker" in navigator) {
-    try {
-      const registration = await navigator.serviceWorker.register("./sw.js");
-      if (registration.update) {
-        await registration.update();
-      }
-    } catch (error) {
-      console.log("Service worker skipped", error);
+  if (!("serviceWorker" in navigator)) return;
+
+  try {
+    const registration = await navigator.serviceWorker.register("./sw.js");
+    if (registration.update) {
+      await registration.update();
     }
+  } catch (error) {
+    console.log("Service worker skipped", error);
   }
 }
 
@@ -997,7 +971,6 @@ async function requestNotification() {
   }
 
   const permission = await Notification.requestPermission();
-
   if (permission === "granted") {
     alert("알림 권한이 허용되었습니다.");
     return true;
@@ -1005,6 +978,14 @@ async function requestNotification() {
 
   alert("알림 권한이 허용되지 않았습니다.");
   return false;
+}
+
+function buildNotificationWeatherLine() {
+  const snapshot = getWeatherSnapshot();
+  if (!snapshot) return "날씨 정보 확인 중";
+
+  const [title] = weatherText(snapshot.current.weather_code);
+  return `${state.city} ${snapshot.temp}° · ${title} · 최고 ${snapshot.high}° / 최저 ${snapshot.low}°`;
 }
 
 async function showBriefNotification() {
@@ -1015,18 +996,8 @@ async function showBriefNotification() {
     if (!ok) return;
   }
 
-  let weatherLine = "날씨 정보 확인 중";
-  if (state.weather) {
-    const current = state.weather.current;
-    const daily = state.weather.daily;
-    const [title] = weatherText(current.weather_code);
-    weatherLine = `${state.city} ${round(current.temperature_2m)}° · ${title} · 최고 ${round(daily.temperature_2m_max[0])}° / 최저 ${round(daily.temperature_2m_min[0])}°`;
-  }
-
-  const scheduleCount = state.schedules.length;
   const title = "SHJJ Brief · 오늘 브리핑";
-  const body = `${weatherLine}\n오늘 일정 ${scheduleCount}건`;
-
+  const body = `${buildNotificationWeatherLine()}\n오늘 일정 ${state.schedules.length}건`;
   const reg = await navigator.serviceWorker.getRegistration();
 
   if (reg) {
@@ -1035,37 +1006,50 @@ async function showBriefNotification() {
       tag: "shjj-brief-test",
       renotify: true,
     });
-  } else {
-    new Notification(title, { body });
+    return;
   }
+
+  new Notification(title, { body });
 }
 
 function setupBottomNav() {
-  document.querySelectorAll(".bottom-nav-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const target = document.getElementById(btn.dataset.target);
+  const buttons = $$(".bottom-nav-btn");
+  buttons.forEach((button) => {
+    bindEvent(button, "click", () => {
+      const target = document.getElementById(button.dataset.target);
       if (!target) return;
 
-      document.querySelectorAll(".bottom-nav-btn").forEach((item) => item.classList.remove("active"));
-      btn.classList.add("active");
+      buttons.forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
 }
 
-function bindEvents() {
-  $("refreshWeatherBtn").addEventListener("click", (event) => {
+function bindWeatherEvents() {
+  bindEvent($("refreshWeatherBtn"), "click", (event) => {
     event.preventDefault();
     event.stopPropagation();
     loadWeather().catch(handleWeatherLoadError);
   });
-  $("addScheduleBtn").addEventListener("click", addSchedule);
-  $("notifyBtn").addEventListener("click", requestNotification);
-  $("testNotifyBtn").addEventListener("click", showBriefNotification);
+}
 
-  $("scheduleTitleInput").addEventListener("keydown", (event) => {
+function bindScheduleEvents() {
+  bindEvent($("addScheduleBtn"), "click", addSchedule);
+  bindEvent($("scheduleTitleInput"), "keydown", (event) => {
     if (event.key === "Enter") addSchedule();
   });
+}
+
+function bindNotificationEvents() {
+  bindEvent($("notifyBtn"), "click", requestNotification);
+  bindEvent($("testNotifyBtn"), "click", showBriefNotification);
+}
+
+function bindEvents() {
+  bindWeatherEvents();
+  bindScheduleEvents();
+  bindNotificationEvents();
 }
 
 async function init() {
@@ -1075,9 +1059,9 @@ async function init() {
   setupLawTabs();
 
   state.schedules = loadArray(STORAGE_KEYS.schedules);
-
   renderSchedules();
   bindEvents();
+
   const weatherLoadPromise = loadWeather().catch(handleWeatherLoadError);
   await registerSW();
   await loadLawUpdates();

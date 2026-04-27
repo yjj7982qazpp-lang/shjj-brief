@@ -402,14 +402,19 @@ textarea:focus {
   word-break: keep-all;
 }
 
-.fold-card > summary {
+.fold-card > summary,
+.weather-fold > summary {
   list-style: none;
   cursor: pointer;
-  margin-bottom: 0;
 }
 
-.fold-card > summary::-webkit-details-marker {
+.fold-card > summary::-webkit-details-marker,
+.weather-fold > summary::-webkit-details-marker {
   display: none;
+}
+
+.fold-card > summary {
+  margin-bottom: 0;
 }
 
 .fold-summary-text,
@@ -433,7 +438,8 @@ textarea:focus {
   font-size: 14px;
 }
 
-.fold-body {
+.fold-body,
+.weather-fold-body {
   margin-top: 14px;
 }
 
@@ -454,20 +460,10 @@ textarea:focus {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  cursor: pointer;
-  list-style: none;
-}
-
-.weather-fold > summary::-webkit-details-marker {
-  display: none;
 }
 
 .weather-summary {
   margin-bottom: 0;
-}
-
-.weather-fold-body {
-  margin-top: 14px;
 }
 
 .location-name {
