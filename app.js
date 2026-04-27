@@ -355,7 +355,12 @@ function renderNoChangeGroup(unchangedItems) {
 
   const categoryBlocks = Object.entries(groups).map(([category, items]) => {
     const names = items.map((item) => {
-      return `<li>${safeHtml(item.law_name)}</li>`;
+      return `
+        <li>
+          <strong>${safeHtml(item.law_name)}</strong>
+          <span>${safeHtml(item.summary, "새로 시행되는 변경사항은 확인되지 않았습니다.")}</span>
+        </li>
+      `;
     }).join("");
 
     return `
@@ -373,7 +378,7 @@ function renderNoChangeGroup(unchangedItems) {
 
   return `
     <details class="law-nochange-box">
-      <summary>변경 없는 법령 ${unchangedItems.length}건</summary>
+      <summary>변경 없음 ${unchangedItems.length}건 · 정기 확인</summary>
       <div class="law-nochange-categories">
         ${categoryBlocks}
       </div>
@@ -417,10 +422,27 @@ function renderChangedItem(item) {
       </div>
 
       <div class="law-next-step">
-        변경 전후 비교는 API 연결 후 클릭 상세 화면에서 확장 예정입니다.
+        오늘 확인: 시행일, 개정유형, 영향도를 먼저 보고 업무 메모에 후속 조치를 남기세요.
       </div>
     </article>
   `;
+}
+
+function updateLawAction(todayCount, weekCount, monthCount) {
+  if (todayCount > 0) {
+    setText("lawActionTitle", "오늘 즉시 확인");
+    setText("lawActionText", `오늘 시행 변경 ${todayCount}건이 있습니다. 법령명, 시행일, 변경 후 요약을 먼저 확인하세요.`);
+    return;
+  }
+
+  if (weekCount > 0) {
+    setText("lawActionTitle", "최근 변경 재확인");
+    setText("lawActionText", `오늘 신규 변경은 없지만 최근 7일 내 변경 ${weekCount}건이 있습니다. 진행 중인 인허가와 관련 여부를 확인하세요.`);
+    return;
+  }
+
+  setText("lawActionTitle", "정기 확인 완료");
+  setText("lawActionText", `오늘 신규 변경은 없습니다. 감시 법령 ${monthCount > 0 ? "최근 30일 변경 이력" : "목록"}을 훑고 필요한 메모만 남기세요.`);
 }
 
 function renderLawList(containerId, items, emptyMessage) {
@@ -460,38 +482,41 @@ async function loadLawUpdates() {
     const monthCount = data.summary?.last_30_days_changes ?? countChanged(data.last_30_days);
 
     setText("lawBasisChip", data.basis || "시행일 기준");
-    setText("lawNotice", data.scope || data.notice || "시행일 기준 법령 변경을 확인합니다.");
+    setText("lawNotice", data.notice || data.scope || "시행일 기준으로 오늘 확인할 법령 변경을 정리합니다.");
     const syncedAtText = data.synced_at ? ` · 자동갱신: ${data.synced_at}` : "";
     setText("lawCheckedAt", `확인일: ${safeText(data.checked_at)}${syncedAtText}`);
 
     setText("lawTodayCount", `${todayCount}건`);
     setText("lawWeekCount", `${weekCount}건`);
     setText("lawMonthCount", `${monthCount}건`);
+    updateLawAction(todayCount, weekCount, monthCount);
 
     renderLawList(
       "lawTodayList",
       data.today,
-      "오늘부터 새로 시행되는 건축 관련 법령 변경사항이 없습니다."
+      "오늘 새로 시행되는 변경은 없습니다. 감시 법령 목록을 정기 확인하세요."
     );
 
     renderLawList(
       "lawWeekList",
       data.last_7_days,
-      "최근 7일 내 새로 시행된 건축 관련 법령 변경사항이 없습니다."
+      "최근 7일 내 새로 시행된 변경은 없습니다. 진행 중인 업무 영향은 낮아 보입니다."
     );
 
     renderLawList(
       "lawMonthList",
       data.last_30_days,
-      "최근 30일 내 새로 시행된 건축 관련 법령 변경사항이 없습니다."
+      "최근 30일 내 새로 시행된 변경은 없습니다. 월간 정기 확인만 진행하세요."
     );
   } catch (error) {
-    setText("lawNotice", "법령 변경 정보를 불러오지 못했습니다.");
+    setText("lawNotice", "법령 변경 데이터를 불러오지 못했습니다. 네트워크 또는 data/law_updates.json 파일을 확인하세요.");
     setText("lawCheckedAt", "확인일: -");
+    setText("lawActionTitle", "확인 필요");
+    setText("lawActionText", "자동 브리프를 표시하지 못했습니다. 오늘 업무 전 수동으로 주요 법령 변경 여부를 확인하세요.");
 
-    renderLawList("lawTodayList", [], "법령 데이터 파일을 확인해야 합니다.");
-    renderLawList("lawWeekList", [], "법령 데이터 파일을 확인해야 합니다.");
-    renderLawList("lawMonthList", [], "법령 데이터 파일을 확인해야 합니다.");
+    renderLawList("lawTodayList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.");
+    renderLawList("lawWeekList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.");
+    renderLawList("lawMonthList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.");
   }
 }
 
