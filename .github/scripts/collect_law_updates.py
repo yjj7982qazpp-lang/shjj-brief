@@ -96,6 +96,10 @@ def safe_dict_list(value):
     return value if isinstance(value, list) else []
 
 
+def safe_dict(value):
+    return value if isinstance(value, dict) else {}
+
+
 def extract_items(data):
     if not isinstance(data, dict):
         return []
@@ -378,6 +382,8 @@ def filter_query_items(raw_items, watched_law_name, watched_map, source_type, so
 
 
 def build_tracked_laws(today, watched_laws, all_items, previous_data, failed_law_names):
+    previous_payload = safe_dict(previous_data)
+    previous_tracked_laws = safe_dict_list(previous_payload.get("tracked_laws"))
     watched_map = {
         normalize_name(item.get("name")): item
         for item in watched_laws
@@ -385,7 +391,7 @@ def build_tracked_laws(today, watched_laws, all_items, previous_data, failed_law
     }
     previous_map = {
         normalize_name(item.get("law_name")): item
-        for item in previous_data.get("tracked_laws", [])
+        for item in previous_tracked_laws
         if isinstance(item, dict) and item.get("law_name")
     }
 
@@ -479,7 +485,9 @@ def build_payload(
     error_text="",
     errors=None,
 ):
-    now_text = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S KST")
+    now_dt = datetime.now(KST)
+    now_text = now_dt.strftime("%Y-%m-%d %H:%M:%S KST")
+    now_iso = now_dt.isoformat(timespec="seconds")
     start_7 = today - timedelta(days=6)
     start_30 = today - timedelta(days=29)
 
@@ -491,6 +499,12 @@ def build_payload(
     today_promulgated_or_revised_items = [item for item in today_items if item.get("source_type") != "effective"]
 
     return {
+        "metadata": {
+            "lastUpdated": now_iso,
+            "watchedLawCount": len(watched_laws),
+            "totalSavedCount": len(sorted_items),
+        },
+        "items": sorted_items,
         "checked_at": today.isoformat(),
         "updated_at": now_text,
         "timezone": "Asia/Seoul",
@@ -546,9 +560,14 @@ def collect_for_watched_law(oc, watched_law_name, watched_map, start_30, today):
     items = []
     law_errors = []
     successful_queries = 0
+    query_counts = {
+        "effective": 0,
+        "promulgated": 0,
+    }
 
     try:
         effective_data = fetch_effective_laws(oc, watched_law_name, start_30, today)
+        effective_before_count = len(items)
         items.extend(
             filter_query_items(
                 extract_items(effective_data),
@@ -560,6 +579,7 @@ def collect_for_watched_law(oc, watched_law_name, watched_map, start_30, today):
                 today,
             )
         )
+        query_counts["effective"] = len(items) - effective_before_count
         successful_queries += 1
     except LawApiError as error:
         law_errors.append(
@@ -574,6 +594,7 @@ def collect_for_watched_law(oc, watched_law_name, watched_map, start_30, today):
 
     try:
         promulgated_data = fetch_promulgated_laws(oc, watched_law_name)
+        promulgated_before_count = len(items)
         items.extend(
             filter_query_items(
                 extract_items(promulgated_data),
@@ -585,6 +606,7 @@ def collect_for_watched_law(oc, watched_law_name, watched_map, start_30, today):
                 today,
             )
         )
+        query_counts["promulgated"] = len(items) - promulgated_before_count
         successful_queries += 1
     except LawApiError as error:
         law_errors.append(
@@ -597,7 +619,24 @@ def collect_for_watched_law(oc, watched_law_name, watched_map, start_30, today):
             }
         )
 
-    return dedupe(items), law_errors, successful_queries
+    return dedupe(items), law_errors, successful_queries, query_counts
+
+
+def print_collection_log(watched_laws, per_law_logs, total_effective_count, total_promulgated_count, total_saved_count):
+    completed_at = datetime.now(KST).isoformat(timespec="seconds")
+
+    print(f"전체 관심 법령 개수: {len(watched_laws)}")
+    for law_log in per_law_logs:
+        print(
+            "관심 법령 조회 결과: "
+            f"{law_log['law_name']} / 총 {law_log['total_count']}건 "
+            f"(시행일 {law_log['effective_count']}건, 공포/개정 {law_log['promulgated_count']}건)"
+        )
+    print(f"시행일 기준 조회 결과 개수: {total_effective_count}")
+    print(f"공포/개정 기준 조회 결과 개수: {total_promulgated_count}")
+    print(f"최종 저장된 법령 개수: {total_saved_count}")
+    print(f"저장 파일 경로: {OUTPUT_PATH}")
+    print(f"실행 완료 시간: {completed_at}")
 
 
 def main():
@@ -632,6 +671,7 @@ def main():
             ],
         )
         write_json(payload)
+        print_collection_log(watched_laws, [], 0, 0, payload.get("metadata", {}).get("totalSavedCount", 0))
         print("LAW_OC missing: wrote safe placeholder JSON.")
         return
 
@@ -640,13 +680,16 @@ def main():
     failed_laws = []
     partial_failed_laws = []
     any_successful_query = False
+    per_law_logs = []
+    total_effective_count = 0
+    total_promulgated_count = 0
 
     for watched_law in watched_laws:
         law_name = str(watched_law.get("name", "")).strip()
         if not law_name:
             continue
 
-        law_items, law_errors, successful_queries = collect_for_watched_law(
+        law_items, law_errors, successful_queries, query_counts = collect_for_watched_law(
             oc,
             law_name,
             watched_map,
@@ -655,6 +698,16 @@ def main():
         )
         all_items.extend(law_items)
         error_details.extend(law_errors)
+        total_effective_count += query_counts["effective"]
+        total_promulgated_count += query_counts["promulgated"]
+        per_law_logs.append(
+            {
+                "law_name": law_name,
+                "total_count": len(law_items),
+                "effective_count": query_counts["effective"],
+                "promulgated_count": query_counts["promulgated"],
+            }
+        )
 
         if successful_queries > 0:
             any_successful_query = True
@@ -703,6 +756,13 @@ def main():
     )
 
     write_json(payload)
+    print_collection_log(
+        watched_laws,
+        per_law_logs,
+        total_effective_count,
+        total_promulgated_count,
+        payload.get("metadata", {}).get("totalSavedCount", len(payload.get("items", []))),
+    )
     print(
         "Watched laws collected: "
         f"today {payload['today_count']} / "

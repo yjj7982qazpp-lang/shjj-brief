@@ -561,6 +561,100 @@ function formatLawDate(value) {
   return text.replace(/-/g, ".");
 }
 
+function parseLawDateValue(value) {
+  const text = safeText(value, "");
+  if (!text) return null;
+
+  const parsed = new Date(text);
+  if (!Number.isNaN(parsed.getTime())) return parsed;
+
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day));
+}
+
+function filterItemsByDateRange(items, start, end) {
+  return (items || []).filter((item) => {
+    const source = item?.source_date || item?.effective_date || item?.promulgation_date || "";
+    const date = parseLawDateValue(source);
+    return date && date >= start && date <= end;
+  });
+}
+
+function formatLawUpdatedAt(value) {
+  const date = parseLawDateValue(value);
+  if (!date) return safeText(value);
+
+  return date.toLocaleString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+function normalizeLawUpdatesData(rawData) {
+  if (Array.isArray(rawData)) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endOfToday = new Date(today);
+    endOfToday.setHours(23, 59, 59, 999);
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - 6);
+
+    return {
+      metadata: {},
+      watchedItems: [],
+      todayItemsRaw: filterItemsByDateRange(rawData, today, endOfToday),
+      weekItemsRaw: filterItemsByDateRange(rawData, startOfWeek, endOfToday),
+      monthItemsRaw: rawData,
+      apiStatus: "",
+      basis: "시행일 기준",
+      notice: "",
+      error: "",
+      totalCheckedLaws: 0,
+      failedLaws: 0,
+      partialFailedLaws: 0,
+      checkedAt: "",
+      updatedAt: "",
+    };
+  }
+
+  const data = rawData && typeof rawData === "object" ? rawData : {};
+  const metadata = data.metadata && typeof data.metadata === "object" ? data.metadata : {};
+  const watchedItems = Array.isArray(data.tracked_laws) ? data.tracked_laws : [];
+  const allItems = Array.isArray(data.items) ? data.items : [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(today);
+  endOfToday.setHours(23, 59, 59, 999);
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - 6);
+  const startOfMonth = new Date(today);
+  startOfMonth.setDate(today.getDate() - 29);
+
+  return {
+    metadata,
+    watchedItems,
+    todayItemsRaw: data.today_items ?? data.today ?? filterItemsByDateRange(allItems, today, endOfToday),
+    weekItemsRaw: data.last_7_days_items ?? data.last_7_days ?? filterItemsByDateRange(allItems, startOfWeek, endOfToday),
+    monthItemsRaw: data.last_30_days_items ?? data.last_30_days ?? allItems,
+    apiStatus: data.api_status || "",
+    basis: data.basis || "시행일 기준",
+    notice: data.notice || data.scope || "시행일 기준으로 오늘 확인할 법령 변경을 정리합니다.",
+    error: data.error || "",
+    totalCheckedLaws: Number(data.total_checked_laws) || Number(metadata.watchedLawCount) || watchedItems.length,
+    failedLaws: Array.isArray(data.failed_laws) ? data.failed_laws.length : 0,
+    partialFailedLaws: Array.isArray(data.partial_failed_laws) ? data.partial_failed_laws.length : 0,
+    checkedAt: data.checked_at || "",
+    updatedAt: data.updated_at || data.synced_at || metadata.lastUpdated || "",
+  };
+}
+
 function normalizeLawName(value) {
   return safeText(value, "")
     .replace(/\s+/g, "")
@@ -687,22 +781,23 @@ async function loadLawUpdates() {
     const res = await fetch("./data/law_updates.json", { cache: "no-store" });
     if (!res.ok) throw new Error("law_updates.json 로딩 실패");
 
-    const data = await res.json();
-    const watchedItems = Array.isArray(data.tracked_laws) ? data.tracked_laws : [];
+    const rawData = await res.json();
+    const data = normalizeLawUpdatesData(rawData);
+    const watchedItems = data.watchedItems;
     const watchedSet = buildWatchedNameSet(watchedItems);
 
-    const todayItemsRaw = data.today_items ?? data.today ?? [];
-    const weekItemsRaw = data.last_7_days_items ?? data.last_7_days ?? [];
-    const monthItemsRaw = data.last_30_days_items ?? data.last_30_days ?? [];
+    const todayItemsRaw = data.todayItemsRaw;
+    const weekItemsRaw = data.weekItemsRaw;
+    const monthItemsRaw = data.monthItemsRaw;
 
-    const todayItems = filterWatchedItems(todayItemsRaw, watchedSet);
-    const weekItems = filterWatchedItems(weekItemsRaw, watchedSet);
-    const monthItems = filterWatchedItems(monthItemsRaw, watchedSet);
+    const todayItems = watchedSet.size ? filterWatchedItems(todayItemsRaw, watchedSet) : todayItemsRaw;
+    const weekItems = watchedSet.size ? filterWatchedItems(weekItemsRaw, watchedSet) : weekItemsRaw;
+    const monthItems = watchedSet.size ? filterWatchedItems(monthItemsRaw, watchedSet) : monthItemsRaw;
 
     const todayCount = todayItems.length;
     const weekCount = weekItems.length;
     const monthCount = monthItems.length;
-    const apiStatus = data.api_status || "";
+    const apiStatus = data.apiStatus;
     const apiStatusLabel = {
       success: "정상",
       partial_success: "부분 성공",
@@ -711,27 +806,31 @@ async function loadLawUpdates() {
       api_error: "오류",
     }[apiStatus] || "";
 
-    setText("lawBasisChip", data.basis || "시행일 기준");
+    setText("lawBasisChip", data.basis);
     if (apiStatus && apiStatus !== "success") {
-      setText("lawBasisChip", `${data.basis || "시행일 기준"} · ${apiStatusLabel || apiStatus}`);
+      setText("lawBasisChip", `${data.basis} · ${apiStatusLabel || apiStatus}`);
     }
 
-    const noticeText = data.notice || data.scope || "시행일 기준으로 오늘 확인할 법령 변경을 정리합니다.";
+    const noticeText = data.notice;
     const errorSuffix = data.error ? ` (${data.error})` : "";
-    const totalCheckedLaws = Number(data.total_checked_laws) || watchedItems.length;
-    const failedLaws = Array.isArray(data.failed_laws) ? data.failed_laws.length : 0;
-    const partialFailedLaws = Array.isArray(data.partial_failed_laws) ? data.partial_failed_laws.length : 0;
+    const totalCheckedLaws = data.totalCheckedLaws;
+    const failedLaws = data.failedLaws;
+    const partialFailedLaws = data.partialFailedLaws;
     const diagnosticText = `관심 법령 ${totalCheckedLaws}건 확인 · 부분 실패 ${partialFailedLaws}건 · 실패 ${failedLaws}건`;
     setText("lawNotice", `${noticeText}${apiStatus && apiStatus !== "success" ? errorSuffix : ""} · ${diagnosticText}`);
 
-    const updatedAtText = data.updated_at ? ` · 갱신: ${data.updated_at}` : data.synced_at ? ` · 갱신: ${data.synced_at}` : "";
-    setText("lawCheckedAt", `확인일: ${safeText(data.checked_at)}${updatedAtText}`);
+    const updatedAtText = data.updatedAt ? ` · 갱신: ${safeText(data.updatedAt)}` : "";
+    setText("lawCheckedAt", `확인일: ${safeText(data.checkedAt)}${updatedAtText}`);
+    setText(
+      "lawMetaSummary",
+      `마지막 갱신 ${formatLawUpdatedAt(data.metadata.lastUpdated || data.updatedAt || "")} · 총 저장 ${Number(data.metadata.totalSavedCount) || monthCount}건`
+    );
 
     setText("lawTodayCount", `${todayCount}건`);
     setText("lawWeekCount", `${weekCount}건`);
     setText("lawMonthCount", `${monthCount}건`);
     updateLawAction(todayCount, weekCount, monthCount, apiStatus, data.error || "");
-    renderTrackedLaws(watchedItems, data.checked_at, {
+    renderTrackedLaws(watchedItems, data.checkedAt, {
       apiStatus,
       todayItems,
       weekItems,
@@ -761,6 +860,7 @@ async function loadLawUpdates() {
   } catch (error) {
     setText("lawNotice", "법령 변경 데이터를 불러오지 못했습니다. 네트워크 또는 data/law_updates.json 파일을 확인하세요.");
     setText("lawCheckedAt", "확인일: -");
+    setText("lawMetaSummary", "마지막 갱신 - · 총 저장 0건");
     setText("lawActionTitle", "확인 필요");
     setText("lawActionText", "자동 브리프를 표시하지 못했습니다. 오늘 업무 전 수동으로 주요 법령 변경 여부를 확인하세요.");
 
