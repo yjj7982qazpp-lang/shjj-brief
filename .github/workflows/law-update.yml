@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Update law brief data
+      - name: Collect today effective law brief data
         env:
           LAW_OC: ${{ secrets.LAW_OC }}
         run: python .github/scripts/collect_law_updates.py
@@ -31,7 +31,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add data/law_updates.json DEPLOY_STATUS.txt
+          git add data/law_updates.json
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else

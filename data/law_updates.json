@@ -1,8 +1,10 @@
 {
-  "checked_at": "2026-04-25",
-  "basis": "시행일 기준",
-  "scope": "시행일 기준으로 오늘ㆍ최근 7일ㆍ최근 30일의 법령 변경을 확인합니다.",
-  "notice": "오늘 업무 전 법령명, 시행일, 변경 후 요약을 먼저 확인하세요.",
+  "checked_at": "2026-04-27",
+  "synced_at": "2026-04-27 12:29:36 KST",
+  "sync_status": "missing_law_oc",
+  "basis": "현행법령 시행일 목록 조회",
+  "scope": "법제처 현행법령 시행일 목록에서 오늘 시행되는 법령을 조회합니다.",
+  "notice": "LAW_OC 환경변수가 설정되지 않아 법제처 API 조회를 건너뛰었습니다.",
   "watched_laws": [
     {
       "name": "건축법",
@@ -20,13 +22,193 @@
       "priority": 1
     },
     {
+      "name": "주택법",
+      "category": "공동주택",
+      "priority": 1
+    },
+    {
+      "name": "주택법 시행령",
+      "category": "공동주택",
+      "priority": 1
+    },
+    {
+      "name": "주택법 시행규칙",
+      "category": "공동주택",
+      "priority": 1
+    },
+    {
       "name": "주택건설기준 등에 관한 규정",
+      "category": "공동주택",
+      "priority": 1
+    },
+    {
+      "name": "주택건설기준 등에 관한 규칙",
       "category": "공동주택",
       "priority": 1
     },
     {
       "name": "건축물관리법",
       "category": "유지관리",
+      "priority": 1
+    },
+    {
+      "name": "건축물관리법 시행령",
+      "category": "유지관리",
+      "priority": 1
+    },
+    {
+      "name": "건축물관리법 시행규칙",
+      "category": "유지관리",
+      "priority": 1
+    },
+    {
+      "name": "국토의 계획 및 이용에 관한 법률",
+      "category": "도시계획",
+      "priority": 1
+    },
+    {
+      "name": "국토의 계획 및 이용에 관한 법률 시행령",
+      "category": "도시계획",
+      "priority": 1
+    },
+    {
+      "name": "국토의 계획 및 이용에 관한 법률 시행규칙",
+      "category": "도시계획",
+      "priority": 2
+    },
+    {
+      "name": "주차장법",
+      "category": "주차",
+      "priority": 1
+    },
+    {
+      "name": "주차장법 시행령",
+      "category": "주차",
+      "priority": 1
+    },
+    {
+      "name": "주차장법 시행규칙",
+      "category": "주차",
+      "priority": 1
+    },
+    {
+      "name": "장애인ㆍ노인ㆍ임산부 등의 편의증진 보장에 관한 법률",
+      "category": "장애인 편의",
+      "priority": 1
+    },
+    {
+      "name": "장애인ㆍ노인ㆍ임산부 등의 편의증진 보장에 관한 법률 시행령",
+      "category": "장애인 편의",
+      "priority": 1
+    },
+    {
+      "name": "장애인ㆍ노인ㆍ임산부 등의 편의증진 보장에 관한 법률 시행규칙",
+      "category": "장애인 편의",
+      "priority": 1
+    },
+    {
+      "name": "녹색건축물 조성 지원법",
+      "category": "녹색건축ㆍ에너지",
+      "priority": 1
+    },
+    {
+      "name": "녹색건축물 조성 지원법 시행령",
+      "category": "녹색건축ㆍ에너지",
+      "priority": 1
+    },
+    {
+      "name": "녹색건축물 조성 지원법 시행규칙",
+      "category": "녹색건축ㆍ에너지",
+      "priority": 2
+    },
+    {
+      "name": "시설물의 안전 및 유지관리에 관한 특별법",
+      "category": "시설물 안전",
+      "priority": 1
+    },
+    {
+      "name": "시설물의 안전 및 유지관리에 관한 특별법 시행령",
+      "category": "시설물 안전",
+      "priority": 1
+    },
+    {
+      "name": "시설물의 안전 및 유지관리에 관한 특별법 시행규칙",
+      "category": "시설물 안전",
+      "priority": 1
+    },
+    {
+      "name": "소방시설 설치 및 관리에 관한 법률",
+      "category": "소방",
+      "priority": 1
+    },
+    {
+      "name": "소방시설 설치 및 관리에 관한 법률 시행령",
+      "category": "소방",
+      "priority": 1
+    },
+    {
+      "name": "소방시설 설치 및 관리에 관한 법률 시행규칙",
+      "category": "소방",
+      "priority": 1
+    },
+    {
+      "name": "화재의 예방 및 안전관리에 관한 법률",
+      "category": "화재안전",
+      "priority": 2
+    },
+    {
+      "name": "화재의 예방 및 안전관리에 관한 법률 시행령",
+      "category": "화재안전",
+      "priority": 2
+    },
+    {
+      "name": "화재의 예방 및 안전관리에 관한 법률 시행규칙",
+      "category": "화재안전",
+      "priority": 2
+    },
+    {
+      "name": "건축사법",
+      "category": "건축사사무소",
+      "priority": 1
+    },
+    {
+      "name": "건축사법 시행령",
+      "category": "건축사사무소",
+      "priority": 1
+    },
+    {
+      "name": "건축사법 시행규칙",
+      "category": "건축사사무소",
+      "priority": 1
+    },
+    {
+      "name": "건축서비스산업 진흥법",
+      "category": "설계공모ㆍ건축서비스",
+      "priority": 2
+    },
+    {
+      "name": "건축서비스산업 진흥법 시행령",
+      "category": "설계공모ㆍ건축서비스",
+      "priority": 2
+    },
+    {
+      "name": "건축서비스산업 진흥법 시행규칙",
+      "category": "설계공모ㆍ건축서비스",
+      "priority": 2
+    },
+    {
+      "name": "승강기 안전관리법",
+      "category": "승강기ㆍ감리",
+      "priority": 2
+    },
+    {
+      "name": "승강기 안전관리법 시행령",
+      "category": "승강기ㆍ감리",
+      "priority": 2
+    },
+    {
+      "name": "승강기 안전관리법 시행규칙",
+      "category": "승강기ㆍ감리",
       "priority": 2
     }
   ],
@@ -35,80 +217,21 @@
     "last_7_days_changes": 0,
     "last_30_days_changes": 0
   },
-  "today": [
-    {
-      "law_name": "건축법",
-      "category": "건축 인허가",
-      "status": "no_change",
-      "status_label": "변경 없음",
-      "effective_date": "",
-      "promulgation_date": "",
-      "amendment_type": "",
-      "impact": "없음",
-      "summary": "오늘 새로 시행되는 변경은 없습니다. 정기 확인만 진행하세요.",
-      "change_summary": "",
-      "source_url": ""
-    },
-    {
-      "law_name": "건축법 시행령",
-      "category": "건축 인허가",
-      "status": "no_change",
-      "status_label": "변경 없음",
-      "effective_date": "",
-      "promulgation_date": "",
-      "amendment_type": "",
-      "impact": "없음",
-      "summary": "오늘 새로 시행되는 변경은 없습니다. 정기 확인만 진행하세요.",
-      "change_summary": "",
-      "source_url": ""
-    },
-    {
-      "law_name": "건축법 시행규칙",
-      "category": "건축 인허가",
-      "status": "no_change",
-      "status_label": "변경 없음",
-      "effective_date": "",
-      "promulgation_date": "",
-      "amendment_type": "",
-      "impact": "없음",
-      "summary": "오늘 새로 시행되는 변경은 없습니다. 정기 확인만 진행하세요.",
-      "change_summary": "",
-      "source_url": ""
-    },
-    {
-      "law_name": "주택건설기준 등에 관한 규정",
-      "category": "공동주택",
-      "status": "no_change",
-      "status_label": "변경 없음",
-      "effective_date": "",
-      "promulgation_date": "",
-      "amendment_type": "",
-      "impact": "없음",
-      "summary": "오늘 새로 시행되는 변경은 없습니다. 정기 확인만 진행하세요.",
-      "change_summary": "",
-      "source_url": ""
-    },
-    {
-      "law_name": "건축물관리법",
-      "category": "유지관리",
-      "status": "no_change",
-      "status_label": "변경 없음",
-      "effective_date": "",
-      "promulgation_date": "",
-      "amendment_type": "",
-      "impact": "없음",
-      "summary": "오늘 새로 시행되는 변경은 없습니다. 정기 확인만 진행하세요.",
-      "change_summary": "",
-      "source_url": ""
-    }
-  ],
+  "today": [],
   "last_7_days": [],
   "last_30_days": [],
   "collector": {
-    "version": "law_collector_v1",
-    "oc_mode": "test",
-    "errors": []
-  },
-  "synced_at": "2026-04-25 00:23:57",
-  "sync_status": "success"
+    "version": "law_collector_eflaw_v1",
+    "api": "http://www.law.go.kr/DRF/lawSearch.do",
+    "target": "eflaw",
+    "oc_mode": "missing",
+    "display": 100,
+    "sort": "efdes",
+    "errors": [
+      {
+        "code": "missing_law_oc",
+        "message": "GitHub Secrets에 LAW_OC를 설정하면 자동 수집이 실행됩니다."
+      }
+    ]
+  }
 }
