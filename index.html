@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>법령 브리프</title>
+  <title>SHJJ Brief - Preview V3</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="stylesheet" href="./styles.css" />
   <meta name="theme-color" content="#111827" />
@@ -20,12 +20,45 @@
     <header class="topbar">
       <div>
         <p class="eyebrow">SHJJ PERSONAL ASSISTANT</p>
-        <h1>법령 브리프</h1>
+        <h1>SHJJ Brief</h1>
       </div>
       <button id="notifyBtn" class="top-action">알림</button>
     </header>
 
     <main>
+      <section id="notificationSection" class="notification-top-wrap">
+        <details id="notificationFold" class="notification-fold">
+          <summary class="notification-pill">
+            <span class="notification-pill-label">알림</span>
+            <strong id="notificationTimePill">09:20</strong>
+          </summary>
+
+          <div class="card notification-top-card">
+            <div class="section-head notification-top-head">
+              <div>
+                <p class="section-label">Notification</p>
+                <h3>매일 알림 시간</h3>
+              </div>
+              <span id="notificationTimeSummary" class="notification-time-badge">매일 09:20 알림 예정</span>
+            </div>
+
+            <div class="notification-settings-body notification-settings-body-top">
+              <label class="notification-time-field" for="notificationTimeInput">
+                <span>알림 희망 시간</span>
+                <input id="notificationTimeInput" type="time" value="09:20" />
+              </label>
+              <p id="notificationTimeCurrent" class="notification-settings-note">현재 저장된 알림 예정 시간: 매일 09:20</p>
+              <div class="notification-save-row">
+                <p id="notificationTimeHelper" class="notification-settings-note">
+                  실제 푸시 발송 연동 전까지는 앱에서 희망 시간만 저장합니다.
+                </p>
+                <button id="notificationTimeSaveBtn" type="button" class="notification-save-btn">저장</button>
+              </div>
+            </div>
+          </div>
+        </details>
+      </section>
+
       <!-- Weather -->
       <section id="weatherSection" class="card weather-card">
         <details class="weather-fold">
@@ -179,6 +212,7 @@
           <span id="lawBasisChip" class="status-chip">시행일 기준</span>
         </div>
 
+        <div class="law-brief-summary-card">
         <div class="law-intro">
           <span id="lawMetaSummary">갱신 정보 -</span>
           <p id="lawNotice">법령 변경 정보를 불러오는 중입니다.</p>
@@ -211,6 +245,7 @@
             <span>최근 30일</span>
             <strong id="lawMonthCount">0건</strong>
           </div>
+        </div>
         </div>
 
         <div class="law-tabs">
@@ -246,9 +281,30 @@
             <span>기본 지역</span>
             <strong id="settingCityName">서울</strong>
           </div>
+          <details class="notification-settings-card" hidden>
+            <summary class="notification-settings-summary">
+              <div>
+                <span class="notification-settings-label">알림 설정</span>
+                <strong>매일 알림 시간</strong>
+              </div>
+              <span id="notificationTimeSummary" class="notification-time-badge">매일 09:20 알림 예정</span>
+            </summary>
+            <div class="notification-settings-body">
+              <label class="notification-time-field" for="notificationTimeInput">
+                <span>알림 희망 시간</span>
+                <input id="notificationTimeInput" type="time" value="09:20" />
+              </label>
+              <p id="notificationTimeHelper" class="notification-settings-note">
+                실제 푸시 발송 연동 전까지는 앱에서 희망 시간만 저장합니다.
+              </p>
+            </div>
+          </details>
         </div>
       </section>
 
+      <p id="notificationTestHint" class="notification-test-hint">
+        테스트 알림은 즉시 확인용입니다. 아래 버튼은 저장된 예정 시간과 별도로 바로 알림을 띄웁니다.
+      </p>
       <button id="testNotifyBtn" class="notify-test-btn">
         오늘 브리핑 테스트 알림 보내기
       </button>
@@ -278,7 +334,7 @@
       <strong>업무</strong>
     </button>
   </nav>
-
+  <div id="notificationToast" class="notification-toast" role="status" aria-live="polite"></div>
   <script src="./app.js"></script>
 </body>
 </html>

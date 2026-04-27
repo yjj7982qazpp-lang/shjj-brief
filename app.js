@@ -11,7 +11,10 @@ const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selec
 
 const STORAGE_KEYS = {
   schedules: "shjj_brief_schedules_v4",
+  notificationTime: "shjj_notification_time",
 };
+
+const DEFAULT_NOTIFICATION_TIME = "09:20";
 
 const DEFAULT_LOCATION = {
   city: "서울",
@@ -86,6 +89,7 @@ const state = {
   longitude: DEFAULT_LOCATION.longitude,
   weather: null,
   schedules: [],
+  notificationTime: DEFAULT_NOTIFICATION_TIME,
 };
 
 const weatherMap = {
@@ -164,6 +168,11 @@ function saveJson(key, value) {
 function loadArray(key) {
   const value = loadJson(key, []);
   return Array.isArray(value) ? value : [];
+}
+
+function normalizeNotificationTime(value) {
+  const text = safeText(value, DEFAULT_NOTIFICATION_TIME);
+  return /^\d{2}:\d{2}$/.test(text) ? text : DEFAULT_NOTIFICATION_TIME;
 }
 
 function pad2(value) {
@@ -698,6 +707,348 @@ function renderChangedCategoryGroups(changedItems) {
     .join("");
 }
 
+function getLawSourceBasisLabel(item) {
+  const sourceType = safeText(item.source_type, "").toLowerCase();
+  const sourceNote = safeText(item.source_note, "");
+  const summary = safeText(item.summary, "");
+  const combined = `${sourceType} ${sourceNote} ${summary}`;
+
+  if (/effective|시행/.test(combined)) return "시행일 기준";
+  if (/promulg|revis|공포|개정/.test(combined)) return "공포·개정 기준";
+  return "알 수 없음";
+}
+
+function getLawDateEntries(item) {
+  const entries = [
+    ["시행일", item.effective_date],
+    ["공포일", item.promulgation_date],
+    ["개정일", item.revision_date],
+    ["기준일", item.source_date],
+  ].filter(([, value]) => safeText(value, ""));
+
+  const seen = new Set();
+  return entries.filter(([label, value]) => {
+    const key = `${label}:${safeText(value)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function getLawRelevanceMemo(item) {
+  const text = [
+    safeText(item.law_name, ""),
+    safeText(item.category, ""),
+    safeText(item.summary, ""),
+    safeText(item.change_summary, ""),
+  ].join(" ");
+
+  const rules = [
+    [/녹색건축|에너지절약/, "녹색건축 관련 검토가 필요해 보입니다."],
+    [/건축|인허가|국토계획|주택/, "건축 또는 인허가 검토와 관련될 수 있습니다."],
+    [/소방|피난|방화/, "소방 또는 피난 기준 검토와 관련될 수 있습니다."],
+    [/하수도|수도/, "기반시설 또는 설비 검토와 관련될 수 있습니다."],
+    [/안전|범죄예방|편의증진|장애인|노인|임산부/, "안전 또는 이용자 편의 검토와 관련될 수 있습니다."],
+    [/주차장|자전거|교통/, "교통 또는 주차 계획 검토와 관련될 수 있습니다."],
+  ];
+
+  const match = rules.find(([pattern]) => pattern.test(text));
+  return match ? match[1] : "실무 연관성은 법령명과 변경일 중심으로 한 번 더 확인해 보세요.";
+}
+
+function getLawCheckStatusLabel(item) {
+  return getLawSourceBasisLabel(item) === "공포·개정 기준" ? "참고" : "확인 필요";
+}
+
+function getLawDetailUrl(item) {
+  return safeText(item.detail_url || item.source_url, "");
+}
+
+function renderLawDateBadges(item) {
+  const entries = getLawDateEntries(item);
+  if (!entries.length) {
+    return `
+      <div class="law-date-row">
+        <span class="law-date-chip law-date-chip-empty">정보 없음</span>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="law-date-row">
+      ${entries.map(([label, value]) => `
+        <span class="law-date-chip">${escapeHtml(label)} ${escapeHtml(safeText(value))}</span>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderLawMetaGrid(item) {
+  return `
+    <div class="law-meta law-detail-meta">
+      <div>
+        <span>변경 기준</span>
+        <strong>${escapeHtml(getLawSourceBasisLabel(item))}</strong>
+      </div>
+      <div>
+        <span>확인 상태</span>
+        <strong>${escapeHtml(getLawCheckStatusLabel(item))}</strong>
+      </div>
+    </div>
+  `;
+}
+
+function renderLawRelevanceNote(item) {
+  return `
+    <div class="law-relevance-note">
+      <span>관련성 메모</span>
+      <p>${escapeHtml(getLawRelevanceMemo(item))}</p>
+    </div>
+  `;
+}
+
+function renderLawCardActions(item) {
+  const url = getLawDetailUrl(item);
+  if (!url) return "";
+
+  return `
+    <div class="law-card-actions">
+      <a class="law-link-btn" href="${escapeHtml(url)}" target="_blank" rel="noreferrer">원문 보기</a>
+    </div>
+  `;
+}
+
+function renderLawDetailCard(item) {
+  return `
+    <article class="law-item law-item-changed law-detail-card">
+      <div class="law-item-head">
+        <div>
+          <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
+          <span class="law-category">${safeHtml(item.category, "분류 없음")}</span>
+        </div>
+        <span class="law-status ${lawStatusClass(item)}">${escapeHtml(getLawCheckStatusLabel(item))}</span>
+      </div>
+      ${renderLawDateBadges(item)}
+      ${renderLawMetaGrid(item)}
+      ${renderLawRelevanceNote(item)}
+      ${renderLawCardActions(item)}
+    </article>
+  `;
+}
+
+function getLawDateEntries(item) {
+  return [
+    ["시행일", item.effective_date],
+    ["공포일", item.promulgation_date],
+  ].filter(([, value]) => safeText(value, ""));
+}
+
+function getLawPreviewDateEntries(item) {
+  return getLawDateEntries(item).slice(0, 2);
+}
+
+function getLawPrimaryContent(item) {
+  const candidates = [
+    item.amendment_text,
+    item["변경 내용"],
+    item["개정 조문"],
+    item.article,
+    item["개정 이유"],
+    item.reason,
+    item.change_summary,
+    item.summary,
+  ];
+
+  const content = candidates.find((value) => safeText(value, ""));
+  return safeText(content, "상세 변경 내용은 원문에서 확인");
+}
+
+function getLawDetailUrl(item) {
+  return safeText(item.article_url || item.detail_url || item.source_url, "");
+}
+
+function renderLawPreviewDates(item) {
+  const entries = getLawPreviewDateEntries(item);
+  if (!entries.length) return `<span class="law-date-chip law-date-chip-empty">날짜 정보 없음</span>`;
+
+  return entries.map(([label, value]) => `
+    <span class="law-date-chip">${escapeHtml(label)} ${escapeHtml(safeText(value))}</span>
+  `).join("");
+}
+
+function renderLawExpandedDates(item) {
+  const entries = getLawDateEntries(item);
+  if (!entries.length) return "";
+
+  return `
+    <div class="law-date-row law-date-row-detail">
+      ${entries.map(([label, value]) => `
+        <span class="law-date-chip">${escapeHtml(label)} ${escapeHtml(safeText(value))}</span>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderLawCardActions(item) {
+  const url = getLawDetailUrl(item);
+  if (!url) return "";
+
+  return `
+    <div class="law-card-actions">
+      <a class="law-link-btn" href="${escapeHtml(url)}" target="_blank" rel="noreferrer">원문 보기</a>
+    </div>
+  `;
+}
+
+function renderLawDetailCard(item, index = 0) {
+  const contentId = `law-detail-content-${index}`;
+  const category = safeText(item.category, "");
+
+  return `
+    <details class="law-item law-item-changed law-detail-card">
+      <summary class="law-detail-summary" aria-controls="${escapeHtml(contentId)}">
+        <div class="law-detail-summary-main">
+          <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
+          ${category ? `<span class="law-category">${escapeHtml(category)}</span>` : ""}
+          <div class="law-date-row law-date-row-preview">
+            ${renderLawPreviewDates(item)}
+          </div>
+        </div>
+        <span class="law-toggle-indicator" aria-hidden="true">열기</span>
+      </summary>
+      <div id="${escapeHtml(contentId)}" class="law-detail-body">
+        ${renderLawExpandedDates(item)}
+        <div class="law-change-summary-box">
+          <span>변경 내용</span>
+          <p>${escapeHtml(getLawPrimaryContent(item))}</p>
+        </div>
+        ${renderLawCardActions(item)}
+      </div>
+    </details>
+  `;
+}
+
+function getLawDateEntries(item) {
+  return [
+    ["시행일", item.effective_date],
+    ["공포일", item.promulgation_date],
+  ].filter(([, value]) => safeText(value, ""));
+}
+
+function getLawPreviewDateEntries(item) {
+  return getLawDateEntries(item).slice(0, 2);
+}
+
+function getLawDefermentDays(item) {
+  const effectiveDate = parseLawDateValue(item.effective_date);
+  const promulgationDate = parseLawDateValue(item.promulgation_date);
+  if (!effectiveDate || !promulgationDate) return null;
+
+  const diffDays = Math.round((effectiveDate.getTime() - promulgationDate.getTime()) / (1000 * 60 * 60 * 24));
+  return diffDays > 0 ? diffDays : null;
+}
+
+function getLawDateToneClass(item, label) {
+  const effectiveDate = safeText(item.effective_date, "");
+  const promulgationDate = safeText(item.promulgation_date, "");
+
+  if (effectiveDate && promulgationDate && effectiveDate === promulgationDate) return "law-date-chip-shared";
+  if (label === "시행일") return "law-date-chip-effective";
+  if (label === "공포일") return "law-date-chip-promulgation";
+  return "";
+}
+
+function getLawPrimaryContent(item) {
+  const candidates = [
+    item.change_summary,
+    item.summary,
+    item.amendment_text,
+    item.amendment,
+    item.reason,
+    item.change_reason,
+    item.article,
+    item.article_text,
+    item.content,
+    item.law_content,
+    item.detail,
+    item.description,
+  ];
+
+  const content = candidates.find((value) => safeText(value, ""));
+  return safeText(content, "수집 데이터에 구체 변경 내용이 없습니다. 원문에서 세부 조항을 확인하세요.");
+}
+
+function getLawDetailUrl(item) {
+  return safeText(item.article_url || item.detail_url || item.source_url, "");
+}
+
+function renderLawPreviewDates(item) {
+  const entries = getLawPreviewDateEntries(item);
+  if (!entries.length) {
+    return `<span class="law-date-chip law-date-chip-empty">날짜 정보 없음</span>`;
+  }
+
+  const chips = entries.map(([label, value]) => `
+    <span class="law-date-chip ${getLawDateToneClass(item, label)}">${escapeHtml(label)} ${escapeHtml(safeText(value))}</span>
+  `);
+
+  const defermentDays = getLawDefermentDays(item);
+  if (defermentDays) {
+    chips.push(`<span class="law-date-chip law-date-chip-deferment">유예 ${escapeHtml(String(defermentDays))}일</span>`);
+  }
+
+  return chips.join("");
+}
+
+function shouldShowLawContentMore(text) {
+  return safeText(text, "").length > 140;
+}
+
+function renderLawCardActions(item) {
+  const url = getLawDetailUrl(item);
+  if (!url) return "";
+
+  return `
+    <div class="law-card-actions">
+      <a class="law-link-btn" href="${escapeHtml(url)}" target="_blank" rel="noreferrer">원문 보기</a>
+    </div>
+  `;
+}
+
+function renderLawDetailCard(item, index = 0) {
+  const contentId = `law-detail-content-${index}`;
+  const category = safeText(item.category, "");
+  const contentText = getLawPrimaryContent(item);
+  const showMore = shouldShowLawContentMore(contentText);
+  const contentClass = showMore ? "law-change-summary-text is-collapsed" : "law-change-summary-text";
+  const moreButton = showMore
+    ? `<button type="button" class="law-more-btn" data-target="${escapeHtml(contentId)}" aria-expanded="false">더보기</button>`
+    : "";
+
+  return `
+    <details class="law-item law-item-changed law-detail-card">
+      <summary class="law-detail-summary" aria-controls="${escapeHtml(contentId)}">
+        <div class="law-detail-summary-main">
+          <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
+          ${category ? `<span class="law-category">${escapeHtml(category)}</span>` : ""}
+          <div class="law-date-row law-date-row-preview">
+            ${renderLawPreviewDates(item)}
+          </div>
+        </div>
+        <span class="law-toggle-indicator" aria-hidden="true">열기</span>
+      </summary>
+      <div id="${escapeHtml(contentId)}" class="law-detail-body">
+        <div class="law-change-summary-box">
+          <span>변경 내용</span>
+          <p class="${contentClass}">${escapeHtml(contentText)}</p>
+          ${moreButton}
+        </div>
+        ${renderLawCardActions(item)}
+      </div>
+    </details>
+  `;
+}
+
 function renderLawList(containerId, items, emptyMessage, options = {}) {
   const container = $(containerId);
   if (!container) return;
@@ -712,7 +1063,7 @@ function renderLawList(containerId, items, emptyMessage, options = {}) {
     return;
   }
 
-  container.innerHTML = renderChangedCategoryGroups(changedItems);
+  container.innerHTML = changedItems.map((item, index) => renderLawDetailCard(item, index)).join("");
 }
 
 function parseLawDateValue(value) {
@@ -932,6 +1283,53 @@ async function loadLawUpdates() {
   }
 }
 
+function getLawSummaryStatus(todayCount, weekCount, monthCount) {
+  if (todayCount > 0) return `오늘 신규 변경 ${todayCount}건`;
+  if (weekCount > 0 || monthCount > 0) return "오늘 신규 변경 없음";
+  return "최근 변경 없음";
+}
+
+function renderLawSummaryCard(data, todayCount, weekCount, monthCount) {
+  const updatedAt = data.metadata.lastUpdated || data.updatedAt || "";
+  const apiStatusLabel = LAW_API_STATUS_LABELS[data.apiStatus] || data.apiStatus || "";
+  const extra = data.apiStatus && data.apiStatus !== "success" ? ` · ${apiStatusLabel}` : "";
+
+  setText("lawBasisChip", todayCount > 0 ? "변경 있음" : "법령 브리프");
+  setText("lawMetaSummary", updatedAt ? `마지막 갱신 ${formatLawUpdatedAt(updatedAt)}` : "마지막 갱신 -");
+  setText("lawNotice", `${getLawSummaryStatus(todayCount, weekCount, monthCount)}${extra}`);
+  setText("lawCheckedAt", "");
+  updateLawSummaryCounts(todayCount, weekCount, monthCount);
+}
+
+function renderLawLoadFailure() {
+  setText("lawBasisChip", "법령 브리프");
+  setText("lawMetaSummary", "마지막 갱신 -");
+  setText("lawNotice", LAW_MESSAGES.loadFailed);
+  setText("lawCheckedAt", "");
+  updateLawSummaryCounts(0, 0, 0);
+  renderLawList("lawTodayList", [], LAW_MESSAGES.loadFailedDetail, { apiStatus: "api_error" });
+  renderLawList("lawWeekList", [], LAW_MESSAGES.loadFailedDetail, { apiStatus: "api_error" });
+  renderLawList("lawMonthList", [], LAW_MESSAGES.loadFailedDetail, { apiStatus: "api_error" });
+}
+
+async function loadLawUpdates() {
+  try {
+    const res = await fetch("./data/law_updates.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("law_updates.json 로딩 실패");
+
+    const data = normalizeLawUpdatesData(await res.json());
+    const { todayItems, weekItems, monthItems } = getFilteredLawLists(data);
+    const todayCount = todayItems.length;
+    const weekCount = weekItems.length;
+    const monthCount = monthItems.length;
+
+    renderLawSummaryCard(data, todayCount, weekCount, monthCount);
+    renderLawSections(data, todayItems, weekItems, monthItems);
+  } catch {
+    renderLawLoadFailure();
+  }
+}
+
 function activateLawTab(tab) {
   const buttons = $$(".law-tab-btn");
   const activeButton = buttons.find((button) => button.dataset.lawTab === tab);
@@ -1012,6 +1410,106 @@ async function showBriefNotification() {
   new Notification(title, { body });
 }
 
+function renderNotificationTime() {
+  const time = normalizeNotificationTime(state.notificationTime);
+  const input = $("notificationTimeInput");
+
+  if (input && input.value !== time) {
+    input.value = time;
+  }
+
+  setText("notificationTimeSummary", `매일 ${time} 알림 예정`);
+}
+
+function saveNotificationTime(value) {
+  const normalized = normalizeNotificationTime(value);
+  state.notificationTime = normalized;
+  localStorage.setItem(STORAGE_KEYS.notificationTime, normalized);
+  renderNotificationTime();
+}
+
+function loadNotificationSettings() {
+  const saved = localStorage.getItem(STORAGE_KEYS.notificationTime);
+  state.notificationTime = normalizeNotificationTime(saved);
+  renderNotificationTime();
+}
+
+function renderNotificationTime() {
+  const time = normalizeNotificationTime(state.notificationTime);
+  const input = $("notificationTimeInput");
+
+  if (input) input.value = time;
+  setText("notificationTimeSummary", `매일 ${time} 알림 예정`);
+  setText("notificationTimePill", time);
+  setText("notificationTimeCurrent", `현재 저장된 알림 예정 시간: 매일 ${time}`);
+}
+
+function saveNotificationTime(value) {
+  const normalized = normalizeNotificationTime(value);
+  state.notificationTime = normalized;
+  localStorage.setItem(STORAGE_KEYS.notificationTime, normalized);
+  renderNotificationTime();
+  triggerNotificationHaptic();
+  showNotificationToast("알림 시간이 저장되었습니다");
+}
+
+function loadNotificationSettings() {
+  const saved = localStorage.getItem(STORAGE_KEYS.notificationTime);
+  state.notificationTime = normalizeNotificationTime(saved);
+  renderNotificationTime();
+}
+
+function showNotificationToast(message) {
+  const toast = $("notificationToast");
+  if (!toast) return;
+
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(showNotificationToast.timerId);
+  showNotificationToast.timerId = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 1800);
+}
+
+function triggerNotificationHaptic() {
+  try {
+    if (navigator.vibrate) navigator.vibrate(40);
+  } catch {}
+}
+
+function renderNotificationTime() {
+  const time = normalizeNotificationTime(state.notificationTime);
+  const input = $("notificationTimeInput");
+
+  if (input) input.value = time;
+  setText("notificationTimeSummary", `매일 ${time} 알림 예정`);
+}
+
+function saveNotificationTime(value) {
+  const normalized = normalizeNotificationTime(value);
+  state.notificationTime = normalized;
+  localStorage.setItem(STORAGE_KEYS.notificationTime, normalized);
+  renderNotificationTime();
+  triggerNotificationHaptic();
+  showNotificationToast("알림 시간이 저장되었습니다");
+}
+
+function loadNotificationSettings() {
+  const saved = localStorage.getItem(STORAGE_KEYS.notificationTime);
+  state.notificationTime = normalizeNotificationTime(saved);
+  renderNotificationTime();
+}
+
+function toggleLawContentExpansion(targetId, button) {
+  const container = document.getElementById(targetId);
+  const text = container?.querySelector(".law-change-summary-text");
+  if (!text || !button) return;
+
+  const expanded = text.classList.toggle("is-collapsed");
+  button.setAttribute("aria-expanded", String(!expanded));
+  button.textContent = expanded ? "더보기" : "접기";
+}
+
 function setupBottomNav() {
   const buttons = $$(".bottom-nav-btn");
   buttons.forEach((button) => {
@@ -1044,12 +1542,45 @@ function bindScheduleEvents() {
 function bindNotificationEvents() {
   bindEvent($("notifyBtn"), "click", requestNotification);
   bindEvent($("testNotifyBtn"), "click", showBriefNotification);
+  bindEvent($("notificationTimeSaveBtn"), "click", () => {
+    saveNotificationTime($("notificationTimeInput")?.value || DEFAULT_NOTIFICATION_TIME);
+  });
+  bindEvent(document, "click", (event) => {
+    const button = event.target.closest(".law-more-btn");
+    if (!button) return;
+    toggleLawContentExpansion(button.dataset.target, button);
+  });
 }
 
 function bindEvents() {
   bindWeatherEvents();
   bindScheduleEvents();
   bindNotificationEvents();
+}
+
+function renderNotificationTime() {
+  const time = normalizeNotificationTime(state.notificationTime);
+  const input = $("notificationTimeInput");
+
+  if (input) input.value = time;
+  setText("notificationTimeSummary", `매일 ${time} 알림 예정`);
+  setText("notificationTimePill", time);
+  setText("notificationTimeCurrent", `현재 저장된 알림 예정 시간: 매일 ${time}`);
+}
+
+function saveNotificationTime(value) {
+  const normalized = normalizeNotificationTime(value);
+  state.notificationTime = normalized;
+  localStorage.setItem(STORAGE_KEYS.notificationTime, normalized);
+  renderNotificationTime();
+  triggerNotificationHaptic();
+  showNotificationToast("알림 시간이 저장되었습니다");
+}
+
+function loadNotificationSettings() {
+  const saved = localStorage.getItem(STORAGE_KEYS.notificationTime);
+  state.notificationTime = normalizeNotificationTime(saved);
+  renderNotificationTime();
 }
 
 async function init() {
@@ -1059,6 +1590,7 @@ async function init() {
   setupLawTabs();
 
   state.schedules = loadArray(STORAGE_KEYS.schedules);
+  loadNotificationSettings();
   renderSchedules();
   bindEvents();
 
