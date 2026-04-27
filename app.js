@@ -90,6 +90,7 @@ const state = {
   weather: null,
   schedules: [],
   notificationTime: DEFAULT_NOTIFICATION_TIME,
+  weatherMode: "today",
 };
 
 const weatherMap = {
@@ -303,39 +304,70 @@ function buildWeatherParams() {
   });
 }
 
-function getWeatherSnapshot() {
+function getWeatherSnapshot(dayIndex = 0) {
   if (!state.weather) return null;
 
-  const current = state.weather.current;
+  const current = dayIndex === 0 ? state.weather.current : null;
   const daily = state.weather.daily;
 
+  if (dayIndex >= daily.temperature_2m_max.length) return null;
+
+  const isTomorrow = dayIndex === 1;
+  
   return {
-    current,
+    current: isTomorrow ? null : current,
     daily,
-    temp: round(current.temperature_2m),
-    high: round(daily.temperature_2m_max[0]),
-    low: round(daily.temperature_2m_min[0]),
-    rain: round(daily.precipitation_probability_max[0]),
-    wind: round(current.wind_speed_10m),
+    dayIndex,
+    isTomorrow,
+    temp: isTomorrow ? round(daily.temperature_2m_max[1]) : round(current?.temperature_2m),
+    high: round(daily.temperature_2m_max[dayIndex]),
+    low: round(daily.temperature_2m_min[dayIndex]),
+    rain: round(daily.precipitation_probability_max[dayIndex]),
+    wind: isTomorrow ? "--" : round(current?.wind_speed_10m),
+    humidity: isTomorrow ? "--" : round(current?.relative_humidity_2m),
+    weatherCode: daily.weather_code[dayIndex],
   };
 }
 
-function renderWeather() {
-  const snapshot = getWeatherSnapshot();
-  if (!snapshot) return;
+function renderWeather(dayIndex = 0) {
+  const snapshot = getWeatherSnapshot(dayIndex);
+  if (!snapshot) {
+    if (dayIndex === 1) {
+      setText("weatherDesc", "내일 날씨 정보를 아직 불러오지 못했습니다.");
+    }
+    return;
+  }
 
-  const [title, desc] = weatherText(snapshot.current.weather_code);
+  const section = $("weatherSection");
+  const label = dayIndex === 0 ? "오늘 날씨" : "내일 날씨";
+  const weatherSummary = section?.querySelector(".weather-summary");
+  
+  if (weatherSummary) {
+    const heading = weatherSummary.querySelector("h3");
+    if (heading) heading.textContent = label;
+  }
+
+  const [title, desc] = weatherText(snapshot.weatherCode);
   setText("locationName", state.city);
   setText("currentTemp", `${snapshot.temp}°`);
   setText("weatherDesc", `${title} · ${desc}`);
   setText("highLow", `${snapshot.high}° / ${snapshot.low}°`);
   setText("rainProb", `${snapshot.rain}%`);
-  setText("rainTime", getRainTimeSummary(state.weather));
-  setText("humidity", `${round(snapshot.current.relative_humidity_2m)}%`);
-  setText("wind", `${snapshot.wind} km/h`);
+  
+  if (dayIndex === 0) {
+    setText("rainTime", getRainTimeSummary(state.weather));
+    setText("humidity", `${snapshot.humidity}%`);
+    setText("wind", `${snapshot.wind} km/h`);
+  } else {
+    setText("rainTime", "내일 시간대 정보 미제공");
+    setText("humidity", "--");
+    setText("wind", "--");
+  }
 }
 
 function getGuideCopy(snapshot) {
+  const wind = typeof snapshot.wind === 'string' ? 0 : snapshot.wind;
+  
   const rainGuide = snapshot.rain >= 60
     ? {
       title: "우산 필요 가능성 높음",
@@ -351,10 +383,10 @@ function getGuideCopy(snapshot) {
         text: `강수확률 ${snapshot.rain}%입니다. 우산 필요성은 낮아 보입니다.`,
       };
 
-  const outsideGuide = (snapshot.rain >= 60 || snapshot.wind >= 30)
+  const outsideGuide = (snapshot.rain >= 60 || wind >= 30)
     ? {
       title: "외근 일정은 여유 있게",
-      text: `바람 ${snapshot.wind}km/h, 강수확률 ${snapshot.rain}%입니다. 이동 시간을 넉넉하게 잡으세요.`,
+      text: `바람 ${wind === 0 ? "예보 미제공" : wind + "km/h"}, 강수확률 ${snapshot.rain}%입니다. 이동 시간을 넉넉하게 잡으세요.`,
     }
     : {
       title: "외근 진행 무난",
@@ -384,9 +416,18 @@ function getGuideCopy(snapshot) {
   return { rainGuide, outsideGuide, clothesGuide };
 }
 
-function renderDailyGuide() {
-  const snapshot = getWeatherSnapshot();
+function renderDailyGuide(dayIndex = 0) {
+  const snapshot = getWeatherSnapshot(dayIndex);
   if (!snapshot) return;
+
+  const section = $("guideSection");
+  const label = dayIndex === 0 ? "오늘 행동 가이드" : "내일 행동 가이드";
+  const guideSummary = section?.querySelector(".fold-summary");
+  
+  if (guideSummary) {
+    const heading = guideSummary.querySelector("h3");
+    if (heading) heading.textContent = label;
+  }
 
   const { rainGuide, outsideGuide, clothesGuide } = getGuideCopy(snapshot);
   setText("rainGuideTitle", rainGuide.title);
@@ -403,8 +444,9 @@ async function loadWeather() {
   if (!res.ok) throw new Error("날씨 로딩 실패");
 
   state.weather = await res.json();
-  renderWeather();
-  renderDailyGuide();
+  const dayIndex = state.weatherMode === "today" ? 0 : 1;
+  renderWeather(dayIndex);
+  renderDailyGuide(dayIndex);
   updateSettingsView();
   updateBrief();
 }
@@ -1049,6 +1091,169 @@ function renderLawDetailCard(item, index = 0) {
   `;
 }
 
+const LAW_CHANGE_FALLBACK_TEXT = "수집 데이터에 구체 변경 내용이 없습니다. 원문에서 세부 조항을 확인하세요.";
+
+function getLawChangedArticles(item) {
+  return Array.isArray(item?.changed_articles)
+    ? item.changed_articles.filter((article) =>
+        article && typeof article === "object" && (
+          safeText(article.article_number, "") ||
+          safeText(article.article_title, "") ||
+          safeText(article.article_content, "")
+        )
+      )
+    : [];
+}
+
+function getLawPrimaryContent(item) {
+  const changedArticles = getLawChangedArticles(item);
+  if (changedArticles.length) {
+    return {
+      type: "articles",
+      label: "변경 조문",
+      articles: changedArticles,
+    };
+  }
+
+  const sources = [
+    ["개정문", item.amendment_text],
+    ["제개정 이유", item.change_reason],
+    ["조문 내용", item.article_text],
+    ["변경 내용", item.change_summary],
+    ["요약", item.summary],
+  ];
+
+  const found = sources.find(([, value]) => safeText(value, ""));
+  if (!found) {
+    return {
+      type: "text",
+      label: "변경 내용",
+      text: LAW_CHANGE_FALLBACK_TEXT,
+      isFallback: true,
+    };
+  }
+
+  return {
+    type: "text",
+    label: found[0],
+    text: safeText(found[1], LAW_CHANGE_FALLBACK_TEXT),
+    isFallback: false,
+  };
+}
+
+function shouldShowLawContentMore(text) {
+  return safeText(text, "").length > 160;
+}
+
+function formatLawArticleHeading(article) {
+  const articleNumber = safeText(article.article_number, "");
+  const articleTitle = safeText(article.article_title, "");
+  return [articleNumber, articleTitle].filter(Boolean).join(" ");
+}
+
+function renderLawArticleMeta(article) {
+  const rows = [
+    ["변경유형", safeText(article.article_revision_type, "")],
+    ["조문시행일", safeText(article.article_effective_date, "")],
+  ].filter(([, value]) => value);
+
+  if (!rows.length) return "";
+
+  return `
+    <div class="law-article-meta">
+      ${rows.map(([label, value]) => `
+        <span class="law-article-meta-chip">${escapeHtml(label)}: ${escapeHtml(value)}</span>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderLawExpandableTextBlock(label, text, targetId, options = {}) {
+  const contentText = safeText(text, LAW_CHANGE_FALLBACK_TEXT);
+  const showMore = shouldShowLawContentMore(contentText);
+  const contentClass = showMore ? "law-change-summary-text is-collapsed" : "law-change-summary-text";
+  const moreButton = showMore
+    ? `<button type="button" class="law-more-btn" data-target="${escapeHtml(targetId)}" aria-expanded="false">더보기</button>`
+    : "";
+  const boxClass = options.boxClass ? `law-change-summary-box ${options.boxClass}` : "law-change-summary-box";
+  const extraClass = options.extraClass ? ` ${options.extraClass}` : "";
+
+  return `
+    <div class="${boxClass}${extraClass}">
+      <span>${escapeHtml(label)}</span>
+      <p class="${contentClass}">${escapeHtml(contentText)}</p>
+      ${moreButton}
+    </div>
+  `;
+}
+
+function renderLawChangedArticle(article, cardIndex, articleIndex) {
+  const heading = formatLawArticleHeading(article) || `변경 조문 ${articleIndex + 1}`;
+  const content = safeText(article.article_content, LAW_CHANGE_FALLBACK_TEXT);
+
+  return `
+    <article class="law-article-item">
+      <strong class="law-article-title">${escapeHtml(heading)}</strong>
+      ${renderLawArticleMeta(article)}
+      ${renderLawExpandableTextBlock("조문내용", content, `law-article-content-${cardIndex}-${articleIndex}`, {
+        boxClass: "law-article-content-box",
+      })}
+    </article>
+  `;
+}
+
+function renderLawPrimaryContent(item, index) {
+  const primaryContent = getLawPrimaryContent(item);
+  if (primaryContent.type === "articles") {
+    return `
+      <div id="${escapeHtml(`law-detail-content-${index}`)}" class="law-detail-content-wrap">
+        <div class="law-change-summary-box law-change-summary-box-articles">
+          <span>${escapeHtml(primaryContent.label)}</span>
+          <div class="law-article-list">
+            ${primaryContent.articles.map((article, articleIndex) => renderLawChangedArticle(article, index, articleIndex)).join("")}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div id="${escapeHtml(`law-detail-content-${index}`)}" class="law-detail-content-wrap">
+      ${renderLawExpandableTextBlock(
+        primaryContent.label,
+        primaryContent.text,
+        `law-detail-content-${index}`,
+        {
+          extraClass: primaryContent.isFallback ? "law-change-summary-box-fallback" : "",
+        }
+      )}
+    </div>
+  `;
+}
+
+function renderLawDetailCard(item, index = 0) {
+  const category = safeText(item.category, "");
+
+  return `
+    <details class="law-item law-item-changed law-detail-card">
+      <summary class="law-detail-summary" aria-controls="${escapeHtml(`law-detail-content-${index}`)}">
+        <div class="law-detail-summary-main">
+          <span class="law-name">${safeHtml(item.law_name, "?뺣낫 ?놁쓬")}</span>
+          ${category ? `<span class="law-category">${escapeHtml(category)}</span>` : ""}
+          <div class="law-date-row law-date-row-preview">
+            ${renderLawPreviewDates(item)}
+          </div>
+        </div>
+        <span class="law-toggle-indicator" aria-hidden="true">?닿린</span>
+      </summary>
+      <div class="law-detail-body">
+        ${renderLawPrimaryContent(item, index)}
+        ${renderLawCardActions(item)}
+      </div>
+    </details>
+  `;
+}
+
 function renderLawList(containerId, items, emptyMessage, options = {}) {
   const container = $(containerId);
   if (!container) return;
@@ -1379,10 +1584,10 @@ async function requestNotification() {
 }
 
 function buildNotificationWeatherLine() {
-  const snapshot = getWeatherSnapshot();
+  const snapshot = getWeatherSnapshot(0);
   if (!snapshot) return "날씨 정보 확인 중";
 
-  const [title] = weatherText(snapshot.current.weather_code);
+  const [title] = weatherText(snapshot.weatherCode);
   return `${state.city} ${snapshot.temp}° · ${title} · 최고 ${snapshot.high}° / 최저 ${snapshot.low}°`;
 }
 
@@ -1529,6 +1734,23 @@ function bindWeatherEvents() {
     event.preventDefault();
     event.stopPropagation();
     loadWeather().catch(handleWeatherLoadError);
+  });
+
+  bindEvent($("weatherToggleBtn"), "click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    state.weatherMode = state.weatherMode === "today" ? "tomorrow" : "today";
+    const dayIndex = state.weatherMode === "today" ? 0 : 1;
+    
+    const btn = $("weatherToggleBtn");
+    if (btn) {
+      btn.textContent = state.weatherMode === "today" ? "내일날씨" : "오늘날씨";
+      btn.setAttribute("data-active", String(state.weatherMode === "tomorrow"));
+    }
+    
+    renderWeather(dayIndex);
+    renderDailyGuide(dayIndex);
   });
 }
 

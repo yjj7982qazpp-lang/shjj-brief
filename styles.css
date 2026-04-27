@@ -139,6 +139,31 @@ h3 {
   font-size: 13px;
   font-weight: 900;
   box-shadow: var(--shadow-soft);
+  transition: all 0.2s ease;
+}
+
+.top-action:active {
+  transform: scale(0.95);
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+@keyframes weatherFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.weather-card,
+.guide-card {
+  animation: weatherFade 0.3s ease;
 }
 
 .hero-card,
@@ -1628,6 +1653,60 @@ footer {
   font-size: 13px;
   line-height: 1.55;
   word-break: keep-all;
+}
+
+.law-change-summary-box-fallback p {
+  color: var(--muted);
+}
+
+.law-change-summary-box-articles {
+  display: grid;
+  gap: 10px;
+}
+
+.law-article-list {
+  display: grid;
+  gap: 10px;
+}
+
+.law-article-item {
+  padding: 12px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(23, 32, 51, 0.07);
+}
+
+.law-article-title {
+  display: block;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
+.law-article-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.law-article-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #eef4fb;
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.law-article-content-box {
+  margin-top: 10px;
+  background: white;
 }
 
 .law-change-summary-text.is-collapsed {
