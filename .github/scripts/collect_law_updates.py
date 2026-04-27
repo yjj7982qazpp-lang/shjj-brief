@@ -6,6 +6,7 @@ from urllib.request import Request, urlopen
 import json
 import os
 import re
+import time
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_DIR = Path(__file__).resolve().parent
@@ -18,6 +19,8 @@ API_ENDPOINTS = [
     "http://www.law.go.kr/DRF/lawSearch.do",
 ]
 API_TIMEOUT = 20
+API_RETRY_COUNT = 3
+API_RETRY_DELAY_SECONDS = 2
 KST = timezone(timedelta(hours=9))
 NAME_CLEANUP_RE = re.compile(r"[\s\W_]+", re.UNICODE)
 
@@ -185,28 +188,38 @@ def fetch_api(params, label):
     attempts = []
 
     for base_url in API_ENDPOINTS:
-        try:
-            return fetch_api_once(base_url, params, label), attempts
-        except HTTPError as error:
-            raw = error.read().decode("utf-8", errors="replace") if error.fp else ""
-            attempts.append(
-                {
-                    "label": label,
-                    "code": "http_error",
-                    "message": f"HTTP {error.code}",
-                    "raw_sample": raw[:240],
-                }
-            )
-        except LawApiError as error:
-            attempts.extend(error.attempts)
-        except (TimeoutError, URLError, OSError) as error:
-            attempts.append(
-                {
-                    "label": label,
-                    "code": "request_error",
-                    "message": str(error)[:180],
-                }
-            )
+        for retry_index in range(API_RETRY_COUNT):
+            try:
+                return fetch_api_once(base_url, params, label), attempts
+            except HTTPError as error:
+                raw = error.read().decode("utf-8", errors="replace") if error.fp else ""
+                attempts.append(
+                    {
+                        "label": label,
+                        "code": "http_error",
+                        "message": f"{base_url} HTTP {error.code}",
+                        "raw_sample": raw[:240],
+                        "attempt": retry_index + 1,
+                    }
+                )
+                break
+            except LawApiError as error:
+                for attempt in error.attempts:
+                    attempt["attempt"] = retry_index + 1
+                    attempt["endpoint"] = base_url
+                attempts.extend(error.attempts)
+                break
+            except (TimeoutError, URLError, OSError) as error:
+                attempts.append(
+                    {
+                        "label": label,
+                        "code": "request_error",
+                        "message": f"{base_url} {str(error)[:180]}",
+                        "attempt": retry_index + 1,
+                    }
+                )
+                if retry_index < API_RETRY_COUNT - 1:
+                    time.sleep(API_RETRY_DELAY_SECONDS)
 
     raise LawApiError(attempts)
 
@@ -496,6 +509,7 @@ def build_payload(
         "scope": "시행일, 공포일, 조문 개정 이력을 결합해 법령 변경을 정리합니다.",
         "notice": notice,
         "error": error_text,
+        "error_detail": errors or [],
         "watched_laws": watched_laws,
         "summary": {
             "today_changes": len(today_items),
@@ -642,11 +656,11 @@ def main():
     elif errors and (today_items or last_7_days_items or last_30_days_items):
         api_status = "partial_success"
         notice = "일부 API 조회에 실패했지만 가능한 범위의 법령 데이터를 반영했습니다."
-        error_text = summarize_attempts(errors)
+        error_text = ""
     elif errors:
         api_status = "api_error"
         notice = "법제처 API 조회 중 오류가 발생했습니다. 수동 확인이 필요합니다."
-        error_text = summarize_attempts(errors)
+        error_text = "api_request_failed"
     else:
         api_status = "success"
         notice = "오늘 시행 법령과 오늘 공포/개정 법령 조회 결과입니다."
