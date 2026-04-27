@@ -57,6 +57,16 @@ function setText(id, text) {
   if (el) el.textContent = text;
 }
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;",
+  })[char]);
+}
+
 function loadJson(key, fallback) {
   try {
     return JSON.parse(localStorage.getItem(key)) || fallback;
@@ -253,6 +263,10 @@ function safeText(value, fallback = "-") {
   return value;
 }
 
+function safeHtml(value, fallback = "-") {
+  return escapeHtml(safeText(value, fallback));
+}
+
 function getLawChangeSummary(item) {
   return safeText(
     item.change_summary || item.after_summary || item.summary,
@@ -287,7 +301,7 @@ function renderChangedCategoryGroups(changedItems) {
     return `
       <section class="law-category-group changed-group">
         <div class="law-category-title">
-          <strong>${category}</strong>
+          <strong>${escapeHtml(category)}</strong>
           <span>변경 ${items.length}건</span>
         </div>
         <div class="law-category-body">
@@ -305,13 +319,13 @@ function renderNoChangeGroup(unchangedItems) {
 
   const categoryBlocks = Object.entries(groups).map(([category, items]) => {
     const names = items.map((item) => {
-      return `<li>${safeText(item.law_name)}</li>`;
+      return `<li>${safeHtml(item.law_name)}</li>`;
     }).join("");
 
     return `
       <details class="law-nochange-category">
         <summary>
-          <strong>${category}</strong>
+          <strong>${escapeHtml(category)}</strong>
           <span>${items.length}건</span>
         </summary>
         <ul class="law-nochange-list">
@@ -336,34 +350,34 @@ function renderChangedItem(item) {
     <article class="law-item law-item-changed">
       <div class="law-item-head">
         <div>
-          <span class="law-name">${safeText(item.law_name)}</span>
-          <span class="law-category">${safeText(item.category, "분류 없음")}</span>
+          <span class="law-name">${safeHtml(item.law_name)}</span>
+          <span class="law-category">${safeHtml(item.category, "분류 없음")}</span>
         </div>
-        <span class="law-status changed">${safeText(item.status_label, "변경 있음")}</span>
+        <span class="law-status changed">${safeHtml(item.status_label, "변경 있음")}</span>
       </div>
 
       <div class="law-meta">
         <div>
           <span>시행일</span>
-          <strong>${safeText(item.effective_date)}</strong>
+          <strong>${safeHtml(item.effective_date)}</strong>
         </div>
         <div>
           <span>공포일</span>
-          <strong>${safeText(item.promulgation_date)}</strong>
+          <strong>${safeHtml(item.promulgation_date)}</strong>
         </div>
         <div>
           <span>개정유형</span>
-          <strong>${safeText(item.amendment_type)}</strong>
+          <strong>${safeHtml(item.amendment_type)}</strong>
         </div>
         <div>
           <span>영향도</span>
-          <strong>${safeText(item.impact, "확인 필요")}</strong>
+          <strong>${safeHtml(item.impact, "확인 필요")}</strong>
         </div>
       </div>
 
       <div class="law-change-summary-box">
         <span>변경 후 요약</span>
-        <p>${getLawChangeSummary(item)}</p>
+        <p>${escapeHtml(getLawChangeSummary(item))}</p>
       </div>
 
       <div class="law-next-step">
@@ -378,7 +392,7 @@ function renderLawList(containerId, items, emptyMessage) {
   if (!container) return;
 
   if (!Array.isArray(items) || items.length === 0) {
-    container.innerHTML = `<div class="law-empty">${emptyMessage}</div>`;
+    container.innerHTML = `<div class="law-empty">${escapeHtml(emptyMessage)}</div>`;
     return;
   }
 
@@ -390,7 +404,7 @@ function renderLawList(containerId, items, emptyMessage) {
   if (changedItems.length > 0) {
     html += renderChangedCategoryGroups(changedItems);
   } else {
-    html += `<div class="law-empty">${emptyMessage}</div>`;
+    html += `<div class="law-empty">${escapeHtml(emptyMessage)}</div>`;
   }
 
   html += renderNoChangeGroup(unchangedItems);
@@ -560,11 +574,11 @@ function renderSchedules() {
     row.className = "item";
     row.innerHTML = `
       <div class="item-main">
-        <span class="item-time">${item.time}</span>
-        <span class="item-title">${item.title}</span>
+        <span class="item-time">${escapeHtml(item.time)}</span>
+        <span class="item-title">${escapeHtml(item.title)}</span>
       </div>
       <div class="item-actions">
-        <button data-id="${item.id}" class="delete-schedule">삭제</button>
+        <button data-id="${escapeHtml(item.id)}" class="delete-schedule">삭제</button>
       </div>
     `;
     list.appendChild(row);
@@ -597,11 +611,11 @@ function renderTasks() {
     row.className = `item ${task.done ? "done" : ""}`;
     row.innerHTML = `
       <div class="item-main">
-        <span class="item-title">${task.title}</span>
+        <span class="item-title">${escapeHtml(task.title)}</span>
       </div>
       <div class="item-actions">
-        <button data-id="${task.id}" class="toggle-task">${task.done ? "해제" : "완료"}</button>
-        <button data-id="${task.id}" class="delete-task">삭제</button>
+        <button data-id="${escapeHtml(task.id)}" class="toggle-task">${task.done ? "해제" : "완료"}</button>
+        <button data-id="${escapeHtml(task.id)}" class="delete-task">삭제</button>
       </div>
     `;
     list.appendChild(row);
