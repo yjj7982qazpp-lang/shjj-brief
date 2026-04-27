@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "lastUpdated": "2026-04-28T00:18:46+09:00",
+    "lastUpdated": "2026-04-28T00:26:05+09:00",
     "watchedLawCount": 24,
     "totalSavedCount": 3
   },
@@ -88,9 +88,9 @@
     }
   ],
   "checked_at": "2026-04-28",
-  "updated_at": "2026-04-28 00:18:46 KST",
+  "updated_at": "2026-04-28 00:26:05 KST",
   "timezone": "Asia/Seoul",
-  "synced_at": "2026-04-28 00:18:46 KST",
+  "synced_at": "2026-04-28 00:26:05 KST",
   "api_status": "success",
   "source": "국가법령정보 Open API watched_laws query mode",
   "basis": "KST 기준 관심 법령명별 오늘 / 최근 7일 / 최근 30일 변경",
