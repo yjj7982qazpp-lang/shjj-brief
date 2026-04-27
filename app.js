@@ -1434,6 +1434,31 @@ function loadNotificationSettings() {
   renderNotificationTime();
 }
 
+function renderNotificationTime() {
+  const time = normalizeNotificationTime(state.notificationTime);
+  const input = $("notificationTimeInput");
+
+  if (input) input.value = time;
+  setText("notificationTimeSummary", `매일 ${time} 알림 예정`);
+  setText("notificationTimePill", time);
+  setText("notificationTimeCurrent", `현재 저장된 알림 예정 시간: 매일 ${time}`);
+}
+
+function saveNotificationTime(value) {
+  const normalized = normalizeNotificationTime(value);
+  state.notificationTime = normalized;
+  localStorage.setItem(STORAGE_KEYS.notificationTime, normalized);
+  renderNotificationTime();
+  triggerNotificationHaptic();
+  showNotificationToast("알림 시간이 저장되었습니다");
+}
+
+function loadNotificationSettings() {
+  const saved = localStorage.getItem(STORAGE_KEYS.notificationTime);
+  state.notificationTime = normalizeNotificationTime(saved);
+  renderNotificationTime();
+}
+
 function showNotificationToast(message) {
   const toast = $("notificationToast");
   if (!toast) return;
@@ -1531,6 +1556,31 @@ function bindEvents() {
   bindWeatherEvents();
   bindScheduleEvents();
   bindNotificationEvents();
+}
+
+function renderNotificationTime() {
+  const time = normalizeNotificationTime(state.notificationTime);
+  const input = $("notificationTimeInput");
+
+  if (input) input.value = time;
+  setText("notificationTimeSummary", `매일 ${time} 알림 예정`);
+  setText("notificationTimePill", time);
+  setText("notificationTimeCurrent", `현재 저장된 알림 예정 시간: 매일 ${time}`);
+}
+
+function saveNotificationTime(value) {
+  const normalized = normalizeNotificationTime(value);
+  state.notificationTime = normalized;
+  localStorage.setItem(STORAGE_KEYS.notificationTime, normalized);
+  renderNotificationTime();
+  triggerNotificationHaptic();
+  showNotificationToast("알림 시간이 저장되었습니다");
+}
+
+function loadNotificationSettings() {
+  const saved = localStorage.getItem(STORAGE_KEYS.notificationTime);
+  state.notificationTime = normalizeNotificationTime(saved);
+  renderNotificationTime();
 }
 
 async function init() {
