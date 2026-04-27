@@ -583,14 +583,32 @@ async function loadLawUpdates() {
 
     const data = await res.json();
 
-    const todayCount = data.summary?.today_changes ?? countChanged(data.today);
-    const weekCount = data.summary?.last_7_days_changes ?? countChanged(data.last_7_days);
-    const monthCount = data.summary?.last_30_days_changes ?? countChanged(data.last_30_days);
+    const todayItems = data.today_items ?? data.today ?? [];
+    const weekItems = data.last_7_days_items ?? data.last_7_days ?? [];
+    const monthItems = data.last_30_days_items ?? data.last_30_days ?? [];
+    const todayCount = Number(data.today_count ?? data.summary?.today_changes ?? countChanged(todayItems)) || 0;
+    const weekCount = Number(data.last_7_days_count ?? data.summary?.last_7_days_changes ?? countChanged(weekItems)) || 0;
+    const monthCount = Number(data.last_30_days_count ?? data.summary?.last_30_days_changes ?? countChanged(monthItems)) || 0;
+    const apiStatus = data.api_status || "";
+    const apiStatusLabel = {
+      success: "정상",
+      partial_success: "일부 실패",
+      no_data: "0건",
+      missing_law_oc: "OC 필요",
+      api_error: "오류",
+    }[apiStatus] || "";
 
     setText("lawBasisChip", data.basis || "시행일 기준");
-    setText("lawNotice", data.notice || data.scope || "시행일 기준으로 오늘 확인할 법령 변경을 정리합니다.");
-    const syncedAtText = data.synced_at ? ` · 자동갱신: ${data.synced_at}` : "";
-    setText("lawCheckedAt", `확인일: ${safeText(data.checked_at)}${syncedAtText}`);
+    if (apiStatus && apiStatus !== "success") {
+      setText("lawBasisChip", `${data.basis || "시행일 기준"} · ${apiStatusLabel || apiStatus}`);
+    }
+
+    const noticeText = data.notice || data.scope || "시행일 기준으로 오늘 확인할 법령 변경을 정리합니다.";
+    const errorSuffix = data.error ? ` (${data.error})` : "";
+    setText("lawNotice", `${noticeText}${apiStatus && apiStatus !== "success" ? errorSuffix : ""}`);
+
+    const updatedAtText = data.updated_at ? ` · 갱신: ${data.updated_at}` : data.synced_at ? ` · 갱신: ${data.synced_at}` : "";
+    setText("lawCheckedAt", `확인일: ${safeText(data.checked_at)}${updatedAtText}`);
 
     setText("lawTodayCount", `${todayCount}건`);
     setText("lawWeekCount", `${weekCount}건`);
@@ -600,19 +618,19 @@ async function loadLawUpdates() {
 
     renderLawList(
       "lawTodayList",
-      data.today,
+      todayItems,
       "오늘 새로 시행되는 변경은 없습니다. 감시 법령 목록을 정기 확인하세요."
     );
 
     renderLawList(
       "lawWeekList",
-      data.last_7_days,
+      weekItems,
       "최근 7일 내 새로 시행된 변경은 없습니다. 진행 중인 업무 영향은 낮아 보입니다."
     );
 
     renderLawList(
       "lawMonthList",
-      data.last_30_days,
+      monthItems,
       "최근 30일 내 새로 시행된 변경은 없습니다. 월간 정기 확인만 진행하세요."
     );
   } catch (error) {
