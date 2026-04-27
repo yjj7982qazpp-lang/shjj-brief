@@ -179,6 +179,7 @@
           <span id="lawBasisChip" class="status-chip">시행일 기준</span>
         </div>
 
+        <div class="law-brief-summary-card">
         <div class="law-intro">
           <span id="lawMetaSummary">갱신 정보 -</span>
           <p id="lawNotice">법령 변경 정보를 불러오는 중입니다.</p>
@@ -211,6 +212,7 @@
             <span>최근 30일</span>
             <strong id="lawMonthCount">0건</strong>
           </div>
+        </div>
         </div>
 
         <div class="law-tabs">
@@ -246,9 +248,30 @@
             <span>기본 지역</span>
             <strong id="settingCityName">서울</strong>
           </div>
+          <details class="notification-settings-card">
+            <summary class="notification-settings-summary">
+              <div>
+                <span class="notification-settings-label">알림 설정</span>
+                <strong>매일 알림 시간</strong>
+              </div>
+              <span id="notificationTimeSummary" class="notification-time-badge">매일 09:20 알림 예정</span>
+            </summary>
+            <div class="notification-settings-body">
+              <label class="notification-time-field" for="notificationTimeInput">
+                <span>알림 희망 시간</span>
+                <input id="notificationTimeInput" type="time" value="09:20" />
+              </label>
+              <p id="notificationTimeHelper" class="notification-settings-note">
+                실제 푸시 발송 연동 전까지는 앱에서 희망 시간만 저장합니다.
+              </p>
+            </div>
+          </details>
         </div>
       </section>
 
+      <p id="notificationTestHint" class="notification-test-hint">
+        테스트 알림은 즉시 확인용입니다. 아래 버튼은 저장된 예정 시간과 별도로 바로 알림을 띄웁니다.
+      </p>
       <button id="testNotifyBtn" class="notify-test-btn">
         오늘 브리핑 테스트 알림 보내기
       </button>
