@@ -464,8 +464,8 @@ function renderChangedCategoryGroups(changedItems) {
 
   const groups = groupLawItemsByMajorGroup(changedItems);
 
-  return groups.map(({ name, items }) => renderLawAccordionGroup(
-    name,
+  return groups.map(({ label, items }) => renderLawAccordionGroup(
+    label,
     items,
     renderChangedItem,
     { countLabel: "건" }
@@ -718,7 +718,8 @@ async function loadLawUpdates() {
 
     const noticeText = data.notice || data.scope || "시행일 기준으로 오늘 확인할 법령 변경을 정리합니다.";
     const errorSuffix = data.error ? ` (${data.error})` : "";
-    setText("lawNotice", `${noticeText}${apiStatus && apiStatus !== "success" ? errorSuffix : ""}`);
+    const diagnosticText = `전체 API 오늘 ${todayItemsRaw.length}건 / 7일 ${weekItemsRaw.length}건 / 30일 ${monthItemsRaw.length}건 · 관심 법령 오늘 ${todayCount}건 / 7일 ${weekCount}건 / 30일 ${monthCount}건`;
+    setText("lawNotice", `${noticeText}${apiStatus && apiStatus !== "success" ? errorSuffix : ""} · ${diagnosticText}`);
 
     const updatedAtText = data.updated_at ? ` · 갱신: ${data.updated_at}` : data.synced_at ? ` · 갱신: ${data.synced_at}` : "";
     setText("lawCheckedAt", `확인일: ${safeText(data.checked_at)}${updatedAtText}`);
