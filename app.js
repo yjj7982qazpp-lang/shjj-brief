@@ -79,8 +79,44 @@ function saveJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function loadArray(key) {
+  const value = loadJson(key, []);
+  return Array.isArray(value) ? value : [];
+}
+
+function clearChildren(el) {
+  el.textContent = "";
+}
+
+function createEmptyListItem(message) {
+  const row = document.createElement("div");
+  row.className = "item";
+
+  const main = document.createElement("div");
+  main.className = "item-main";
+
+  const title = document.createElement("span");
+  title.className = "item-title";
+  title.textContent = message;
+
+  main.appendChild(title);
+  row.appendChild(main);
+
+  return row;
+}
+
+function createActionButton(label, className, id, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = className;
+  button.dataset.id = id;
+  button.textContent = label;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
 function makeId() {
-  if (crypto && crypto.randomUUID) return crypto.randomUUID();
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
   return String(Date.now()) + "_" + Math.random().toString(16).slice(2);
 }
 
@@ -127,9 +163,9 @@ function setupScheduleTimePicker() {
   const minuteSelect = $("scheduleMinuteSelect");
   const quickGrid = $("quickTimeGrid");
 
-  hourSelect.innerHTML = "";
-  minuteSelect.innerHTML = "";
-  quickGrid.innerHTML = "";
+  clearChildren(hourSelect);
+  clearChildren(minuteSelect);
+  clearChildren(quickGrid);
 
   for (let h = 6; h <= 23; h++) {
     const option = document.createElement("option");
@@ -559,38 +595,47 @@ function renderWeather() {
 
 function renderSchedules() {
   const list = $("scheduleList");
-  list.innerHTML = "";
+  clearChildren(list);
 
   if (state.schedules.length === 0) {
-    list.innerHTML = `<div class="item"><div class="item-main"><span class="item-title">등록된 일정이 없습니다.</span></div></div>`;
+    list.appendChild(createEmptyListItem("등록된 일정이 없습니다."));
     updateBrief();
     return;
   }
 
-  const sorted = [...state.schedules].sort((a, b) => a.time.localeCompare(b.time));
+  const sorted = [...state.schedules].sort((a, b) =>
+    safeText(a.time, "").localeCompare(safeText(b.time, ""))
+  );
 
   sorted.forEach((item) => {
     const row = document.createElement("div");
     row.className = "item";
-    row.innerHTML = `
-      <div class="item-main">
-        <span class="item-time">${escapeHtml(item.time)}</span>
-        <span class="item-title">${escapeHtml(item.title)}</span>
-      </div>
-      <div class="item-actions">
-        <button data-id="${escapeHtml(item.id)}" class="delete-schedule">삭제</button>
-      </div>
-    `;
-    list.appendChild(row);
-  });
 
-  document.querySelectorAll(".delete-schedule").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      state.schedules = state.schedules.filter((item) => item.id !== btn.dataset.id);
+    const main = document.createElement("div");
+    main.className = "item-main";
+
+    const time = document.createElement("span");
+    time.className = "item-time";
+    time.textContent = safeText(item.time, "--:--");
+
+    const title = document.createElement("span");
+    title.className = "item-title";
+    title.textContent = safeText(item.title, "제목 없음");
+
+    const actions = document.createElement("div");
+    actions.className = "item-actions";
+
+    const deleteButton = createActionButton("삭제", "delete-schedule", item.id, () => {
+      state.schedules = state.schedules.filter((schedule) => schedule.id !== item.id);
       saveJson(STORAGE_KEYS.schedules, state.schedules);
       renderSchedules();
       updateBrief();
     });
+
+    main.append(time, title);
+    actions.appendChild(deleteButton);
+    row.append(main, actions);
+    list.appendChild(row);
   });
 
   updateBrief();
@@ -598,10 +643,10 @@ function renderSchedules() {
 
 function renderTasks() {
   const list = $("taskList");
-  list.innerHTML = "";
+  clearChildren(list);
 
   if (state.tasks.length === 0) {
-    list.innerHTML = `<div class="item"><div class="item-main"><span class="item-title">등록된 할 일이 없습니다.</span></div></div>`;
+    list.appendChild(createEmptyListItem("등록된 할 일이 없습니다."));
     updateBrief();
     return;
   }
@@ -609,35 +654,35 @@ function renderTasks() {
   state.tasks.forEach((task) => {
     const row = document.createElement("div");
     row.className = `item ${task.done ? "done" : ""}`;
-    row.innerHTML = `
-      <div class="item-main">
-        <span class="item-title">${escapeHtml(task.title)}</span>
-      </div>
-      <div class="item-actions">
-        <button data-id="${escapeHtml(task.id)}" class="toggle-task">${task.done ? "해제" : "완료"}</button>
-        <button data-id="${escapeHtml(task.id)}" class="delete-task">삭제</button>
-      </div>
-    `;
+
+    const main = document.createElement("div");
+    main.className = "item-main";
+
+    const title = document.createElement("span");
+    title.className = "item-title";
+    title.textContent = safeText(task.title, "제목 없음");
+
+    const actions = document.createElement("div");
+    actions.className = "item-actions";
+
+    const toggleButton = createActionButton(task.done ? "해제" : "완료", "toggle-task", task.id, () => {
+      task.done = !task.done;
+      saveJson(STORAGE_KEYS.tasks, state.tasks);
+      renderTasks();
+      updateBrief();
+    });
+
+    const deleteButton = createActionButton("삭제", "delete-task", task.id, () => {
+      state.tasks = state.tasks.filter((item) => item.id !== task.id);
+      saveJson(STORAGE_KEYS.tasks, state.tasks);
+      renderTasks();
+      updateBrief();
+    });
+
+    main.appendChild(title);
+    actions.append(toggleButton, deleteButton);
+    row.append(main, actions);
     list.appendChild(row);
-  });
-
-  document.querySelectorAll(".toggle-task").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const task = state.tasks.find((item) => item.id === btn.dataset.id);
-      if (task) task.done = !task.done;
-      saveJson(STORAGE_KEYS.tasks, state.tasks);
-      renderTasks();
-      updateBrief();
-    });
-  });
-
-  document.querySelectorAll(".delete-task").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      state.tasks = state.tasks.filter((item) => item.id !== btn.dataset.id);
-      saveJson(STORAGE_KEYS.tasks, state.tasks);
-      renderTasks();
-      updateBrief();
-    });
   });
 
   updateBrief();
@@ -808,8 +853,8 @@ async function init() {
   setupScheduleTimePicker();
   setupLawTabs();
 
-  state.schedules = loadJson(STORAGE_KEYS.schedules, []);
-  state.tasks = loadJson(STORAGE_KEYS.tasks, []);
+  state.schedules = loadArray(STORAGE_KEYS.schedules);
+  state.tasks = loadArray(STORAGE_KEYS.tasks);
 
   $("workMemo").value = localStorage.getItem(STORAGE_KEYS.workMemo) || "";
   $("lawMemo").value = localStorage.getItem(STORAGE_KEYS.lawMemo) || "";
