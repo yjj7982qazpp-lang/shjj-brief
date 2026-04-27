@@ -52,6 +52,71 @@ function round(value) {
   return Math.round(value);
 }
 
+function formatRainTime(date) {
+  const label = date.toLocaleDateString("ko-KR", { day: "numeric" }) ===
+    new Date().toLocaleDateString("ko-KR", { day: "numeric" })
+    ? "오늘"
+    : "내일";
+  return `${label} ${date.getHours()}시`;
+}
+
+function formatRainRange(start, end) {
+  const sameDate = start.toDateString() === end.toDateString();
+  return sameDate
+    ? `${formatRainTime(start)}~${end.getHours()}시`
+    : `${formatRainTime(start)}~${formatRainTime(end)}`;
+}
+
+function getRainTimeSummary(weather) {
+  const hourly = weather?.hourly;
+  if (!hourly?.time?.length) return "시간대별 강수 정보 확인 중";
+
+  const now = new Date();
+  const limit = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const slots = hourly.time
+    .map((time, index) => {
+      const date = new Date(time);
+      const probability = Number(hourly.precipitation_probability?.[index] ?? 0);
+      const precipitation = Number(hourly.precipitation?.[index] ?? 0);
+      return { date, probability, precipitation };
+    })
+    .filter((slot) =>
+      slot.date >= now &&
+      slot.date <= limit &&
+      (slot.probability >= 40 || slot.precipitation > 0)
+    );
+
+  if (slots.length === 0) return "향후 24시간 내 뚜렷한 강수 신호 없음";
+
+  const groups = slots.reduce((acc, slot) => {
+    const lastGroup = acc[acc.length - 1];
+    const previous = lastGroup?.[lastGroup.length - 1];
+    const isNear = previous && slot.date - previous.date <= 90 * 60 * 1000;
+    if (isNear) {
+      lastGroup.push(slot);
+    } else {
+      acc.push([slot]);
+    }
+    return acc;
+  }, []);
+
+  const scoreGroup = (group) =>
+    Math.max(...group.map((slot) => slot.probability)) * 10 +
+    Math.max(...group.map((slot) => slot.precipitation));
+  const bestGroup = groups.sort((a, b) => scoreGroup(b) - scoreGroup(a))[0];
+  const start = bestGroup[0].date;
+  const end = bestGroup[bestGroup.length - 1].date;
+  const maxProbability = Math.max(...bestGroup.map((slot) => slot.probability));
+  const maxPrecipitation = Math.max(...bestGroup.map((slot) => slot.precipitation));
+
+  if (bestGroup.length === 1) {
+    return `${formatRainTime(start)} 전후 ${maxProbability >= 40 ? "비 가능성 높음" : "약한 비 가능성"}`;
+  }
+
+  const intensity = maxProbability >= 40 || maxPrecipitation >= 1 ? "비 가능성 높음" : "약한 비 가능성";
+  return `${formatRainRange(start, end)} ${intensity}`;
+}
+
 function setText(id, text) {
   const el = $(id);
   if (el) el.textContent = text;
@@ -589,8 +654,12 @@ async function loadWeather() {
       "temperature_2m_min",
       "precipitation_probability_max"
     ].join(","),
+    hourly: [
+      "precipitation_probability",
+      "precipitation"
+    ].join(","),
     timezone: "auto",
-    forecast_days: "1"
+    forecast_days: "2"
   });
 
   const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
@@ -617,6 +686,7 @@ function renderWeather() {
   setText("weatherDesc", `${title} · ${desc}`);
   setText("highLow", `${round(daily.temperature_2m_max[0])}° / ${round(daily.temperature_2m_min[0])}°`);
   setText("rainProb", `${round(daily.precipitation_probability_max[0])}%`);
+  setText("rainTime", getRainTimeSummary(state.weather));
   setText("humidity", `${round(current.relative_humidity_2m)}%`);
   setText("wind", `${round(current.wind_speed_10m)} km/h`);
 }

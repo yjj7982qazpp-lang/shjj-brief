@@ -467,6 +467,12 @@ textarea:focus {
   box-shadow: inset 0 0 0 1px rgba(17,24,39,0.04);
 }
 
+.weather-metrics .rain-time-metric {
+  grid-column: 1 / -1;
+  min-height: auto;
+  background: linear-gradient(145deg, #fffaf0, #eef5fb);
+}
+
 .weather-metrics span {
   display: block;
   margin-bottom: 8px;
@@ -478,6 +484,12 @@ textarea:focus {
 .weather-metrics strong {
   font-size: 17px;
   letter-spacing: 0;
+}
+
+.rain-time-metric strong {
+  display: block;
+  line-height: 1.35;
+  word-break: keep-all;
 }
 
 .schedule-composer {
