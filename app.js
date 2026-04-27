@@ -52,6 +52,73 @@ function round(value) {
   return Math.round(value);
 }
 
+function formatRainTime(date) {
+  const label = date.toLocaleDateString("ko-KR", { day: "numeric" }) ===
+    new Date().toLocaleDateString("ko-KR", { day: "numeric" })
+    ? "오늘"
+    : "내일";
+  const hour = date.getHours();
+  const dayPart = hour >= 18 ? " 밤" : "";
+  return `${label}${dayPart} ${hour}시`;
+}
+
+function formatRainRange(start, end) {
+  const sameDate = start.toDateString() === end.toDateString();
+  return sameDate
+    ? `${formatRainTime(start)}~${end.getHours()}시`
+    : `${formatRainTime(start)}~${formatRainTime(end)}`;
+}
+
+function getRainTimeSummary(weather) {
+  const hourly = weather?.hourly;
+  if (!hourly?.time?.length) return "시간대별 강수 정보 확인 중";
+
+  const now = new Date();
+  const limit = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const slots = hourly.time
+    .map((time, index) => {
+      const date = new Date(time);
+      const probability = Number(hourly.precipitation_probability?.[index] ?? 0);
+      const precipitation = Number(hourly.precipitation?.[index] ?? 0);
+      return { date, probability, precipitation };
+    })
+    .filter((slot) =>
+      slot.date >= now &&
+      slot.date <= limit &&
+      (slot.probability >= 40 || slot.precipitation > 0)
+    );
+
+  if (slots.length === 0) return "향후 24시간 내 뚜렷한 강수 신호 없음";
+
+  const groups = slots.reduce((acc, slot) => {
+    const lastGroup = acc[acc.length - 1];
+    const previous = lastGroup?.[lastGroup.length - 1];
+    const isNear = previous && slot.date - previous.date <= 90 * 60 * 1000;
+    if (isNear) {
+      lastGroup.push(slot);
+    } else {
+      acc.push([slot]);
+    }
+    return acc;
+  }, []);
+
+  const scoreGroup = (group) =>
+    Math.max(...group.map((slot) => slot.probability)) * 10 +
+    Math.max(...group.map((slot) => slot.precipitation));
+  const bestGroup = groups.sort((a, b) => scoreGroup(b) - scoreGroup(a))[0];
+  const start = bestGroup[0].date;
+  const end = bestGroup[bestGroup.length - 1].date;
+  const maxProbability = Math.max(...bestGroup.map((slot) => slot.probability));
+  const maxPrecipitation = Math.max(...bestGroup.map((slot) => slot.precipitation));
+
+  if (bestGroup.length === 1) {
+    return `${formatRainTime(start)} 전후 ${maxProbability >= 40 ? "비 가능성 높음" : "약한 비 가능성"}`;
+  }
+
+  const intensity = maxProbability >= 40 || maxPrecipitation >= 1 ? "비 가능성 높음" : "약한 비 가능성";
+  return `${formatRainRange(start, end)} ${intensity}`;
+}
+
 function setText(id, text) {
   const el = $(id);
   if (el) el.textContent = text;
@@ -355,7 +422,12 @@ function renderNoChangeGroup(unchangedItems) {
 
   const categoryBlocks = Object.entries(groups).map(([category, items]) => {
     const names = items.map((item) => {
-      return `<li>${safeHtml(item.law_name)}</li>`;
+      return `
+        <li>
+          <strong>${safeHtml(item.law_name)}</strong>
+          <span>${safeHtml(item.summary, "새로 시행되는 변경사항은 확인되지 않았습니다.")}</span>
+        </li>
+      `;
     }).join("");
 
     return `
@@ -373,7 +445,7 @@ function renderNoChangeGroup(unchangedItems) {
 
   return `
     <details class="law-nochange-box">
-      <summary>변경 없는 법령 ${unchangedItems.length}건</summary>
+      <summary>변경 없음 ${unchangedItems.length}건 · 정기 확인</summary>
       <div class="law-nochange-categories">
         ${categoryBlocks}
       </div>
@@ -417,10 +489,27 @@ function renderChangedItem(item) {
       </div>
 
       <div class="law-next-step">
-        변경 전후 비교는 API 연결 후 클릭 상세 화면에서 확장 예정입니다.
+        오늘 확인: 시행일, 개정유형, 영향도를 먼저 보고 업무 메모에 후속 조치를 남기세요.
       </div>
     </article>
   `;
+}
+
+function updateLawAction(todayCount, weekCount, monthCount) {
+  if (todayCount > 0) {
+    setText("lawActionTitle", "오늘 즉시 확인");
+    setText("lawActionText", `오늘 시행 변경 ${todayCount}건이 있습니다. 법령명, 시행일, 변경 후 요약을 먼저 확인하세요.`);
+    return;
+  }
+
+  if (weekCount > 0) {
+    setText("lawActionTitle", "최근 변경 재확인");
+    setText("lawActionText", `오늘 신규 변경은 없지만 최근 7일 내 변경 ${weekCount}건이 있습니다. 진행 중인 인허가와 관련 여부를 확인하세요.`);
+    return;
+  }
+
+  setText("lawActionTitle", "정기 확인 완료");
+  setText("lawActionText", `오늘 신규 변경은 없습니다. 감시 법령 ${monthCount > 0 ? "최근 30일 변경 이력" : "목록"}을 훑고 필요한 메모만 남기세요.`);
 }
 
 function renderLawList(containerId, items, emptyMessage) {
@@ -448,6 +537,45 @@ function renderLawList(containerId, items, emptyMessage) {
   container.innerHTML = html;
 }
 
+function formatLawDate(value) {
+  const text = safeText(value, "");
+  if (!text) return "";
+  return text.replace(/-/g, ".");
+}
+
+function renderTrackedLaws(items, checkedAt) {
+  const container = $("trackedLawList");
+  if (!container) return;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    setText("trackedLawCount", "0개 추적 중");
+    container.innerHTML = `<div class="law-empty">${escapeHtml("관심 법령 추적 데이터가 없습니다.")}</div>`;
+    return;
+  }
+
+  setText("trackedLawCount", `${items.length}개 추적 중`);
+
+  container.innerHTML = items.map((item) => {
+    const isToday = item.status === "today_updated" || item.latest_update_date === checkedAt;
+    const dateText = formatLawDate(item.latest_update_date);
+    const statusText = isToday
+      ? "오늘 업데이트"
+      : dateText
+        ? `최근 업데이트: ${dateText}`
+        : "최근 업데이트 이력 없음";
+
+    return `
+      <article class="tracked-law-item ${isToday ? "today-updated" : ""}">
+        <div>
+          <strong>${safeHtml(item.law_name)}</strong>
+          <span>${safeHtml(item.category, "기타")}</span>
+        </div>
+        <em>${escapeHtml(statusText)}</em>
+      </article>
+    `;
+  }).join("");
+}
+
 async function loadLawUpdates() {
   try {
     const res = await fetch("./data/law_updates.json", { cache: "no-store" });
@@ -460,55 +588,63 @@ async function loadLawUpdates() {
     const monthCount = data.summary?.last_30_days_changes ?? countChanged(data.last_30_days);
 
     setText("lawBasisChip", data.basis || "시행일 기준");
-    setText("lawNotice", data.scope || data.notice || "시행일 기준 법령 변경을 확인합니다.");
+    setText("lawNotice", data.notice || data.scope || "시행일 기준으로 오늘 확인할 법령 변경을 정리합니다.");
     const syncedAtText = data.synced_at ? ` · 자동갱신: ${data.synced_at}` : "";
     setText("lawCheckedAt", `확인일: ${safeText(data.checked_at)}${syncedAtText}`);
 
     setText("lawTodayCount", `${todayCount}건`);
     setText("lawWeekCount", `${weekCount}건`);
     setText("lawMonthCount", `${monthCount}건`);
+    updateLawAction(todayCount, weekCount, monthCount);
+    renderTrackedLaws(data.tracked_laws, data.checked_at);
 
     renderLawList(
       "lawTodayList",
       data.today,
-      "오늘부터 새로 시행되는 건축 관련 법령 변경사항이 없습니다."
+      "오늘 새로 시행되는 변경은 없습니다. 감시 법령 목록을 정기 확인하세요."
     );
 
     renderLawList(
       "lawWeekList",
       data.last_7_days,
-      "최근 7일 내 새로 시행된 건축 관련 법령 변경사항이 없습니다."
+      "최근 7일 내 새로 시행된 변경은 없습니다. 진행 중인 업무 영향은 낮아 보입니다."
     );
 
     renderLawList(
       "lawMonthList",
       data.last_30_days,
-      "최근 30일 내 새로 시행된 건축 관련 법령 변경사항이 없습니다."
+      "최근 30일 내 새로 시행된 변경은 없습니다. 월간 정기 확인만 진행하세요."
     );
   } catch (error) {
-    setText("lawNotice", "법령 변경 정보를 불러오지 못했습니다.");
+    setText("lawNotice", "법령 변경 데이터를 불러오지 못했습니다. 네트워크 또는 data/law_updates.json 파일을 확인하세요.");
     setText("lawCheckedAt", "확인일: -");
+    setText("lawActionTitle", "확인 필요");
+    setText("lawActionText", "자동 브리프를 표시하지 못했습니다. 오늘 업무 전 수동으로 주요 법령 변경 여부를 확인하세요.");
 
-    renderLawList("lawTodayList", [], "법령 데이터 파일을 확인해야 합니다.");
-    renderLawList("lawWeekList", [], "법령 데이터 파일을 확인해야 합니다.");
-    renderLawList("lawMonthList", [], "법령 데이터 파일을 확인해야 합니다.");
+    renderLawList("lawTodayList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.");
+    renderLawList("lawWeekList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.");
+    renderLawList("lawMonthList", [], "법령 데이터 파일을 불러오지 못했습니다. data/law_updates.json을 확인하세요.");
+    renderTrackedLaws([], "");
   }
 }
 
 function setupLawTabs() {
   document.querySelectorAll(".law-tab-btn").forEach((btn) => {
+    btn.setAttribute("role", "tab");
+    btn.setAttribute("aria-selected", String(btn.classList.contains("active")));
+
     btn.addEventListener("click", () => {
       const tab = btn.dataset.lawTab;
 
       document.querySelectorAll(".law-tab-btn").forEach((item) => {
-        item.classList.remove("active");
+        const selected = item === btn;
+        item.classList.toggle("active", selected);
+        item.setAttribute("aria-selected", String(selected));
       });
 
       document.querySelectorAll(".law-panel").forEach((panel) => {
         panel.classList.remove("active");
       });
-
-      btn.classList.add("active");
 
       if (tab === "today") $("lawPanelToday").classList.add("active");
       if (tab === "week") $("lawPanelWeek").classList.add("active");
@@ -561,8 +697,12 @@ async function loadWeather() {
       "temperature_2m_min",
       "precipitation_probability_max"
     ].join(","),
+    hourly: [
+      "precipitation_probability",
+      "precipitation"
+    ].join(","),
     timezone: "auto",
-    forecast_days: "1"
+    forecast_days: "2"
   });
 
   const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
@@ -589,6 +729,7 @@ function renderWeather() {
   setText("weatherDesc", `${title} · ${desc}`);
   setText("highLow", `${round(daily.temperature_2m_max[0])}° / ${round(daily.temperature_2m_min[0])}°`);
   setText("rainProb", `${round(daily.precipitation_probability_max[0])}%`);
+  setText("rainTime", getRainTimeSummary(state.weather));
   setText("humidity", `${round(current.relative_humidity_2m)}%`);
   setText("wind", `${round(current.wind_speed_10m)} km/h`);
 }

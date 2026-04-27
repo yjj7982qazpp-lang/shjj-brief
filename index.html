@@ -128,6 +128,10 @@
             <span>강수확률</span>
             <strong id="rainProb">--%</strong>
           </div>
+          <div class="rain-time-metric">
+            <span>강수 예상 시간</span>
+            <strong id="rainTime">확인 중</strong>
+          </div>
           <div>
             <span>습도</span>
             <strong id="humidity">--%</strong>
@@ -209,6 +213,11 @@
           <span id="lawCheckedAt">확인일: -</span>
         </div>
 
+        <div class="law-action-box">
+          <strong id="lawActionTitle">오늘 확인 포인트</strong>
+          <p id="lawActionText">변경 여부를 확인한 뒤 필요한 업무 메모를 남기세요.</p>
+        </div>
+
         <div class="law-summary-grid">
           <div>
             <span>오늘</span>
@@ -222,6 +231,14 @@
             <span>최근 30일</span>
             <strong id="lawMonthCount">0건</strong>
           </div>
+        </div>
+
+        <div class="tracked-law-box">
+          <div class="tracked-law-head">
+            <strong>관심 법령 최신 업데이트 현황</strong>
+            <span id="trackedLawCount">0개 추적 중</span>
+          </div>
+          <div id="trackedLawList" class="tracked-law-list"></div>
         </div>
 
         <div class="law-tabs">
