@@ -883,6 +883,13 @@ async function loadWeather() {
   updateBrief();
 }
 
+function handleWeatherLoadError() {
+  state.weather = null;
+  setText("weatherDesc", "날씨 정보를 불러오지 못했습니다.");
+  updateSettingsView();
+  updateBrief();
+}
+
 function renderWeather() {
   if (!state.weather) return;
 
@@ -1050,7 +1057,7 @@ function bindEvents() {
   $("refreshWeatherBtn").addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
-    loadWeather();
+    loadWeather().catch(handleWeatherLoadError);
   });
   $("addScheduleBtn").addEventListener("click", addSchedule);
   $("notifyBtn").addEventListener("click", requestNotification);
@@ -1071,16 +1078,10 @@ async function init() {
 
   renderSchedules();
   bindEvents();
+  const weatherLoadPromise = loadWeather().catch(handleWeatherLoadError);
   await registerSW();
   await loadLawUpdates();
-
-  try {
-    await loadWeather();
-  } catch {
-    setText("weatherDesc", "날씨 정보를 불러오지 못했습니다.");
-    updateSettingsView();
-    updateBrief();
-  }
+  await weatherLoadPromise;
 }
 
 init();
