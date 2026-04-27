@@ -27,6 +27,7 @@ API_TIMEOUT = 20
 API_RETRY_COUNT = 3
 API_RETRY_DELAY_SECONDS = 2
 API_DISPLAY = "100"
+MAX_ARTICLE_REFERENCES = 10
 KST = timezone(timedelta(hours=9))
 NAME_CLEANUP_RE = re.compile(r"[\s\W_]+", re.UNICODE)
 HTML_TAG_RE = re.compile(r"<[^>]+>")
@@ -73,7 +74,7 @@ def write_json(payload):
     if isinstance(payload, dict):
         items = payload.get("items")
         if isinstance(items, list):
-            payload["items"] = [ensure_detail_debug_fields(ensure_article_references(item)) for item in items]
+            payload["items"] = [ensure_article_reference_limit(ensure_detail_debug_fields(ensure_article_references(item))) for item in items]
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(
@@ -576,8 +577,32 @@ def ensure_detail_debug_fields(item):
     article_references = normalized.get("article_references", [])
     if not isinstance(article_references, list):
         article_references = []
-    normalized["article_references"] = article_references
+    normalized["article_references"] = article_references[:MAX_ARTICLE_REFERENCES]
 
+    article_references_total_count = normalized.get("article_references_total_count", len(article_references))
+    try:
+        article_references_total_count = int(article_references_total_count or 0)
+    except (TypeError, ValueError):
+        article_references_total_count = len(article_references)
+    normalized["article_references_total_count"] = max(article_references_total_count, len(article_references))
+
+    return normalized
+
+
+def ensure_article_reference_limit(item):
+    normalized = dict(item or {})
+    article_references = normalized.get("article_references", [])
+    if not isinstance(article_references, list):
+        article_references = []
+
+    total_count = normalized.get("article_references_total_count", len(article_references))
+    try:
+        total_count = int(total_count or 0)
+    except (TypeError, ValueError):
+        total_count = len(article_references)
+
+    normalized["article_references_total_count"] = max(total_count, len(article_references))
+    normalized["article_references"] = article_references[:MAX_ARTICLE_REFERENCES]
     return normalized
 
 
@@ -611,6 +636,60 @@ def build_article_reference_snippet(text, start, end, radius=100):
     return re.sub(r"\s+", " ", snippet)
 
 
+def get_article_reference_family(label):
+    text = normalize_article_reference_label(label)
+    if not text or "부터" in text:
+        return text
+    match = re.match(r"^(제\d+조(?:의\d+)?)", text)
+    return match.group(1) if match else text
+
+
+def get_article_reference_specificity(label):
+    text = normalize_article_reference_label(label)
+    if not text:
+        return 0
+    score = len(text)
+    score += text.count("제") * 4
+    score += text.count("항") * 6
+    score += text.count("호") * 8
+    score += text.count("목") * 10
+    if "부터" in text and "까지" in text:
+        score -= 12
+    return score
+
+
+def compress_article_references(references, limit=10):
+    grouped = {}
+
+    for index, reference in enumerate(references):
+        label = normalize_article_reference_label(reference.get("article_label", ""))
+        if not label:
+            continue
+
+        candidate = dict(reference)
+        candidate["article_label"] = label
+        family = get_article_reference_family(label)
+        current = grouped.get(family)
+        candidate_rank = (get_article_reference_specificity(label), -index)
+
+        if current is None:
+            grouped[family] = (candidate_rank, candidate)
+            continue
+
+        current_rank, _ = current
+        if candidate_rank > current_rank:
+            grouped[family] = (candidate_rank, candidate)
+
+    compressed = [entry[1] for entry in grouped.values()]
+    compressed.sort(
+        key=lambda reference: (
+            -get_article_reference_specificity(reference.get("article_label", "")),
+            reference.get("article_label", ""),
+        )
+    )
+    return compressed[:limit]
+
+
 def extract_article_references(*field_pairs):
     references = []
     seen_labels = set()
@@ -625,11 +704,14 @@ def extract_article_references(*field_pairs):
             if not label or label in seen_labels:
                 continue
             seen_labels.add(label)
+            snippet = build_article_reference_snippet(source_text, match.start(), match.end())
+            if len(snippet) > 120:
+                snippet = snippet[:117].rstrip() + "..."
             references.append(
                 {
                     "article_label": label,
                     "source_field": source_field,
-                    "snippet": build_article_reference_snippet(source_text, match.start(), match.end()),
+                    "snippet": snippet,
                 }
             )
 
@@ -638,13 +720,14 @@ def extract_article_references(*field_pairs):
 
 def ensure_article_references(item):
     normalized = dict(item or {})
-    references = extract_article_references(
+    all_references = extract_article_references(
         ("amendment_text", normalized.get("amendment_text", "")),
         ("change_reason", normalized.get("change_reason", "")),
         ("article_text", normalized.get("article_text", "")),
     )
-    normalized["article_references"] = references
-    return normalized
+    normalized["article_references_total_count"] = len(all_references)
+    normalized["article_references"] = compress_article_references(all_references, limit=MAX_ARTICLE_REFERENCES)
+    return ensure_article_reference_limit(normalized)
 
 
 def build_article_text(changed_articles):
@@ -857,6 +940,7 @@ def convert_api_item(item, watched_map, source_type, source_note):
         "changed_articles": [],
         "article_text": "",
         "article_references": [],
+        "article_references_total_count": 0,
         "detail_article_count": 0,
         "detail_debug_keys": [],
         "detail_first_article_keys": [],
@@ -956,6 +1040,7 @@ def extract_detail_fields(detail_data):
         "changed_articles": changed_articles,
         "article_text": article_text,
         "article_references": article_references,
+        "article_references_total_count": len(article_references),
         "detail_article_count": len(article_candidates),
         "detail_debug_keys": detail_debug_keys,
         "detail_first_article_keys": detail_first_article_keys,
@@ -986,6 +1071,7 @@ def enrich_items_with_detail(oc, items):
                     "changed_articles": [],
                     "article_text": "",
                     "article_references": [],
+                    "article_references_total_count": 0,
                     "detail_article_count": 0,
                     "detail_debug_keys": [],
                     "detail_first_article_keys": [],
@@ -1109,7 +1195,7 @@ def build_payload(
     start_7 = today - timedelta(days=6)
     start_30 = today - timedelta(days=29)
 
-    normalized_items = [ensure_detail_debug_fields(ensure_article_references(item)) for item in dedupe(all_items)]
+    normalized_items = [ensure_article_reference_limit(ensure_detail_debug_fields(ensure_article_references(item))) for item in dedupe(all_items)]
     sorted_items = sorted(normalized_items, key=item_sort_key)
     today_items = filter_window(sorted_items, today, today)
     last_7_days_items = filter_window(sorted_items, start_7, today)
