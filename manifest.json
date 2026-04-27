@@ -1,7 +1,7 @@
 {
   "name": "SHJJ Brief",
   "short_name": "SHJJ Brief",
-  "description": "날씨, 일정, 업무, 오늘 시행 법령 변경을 정리하는 개인비서 앱",
+  "description": "날씨, 일정, 업무, 오늘 시행 법령 변경을 정리하는 개인 비서 앱",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#e9eef3",

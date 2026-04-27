@@ -1,8 +1,8 @@
 {
   "checked_at": "2026-04-25",
   "basis": "시행일 기준",
-  "scope": "입법예고 제외, 실제 효력이 시작되는 시행일 기준으로 오늘·최근 7일·최근 30일을 확인합니다.",
-  "notice": "법제처 법령 변경이력 목록 조회 API 결과를 바탕으로 시행일자를 필터링했습니다.",
+  "scope": "입법예고를 제외하고, 실제 효력이 시작되는 시행일 기준으로 오늘ㆍ최근 7일ㆍ최근 30일의 법령 변경을 확인합니다.",
+  "notice": "법제처 법령 변경 이력 목록 조회 API 결과를 바탕으로 시행일자를 필터링했습니다.",
   "watched_laws": [
     {
       "name": "건축법",
@@ -44,8 +44,9 @@
       "effective_date": "",
       "promulgation_date": "",
       "amendment_type": "",
-      "impact": "낮음",
+      "impact": "없음",
       "summary": "오늘부터 새로 시행되는 변경사항이 확인되지 않았습니다.",
+      "change_summary": "",
       "source_url": ""
     },
     {
@@ -56,8 +57,9 @@
       "effective_date": "",
       "promulgation_date": "",
       "amendment_type": "",
-      "impact": "낮음",
+      "impact": "없음",
       "summary": "오늘부터 새로 시행되는 변경사항이 확인되지 않았습니다.",
+      "change_summary": "",
       "source_url": ""
     },
     {
@@ -68,8 +70,9 @@
       "effective_date": "",
       "promulgation_date": "",
       "amendment_type": "",
-      "impact": "낮음",
+      "impact": "없음",
       "summary": "오늘부터 새로 시행되는 변경사항이 확인되지 않았습니다.",
+      "change_summary": "",
       "source_url": ""
     },
     {
@@ -80,8 +83,9 @@
       "effective_date": "",
       "promulgation_date": "",
       "amendment_type": "",
-      "impact": "낮음",
+      "impact": "없음",
       "summary": "오늘부터 새로 시행되는 변경사항이 확인되지 않았습니다.",
+      "change_summary": "",
       "source_url": ""
     },
     {
@@ -92,8 +96,9 @@
       "effective_date": "",
       "promulgation_date": "",
       "amendment_type": "",
-      "impact": "낮음",
+      "impact": "없음",
       "summary": "오늘부터 새로 시행되는 변경사항이 확인되지 않았습니다.",
+      "change_summary": "",
       "source_url": ""
     }
   ],
