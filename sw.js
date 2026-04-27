@@ -1,4 +1,4 @@
-const CACHE_NAME = "shjj-brief-v10-cache-fix2";
+const CACHE_NAME = "shjj-brief-v11-fresh-nav";
 
 const ASSETS = [
   "./",
@@ -56,6 +56,18 @@ self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith(networkFirst(event.request, true));
     return;
+  }
+
+  if (url.origin === self.location.origin) {
+    if (
+      event.request.destination === "script" ||
+      event.request.destination === "style" ||
+      event.request.destination === "manifest" ||
+      url.pathname.endsWith("/index.html")
+    ) {
+      event.respondWith(networkFirst(event.request, true));
+      return;
+    }
   }
 
   if (url.hostname.includes("open-meteo.com")) {
