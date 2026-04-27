@@ -31,6 +31,7 @@ KST = timezone(timedelta(hours=9))
 NAME_CLEANUP_RE = re.compile(r"[\s\W_]+", re.UNICODE)
 HTML_TAG_RE = re.compile(r"<[^>]+>")
 ARTICLE_NUMBER_RE = re.compile(r"^\d+$")
+JO_SECTION_KEYS = {"조문", "jo", "lsJo"}
 CHANGED_FLAG_VALUES = {
     "y",
     "yes",
@@ -253,7 +254,7 @@ def has_article_change_signal(article_changed, article_revision_type, article_ef
     return False
 
 
-def has_article_candidate_shape(node):
+def is_actual_article_unit(node):
     if not isinstance(node, dict):
         return False
 
@@ -261,28 +262,31 @@ def has_article_candidate_shape(node):
     if not keys:
         return False
 
-    candidate_keys = {
-        "조문",
-        "조문단위",
+    unit_keys = {
+        "조문번호",
+        "조문가지번호",
+        "조문여부",
+        "조문제목",
+        "조문시행일자",
+        "조문제개정유형",
         "조문내용",
-        "법령본문",
-        "law",
-        "jo",
-        "lsJo",
-        "조문변경여부",
-        "article_changed",
         "joNo",
         "joTitle",
+        "joYn",
         "articleNo",
         "articleTitle",
-        "articleContent",
+        "articleEffectiveDate",
         "articleRevisionType",
+        "articleContent",
     }
-    if keys & candidate_keys:
-        return True
+    if not (keys & unit_keys):
+        return False
 
     article_number = normalize_article_number(
         pick(node, "조문번호", "조문번호문자열", "조번호", "조항번호", "joNo", "JO", "articleNo", "article_number")
+    )
+    article_branch_number = clean_text(
+        pick(node, "조문가지번호", "조항가지번호", "joBranchNo", "articleBranchNo", "article_branch_number")
     )
     article_title = clean_text(
         pick(node, "조문제목", "조제목", "조항제목", "joTitle", "articleTitle", "article_title")
@@ -296,13 +300,30 @@ def has_article_candidate_shape(node):
     article_content = clean_text(
         pick(node, "조문내용", "조내용", "article_text", "joContent", "articleContent", "content")
     )
-    return has_article_content_signal(
+    article_flag = clean_text(pick(node, "조문여부", "joYn", "articleYn"))
+
+    if article_flag and article_flag.upper() != "Y":
+        return False
+    if article_branch_number:
+        return True
+    if has_article_content_signal(
         article_number,
         article_title,
         article_effective_date,
         article_revision_type,
         article_content,
-    )
+    ):
+        return True
+    return False
+
+
+def iter_jo_section_values(data):
+    for node in walk_nodes(data):
+        if not isinstance(node, dict):
+            continue
+        for key, value in node.items():
+            if clean_text(key) in JO_SECTION_KEYS:
+                yield value
 
 
 def parse_detail_query(item):
@@ -352,6 +373,16 @@ def build_article_record(node):
             "JO",
             "articleNo",
             "article_number",
+        )
+    )
+    article_branch_number = clean_text(
+        pick(
+            node,
+            "조문가지번호",
+            "조항가지번호",
+            "joBranchNo",
+            "articleBranchNo",
+            "article_branch_number",
         )
     )
     article_title = clean_text(
@@ -413,6 +444,9 @@ def build_article_record(node):
     )
     article_flag = clean_text(pick(node, "조문여부", "joYn", "articleYn"))
 
+    if article_branch_number:
+        article_number = f"{article_number}-{article_branch_number}" if article_number else article_branch_number
+
     if not has_article_content_signal(
         article_number,
         article_title,
@@ -445,9 +479,7 @@ def extract_changed_articles(detail_data):
     seen = set()
     articles = []
 
-    for node in walk_nodes(detail_data):
-        if not isinstance(node, dict):
-            continue
+    for node in extract_article_candidates(detail_data):
         article = build_article_record(node)
         if not article:
             continue
@@ -470,19 +502,25 @@ def extract_article_candidates(detail_data):
     candidates = []
     seen = set()
 
-    for node in walk_nodes(detail_data):
-        if not isinstance(node, dict):
-            continue
-        if not has_article_candidate_shape(node):
-            continue
+    for section_value in iter_jo_section_values(detail_data):
+        for node in walk_nodes(section_value):
+            if not isinstance(node, dict):
+                continue
+            if not is_actual_article_unit(node):
+                continue
 
-        keys = tuple(collect_node_keys(node))
-        if not keys:
-            continue
-        if keys in seen:
-            continue
-        seen.add(keys)
-        candidates.append(node)
+            keys = tuple(collect_node_keys(node))
+            identity = (
+                tuple(keys),
+                clean_text(pick(node, "조문번호", "조문번호문자열", "조문가지번호", "joNo", "articleNo")),
+                clean_text(pick(node, "조문제목", "조제목", "joTitle", "articleTitle")),
+            )
+            if not keys:
+                continue
+            if identity in seen:
+                continue
+            seen.add(identity)
+            candidates.append(node)
 
     return candidates
 
