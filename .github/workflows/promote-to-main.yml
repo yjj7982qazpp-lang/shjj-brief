@@ -1,0 +1,49 @@
+name: Promote Preview to Main
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: "Branch to promote into main"
+        required: true
+        default: "feature/v3-law-detail-cards"
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch source branch
+        run: |
+          git fetch origin "${{ inputs.source_branch }}"
+
+      - name: Merge source branch into main
+        run: |
+          git merge --no-ff "origin/${{ inputs.source_branch }}" -m "Promote ${{ inputs.source_branch }} to main"
+
+      - name: Validate app.js
+        run: |
+          node --check app.js
+
+      - name: Validate law updates JSON
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('data/law_updates.json','utf8')); console.log('JSON_OK')"
+
+      - name: Push main
+        run: |
+          git push origin main
