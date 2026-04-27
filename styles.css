@@ -748,6 +748,15 @@ textarea:focus {
   text-align: right;
 }
 
+.notification-top-card {
+  margin-bottom: 12px;
+}
+
+.notification-top-head {
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
 .notification-settings-card {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.9);
@@ -804,6 +813,10 @@ textarea:focus {
   padding: 14px;
 }
 
+.notification-settings-body-top {
+  padding: 0;
+}
+
 .notification-time-field {
   display: grid;
   gap: 8px;
@@ -836,6 +849,25 @@ textarea:focus {
   line-height: 1.5;
 }
 
+.notification-save-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.notification-save-btn {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--navy);
+  color: white;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgba(23, 32, 51, 0.12);
+}
+
 .notification-test-hint {
   margin: 6px 4px 10px;
 }
@@ -852,8 +884,34 @@ textarea:focus {
   box-shadow: var(--shadow);
 }
 
+.notification-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  z-index: 160;
+  min-width: 220px;
+  max-width: calc(100% - 32px);
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(17, 24, 39, 0.92);
+  color: white;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 10px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.notification-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
 @media (max-width: 390px) {
-  .notification-settings-summary {
+  .notification-settings-summary,
+  .notification-save-row {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -920,6 +978,7 @@ footer {
 }
 
 #homeSection,
+#notificationSection,
 #guideSection,
 #weatherSection,
 #scheduleSection,
@@ -1400,6 +1459,26 @@ footer {
   font-weight: 900;
 }
 
+.law-date-chip-shared {
+  background: #eef5ff;
+  color: #35507a;
+}
+
+.law-date-chip-effective {
+  background: #eef7f1;
+  color: #2f5f4c;
+}
+
+.law-date-chip-promulgation {
+  background: #fff3ea;
+  color: #8b6040;
+}
+
+.law-date-chip-deferment {
+  background: #f4f1ff;
+  color: #5c4b8a;
+}
+
 .law-date-chip-empty {
   color: var(--muted);
 }
@@ -1425,10 +1504,6 @@ footer {
 
 .law-date-row-preview {
   margin-top: 10px;
-}
-
-.law-date-row-detail {
-  margin-bottom: 12px;
 }
 
 .law-toggle-indicator {
@@ -1511,6 +1586,23 @@ footer {
   font-size: 13px;
   line-height: 1.55;
   word-break: keep-all;
+}
+
+.law-change-summary-text.is-collapsed {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.law-more-btn {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .law-detail-meta,

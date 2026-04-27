@@ -928,6 +928,127 @@ function renderLawDetailCard(item, index = 0) {
   `;
 }
 
+function getLawDateEntries(item) {
+  return [
+    ["시행일", item.effective_date],
+    ["공포일", item.promulgation_date],
+  ].filter(([, value]) => safeText(value, ""));
+}
+
+function getLawPreviewDateEntries(item) {
+  return getLawDateEntries(item).slice(0, 2);
+}
+
+function getLawDefermentDays(item) {
+  const effectiveDate = parseLawDateValue(item.effective_date);
+  const promulgationDate = parseLawDateValue(item.promulgation_date);
+  if (!effectiveDate || !promulgationDate) return null;
+
+  const diffDays = Math.round((effectiveDate.getTime() - promulgationDate.getTime()) / (1000 * 60 * 60 * 24));
+  return diffDays > 0 ? diffDays : null;
+}
+
+function getLawDateToneClass(item, label) {
+  const effectiveDate = safeText(item.effective_date, "");
+  const promulgationDate = safeText(item.promulgation_date, "");
+
+  if (effectiveDate && promulgationDate && effectiveDate === promulgationDate) return "law-date-chip-shared";
+  if (label === "시행일") return "law-date-chip-effective";
+  if (label === "공포일") return "law-date-chip-promulgation";
+  return "";
+}
+
+function getLawPrimaryContent(item) {
+  const candidates = [
+    item.change_summary,
+    item.summary,
+    item.amendment_text,
+    item.amendment,
+    item.reason,
+    item.change_reason,
+    item.article,
+    item.article_text,
+    item.content,
+    item.law_content,
+    item.detail,
+    item.description,
+  ];
+
+  const content = candidates.find((value) => safeText(value, ""));
+  return safeText(content, "수집 데이터에 구체 변경 내용이 없습니다. 원문에서 세부 조항을 확인하세요.");
+}
+
+function getLawDetailUrl(item) {
+  return safeText(item.article_url || item.detail_url || item.source_url, "");
+}
+
+function renderLawPreviewDates(item) {
+  const entries = getLawPreviewDateEntries(item);
+  if (!entries.length) {
+    return `<span class="law-date-chip law-date-chip-empty">날짜 정보 없음</span>`;
+  }
+
+  const chips = entries.map(([label, value]) => `
+    <span class="law-date-chip ${getLawDateToneClass(item, label)}">${escapeHtml(label)} ${escapeHtml(safeText(value))}</span>
+  `);
+
+  const defermentDays = getLawDefermentDays(item);
+  if (defermentDays) {
+    chips.push(`<span class="law-date-chip law-date-chip-deferment">유예 ${escapeHtml(String(defermentDays))}일</span>`);
+  }
+
+  return chips.join("");
+}
+
+function shouldShowLawContentMore(text) {
+  return safeText(text, "").length > 140;
+}
+
+function renderLawCardActions(item) {
+  const url = getLawDetailUrl(item);
+  if (!url) return "";
+
+  return `
+    <div class="law-card-actions">
+      <a class="law-link-btn" href="${escapeHtml(url)}" target="_blank" rel="noreferrer">원문 보기</a>
+    </div>
+  `;
+}
+
+function renderLawDetailCard(item, index = 0) {
+  const contentId = `law-detail-content-${index}`;
+  const category = safeText(item.category, "");
+  const contentText = getLawPrimaryContent(item);
+  const showMore = shouldShowLawContentMore(contentText);
+  const contentClass = showMore ? "law-change-summary-text is-collapsed" : "law-change-summary-text";
+  const moreButton = showMore
+    ? `<button type="button" class="law-more-btn" data-target="${escapeHtml(contentId)}" aria-expanded="false">더보기</button>`
+    : "";
+
+  return `
+    <details class="law-item law-item-changed law-detail-card">
+      <summary class="law-detail-summary" aria-controls="${escapeHtml(contentId)}">
+        <div class="law-detail-summary-main">
+          <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
+          ${category ? `<span class="law-category">${escapeHtml(category)}</span>` : ""}
+          <div class="law-date-row law-date-row-preview">
+            ${renderLawPreviewDates(item)}
+          </div>
+        </div>
+        <span class="law-toggle-indicator" aria-hidden="true">열기</span>
+      </summary>
+      <div id="${escapeHtml(contentId)}" class="law-detail-body">
+        <div class="law-change-summary-box">
+          <span>변경 내용</span>
+          <p class="${contentClass}">${escapeHtml(contentText)}</p>
+          ${moreButton}
+        </div>
+        ${renderLawCardActions(item)}
+      </div>
+    </details>
+  `;
+}
+
 function renderLawList(containerId, items, emptyMessage, options = {}) {
   const container = $(containerId);
   if (!container) return;
@@ -1313,6 +1434,57 @@ function loadNotificationSettings() {
   renderNotificationTime();
 }
 
+function showNotificationToast(message) {
+  const toast = $("notificationToast");
+  if (!toast) return;
+
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(showNotificationToast.timerId);
+  showNotificationToast.timerId = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 1800);
+}
+
+function triggerNotificationHaptic() {
+  try {
+    if (navigator.vibrate) navigator.vibrate(40);
+  } catch {}
+}
+
+function renderNotificationTime() {
+  const time = normalizeNotificationTime(state.notificationTime);
+  const input = $("notificationTimeInput");
+
+  if (input) input.value = time;
+  setText("notificationTimeSummary", `매일 ${time} 알림 예정`);
+}
+
+function saveNotificationTime(value) {
+  const normalized = normalizeNotificationTime(value);
+  state.notificationTime = normalized;
+  localStorage.setItem(STORAGE_KEYS.notificationTime, normalized);
+  renderNotificationTime();
+  triggerNotificationHaptic();
+  showNotificationToast("알림 시간이 저장되었습니다");
+}
+
+function loadNotificationSettings() {
+  const saved = localStorage.getItem(STORAGE_KEYS.notificationTime);
+  state.notificationTime = normalizeNotificationTime(saved);
+  renderNotificationTime();
+}
+
+function toggleLawContentExpansion(targetId, button) {
+  const container = document.getElementById(targetId);
+  const text = container?.querySelector(".law-change-summary-text");
+  if (!text || !button) return;
+
+  const expanded = text.classList.toggle("is-collapsed");
+  button.setAttribute("aria-expanded", String(!expanded));
+  button.textContent = expanded ? "더보기" : "접기";
+}
+
 function setupBottomNav() {
   const buttons = $$(".bottom-nav-btn");
   buttons.forEach((button) => {
@@ -1345,8 +1517,13 @@ function bindScheduleEvents() {
 function bindNotificationEvents() {
   bindEvent($("notifyBtn"), "click", requestNotification);
   bindEvent($("testNotifyBtn"), "click", showBriefNotification);
-  bindEvent($("notificationTimeInput"), "change", (event) => {
-    saveNotificationTime(event.target.value);
+  bindEvent($("notificationTimeSaveBtn"), "click", () => {
+    saveNotificationTime($("notificationTimeInput")?.value || DEFAULT_NOTIFICATION_TIME);
+  });
+  bindEvent(document, "click", (event) => {
+    const button = event.target.closest(".law-more-btn");
+    if (!button) return;
+    toggleLawContentExpansion(button.dataset.target, button);
   });
 }
 
