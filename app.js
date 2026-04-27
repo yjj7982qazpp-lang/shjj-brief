@@ -876,7 +876,10 @@ function addTask() {
 async function registerSW() {
   if ("serviceWorker" in navigator) {
     try {
-      await navigator.serviceWorker.register("./sw.js");
+      const registration = await navigator.serviceWorker.register("./sw.js");
+      if (registration.update) {
+        await registration.update();
+      }
     } catch (error) {
       console.log("Service worker skipped", error);
     }

@@ -1,4 +1,4 @@
-const CACHE_NAME = "shjj-brief-v9-cache-fix1";
+const CACHE_NAME = "shjj-brief-v10-cache-fix2";
 
 const ASSETS = [
   "./",
@@ -29,16 +29,42 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+async function networkFirst(request, cacheable = true) {
+  const cache = await caches.open(CACHE_NAME);
+
+  try {
+    const response = await fetch(request);
+    if (cacheable && response && response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    throw error;
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
   if (url.pathname.endsWith("/data/law_updates.json")) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(networkFirst(event.request, true));
+    return;
+  }
+
+  if (event.request.mode === "navigate") {
+    event.respondWith(networkFirst(event.request, true));
     return;
   }
 
   if (url.hostname.includes("open-meteo.com")) {
     event.respondWith(fetch(event.request));
+    return;
+  }
+
+  if (url.pathname.endsWith("/manifest.json")) {
+    event.respondWith(networkFirst(event.request, true));
     return;
   }
 
