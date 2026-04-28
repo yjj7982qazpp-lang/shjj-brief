@@ -19,65 +19,7 @@ const PRODUCTION_HOSTNAMES = [
 const PREVIEW_HOSTNAMES = [
   "preview.shjj-brief.pages.dev",
 ];
-
-function normalizeHostname(hostname) {
-  return String(hostname || "").trim().toLowerCase();
-}
-
-function isLocalHostname(hostname) {
-  return ["localhost", "127.0.0.1", "::1"].includes(hostname);
-}
-
-function isProductionHostname(hostname) {
-  return PRODUCTION_HOSTNAMES.includes(hostname);
-}
-
-function isPreviewHostname(hostname) {
-  if (PREVIEW_HOSTNAMES.includes(hostname)) return true;
-
-  return (
-    hostname.endsWith(".pages.dev") &&
-    (
-      hostname.startsWith("preview-") ||
-      hostname.startsWith("preview.")
-    )
-  );
-}
-
-function getAppEnv() {
-  const hostname = normalizeHostname(window.location.hostname);
-
-  if (isProductionHostname(hostname)) return "production";
-  if (isLocalHostname(hostname)) return "preview";
-  if (isPreviewHostname(hostname)) return "preview";
-  return "production";
-}
-
-const APP_ENV = getAppEnv();
-const IS_PREVIEW = APP_ENV === "preview";
-const APP_TITLE = IS_PREVIEW
-  ? `SHJJ Brief Preview v${APP_VERSION}`
-  : "SHJJ Brief";
-
-function applyAppTitle() {
-  document.title = APP_TITLE;
-
-  $$("[data-app-title]").forEach((target) => {
-    target.textContent = APP_TITLE;
-  });
-
-  $$("[data-preview-badge]").forEach((badge) => {
-    badge.hidden = !IS_PREVIEW;
-    badge.style.display = IS_PREVIEW ? "" : "none";
-    if (IS_PREVIEW) badge.textContent = `Preview v${APP_VERSION}`;
-  });
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", applyAppTitle, { once: true });
-} else {
-  applyAppTitle();
-}
+const APP_NAME = "SHJJ Brief";
 
 const STORAGE_KEYS = {
   schedules: "shjj_brief_schedules_v4",
@@ -293,6 +235,70 @@ function weatherText(code) {
   return weatherMap[code] || [WEATHER_COPY.fallbackTitle, WEATHER_COPY.fallbackDesc];
 }
 
+function normalizeHostname(hostname) {
+  return String(hostname || "").trim().toLowerCase();
+}
+
+function isLocalHostname(hostname) {
+  return ["localhost", "127.0.0.1", "::1"].includes(hostname);
+}
+
+function isProductionHostname(hostname) {
+  return PRODUCTION_HOSTNAMES.includes(hostname);
+}
+
+function isPreviewHostname(hostname) {
+  if (PREVIEW_HOSTNAMES.includes(hostname)) return true;
+
+  return (
+    hostname.endsWith(".pages.dev") &&
+    (
+      hostname.startsWith("preview-") ||
+      hostname.startsWith("preview.") ||
+      hostname.includes("preview-ui-") ||
+      hostname.includes("ui-cleanup")
+    )
+  );
+}
+
+function getAppEnv() {
+  const hostname = normalizeHostname(window.location.hostname);
+
+  if (isProductionHostname(hostname)) {
+    return "production";
+  }
+
+  if (isLocalHostname(hostname)) {
+    return "preview";
+  }
+
+  if (isPreviewHostname(hostname)) {
+    return "preview";
+  }
+
+  return "production";
+}
+
+const APP_ENV = getAppEnv();
+const IS_PREVIEW = APP_ENV === "preview";
+const APP_TITLE = IS_PREVIEW ? `${APP_NAME} Pre v${APP_VERSION}` : APP_NAME;
+
+function applyAppTitle() {
+  document.title = APP_TITLE;
+
+  const titleTargets = document.querySelectorAll("[data-app-title]");
+  titleTargets.forEach((target) => {
+    target.textContent = APP_NAME;
+  });
+
+  const previewBadges = document.querySelectorAll("[data-preview-badge]");
+  previewBadges.forEach((badge) => {
+    badge.hidden = !IS_PREVIEW;
+    badge.style.display = IS_PREVIEW ? "" : "none";
+    badge.textContent = IS_PREVIEW ? `Pre v${APP_VERSION}` : "";
+  });
+}
+
 function formatRainTime(date) {
   const label = date.toLocaleDateString("ko-KR", { day: "numeric" }) ===
     new Date().toLocaleDateString("ko-KR", { day: "numeric" })
@@ -481,6 +487,185 @@ function getGuideCopy(snapshot) {
         : {
           title: "무난한 옷차림",
           text: `현재 ${snapshot.temp}°, 최고 ${snapshot.high}° / 최저 ${snapshot.low}°입니다. 일반적인 외출복으로 무난합니다.`,
+        };
+
+  return { rainGuide, outsideGuide, clothesGuide };
+}
+
+function buildRainSignalSummary(weather) {
+  const hourly = weather?.hourly;
+  if (!hourly?.time?.length) {
+    return {
+      hasSignal: false,
+      maxProbability: 0,
+      maxPrecipitation: 0,
+      startLabel: "",
+      endLabel: "",
+      text: "시간대별 강수 정보 확인 중",
+    };
+  }
+
+  const now = new Date();
+  const limit = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const slots = hourly.time
+    .map((time, index) => {
+      const date = new Date(time);
+      const probability = Number(hourly.precipitation_probability?.[index] ?? 0);
+      const precipitation = Number(hourly.precipitation?.[index] ?? 0);
+      return { date, probability, precipitation };
+    })
+    .filter((slot) =>
+      slot.date >= now &&
+      slot.date <= limit &&
+      (slot.probability >= 25 || slot.precipitation > 0)
+    );
+
+  if (!slots.length) {
+    return {
+      hasSignal: false,
+      maxProbability: 0,
+      maxPrecipitation: 0,
+      startLabel: "",
+      endLabel: "",
+      text: "향후 24시간 내 뚜렷한 강수 신호 없음",
+    };
+  }
+
+  const groups = slots.reduce((acc, slot) => {
+    const lastGroup = acc[acc.length - 1];
+    const previous = lastGroup?.[lastGroup.length - 1];
+    const isNear = previous && slot.date - previous.date <= 90 * 60 * 1000;
+    if (isNear) {
+      lastGroup.push(slot);
+    } else {
+      acc.push([slot]);
+    }
+    return acc;
+  }, []);
+
+  const scoreGroup = (group) =>
+    Math.max(...group.map((slot) => slot.probability)) * 10 +
+    Math.max(...group.map((slot) => slot.precipitation));
+  const bestGroup = groups.sort((a, b) => scoreGroup(b) - scoreGroup(a))[0];
+  const start = bestGroup[0].date;
+  const end = bestGroup[bestGroup.length - 1].date;
+  const maxProbability = Math.max(...bestGroup.map((slot) => slot.probability));
+  const maxPrecipitation = Math.max(...bestGroup.map((slot) => slot.precipitation));
+  const startLabel = formatRainTime(start);
+  const endLabel = formatRainTime(end);
+  const hasLightRain = maxProbability >= 60 && maxPrecipitation < 1;
+  const hasSignal = maxProbability >= 40 || maxPrecipitation > 0;
+
+  let text = "";
+  if (hasLightRain) {
+    text = `${startLabel} 전후 비 가능성은 있으나 강수는 약하거나 짧을 수 있음`;
+  } else if (bestGroup.length === 1) {
+    text = `${startLabel} 전후 강수 가능성 있음`;
+  } else {
+    text = `${formatRainRange(start, end)} 강수 가능성 있음`;
+  }
+
+  return {
+    hasSignal,
+    maxProbability,
+    maxPrecipitation,
+    startLabel,
+    endLabel,
+    text,
+  };
+}
+
+function renderWeather(dayIndex = 0) {
+  const snapshot = getWeatherSnapshot(dayIndex);
+  if (!snapshot) {
+    if (dayIndex === 1) {
+      setText("weatherDesc", "내일 날씨 정보를 아직 불러오지 못했습니다.");
+    }
+    return;
+  }
+
+  const section = $("weatherSection");
+  const label = dayIndex === 0 ? "오늘날씨" : "내일날씨";
+  const weatherSummary = section?.querySelector(".weather-summary");
+  const rainSignal = dayIndex === 0 ? buildRainSignalSummary(state.weather) : null;
+
+  if (weatherSummary) {
+    const heading = weatherSummary.querySelector("h3");
+    if (heading) heading.textContent = label;
+  }
+
+  const [title, desc] = weatherText(snapshot.weatherCode);
+  setText("locationName", state.city);
+  setText("currentTemp", formatTemperature(snapshot.temp));
+  setText("weatherDesc", `${title} 쨌 ${desc}`);
+  setText("highLow", `${formatTemperature(snapshot.high)} / ${formatTemperature(snapshot.low)}`);
+  setText("rainProb", `${dayIndex === 0 ? rainSignal.maxProbability : snapshot.rain}%`);
+
+  if (dayIndex === 0) {
+    setText("rainTime", rainSignal.text);
+    setText("humidity", `${snapshot.humidity}%`);
+    setText("wind", `${snapshot.wind} km/h`);
+  } else {
+    setText("rainTime", "내일 시간대 정보 미제공");
+    setText("humidity", "--");
+    setText("wind", "--");
+  }
+}
+
+function getGuideCopy(snapshot) {
+  const rainSignal = buildRainSignalSummary(state.weather);
+  const rainProbability = snapshot.dayIndex === 0 ? rainSignal.maxProbability : snapshot.rain;
+  const wind = typeof snapshot.wind === "string" ? 0 : snapshot.wind;
+  const rainText = rainSignal.text;
+
+  const rainGuide = rainSignal.hasSignal && rainSignal.maxPrecipitation < 1 && rainSignal.maxProbability >= 60
+    ? {
+      title: "비 가능성은 있으나 약할 수 있음",
+      text: `강수확률 ${rainProbability}%입니다. ${rainText}.`,
+    }
+    : rainProbability >= 60
+      ? {
+        title: "우산 필요 가능성 높음",
+        text: `강수확률 ${rainProbability}%입니다. ${rainText}.`,
+      }
+      : rainProbability >= 30
+        ? {
+          title: "접이식 우산 고려",
+          text: `강수확률 ${rainProbability}%입니다. ${rainText}.`,
+        }
+        : {
+          title: "비 가능성 낮음",
+          text: `강수확률 ${rainProbability}%입니다. ${rainText}.`,
+        };
+
+  const outsideGuide = (rainProbability >= 60 || wind >= 30)
+    ? {
+      title: "외근 일정은 여유 있게",
+      text: `바람 ${wind === 0 ? "정보 미제공" : `${wind}km/h`}, ${rainText}. 이동 시간을 넉넉하게 잡으세요.`,
+    }
+    : {
+      title: "외근 진행 무난",
+      text: `바람과 강수 신호가 모두 크지 않아 보입니다. ${rainText}.`,
+    };
+
+  const clothesGuide = snapshot.low <= 5
+    ? {
+      title: "아침 저녁 보온 필요",
+      text: `최저 ${formatTemperature(snapshot.low)}입니다. 겹쳐 입기와 보온이 좋습니다.`,
+    }
+    : snapshot.high >= 28
+      ? {
+        title: "여름 대비 필요",
+        text: `최고 ${formatTemperature(snapshot.high)}입니다. 가벼운 옷차림과 수분 보충을 권합니다.`,
+      }
+      : snapshot.high - snapshot.low >= 10
+        ? {
+          title: "일교차 주의",
+          text: `최고 ${formatTemperature(snapshot.high)}, 최저 ${formatTemperature(snapshot.low)}입니다. 얇게 겹쳐 입는 방식이 좋습니다.`,
+        }
+        : {
+          title: "무난한 옷차림",
+          text: `현재 ${formatTemperature(snapshot.temp)}, 최고 ${formatTemperature(snapshot.high)} / 최저 ${formatTemperature(snapshot.low)}입니다. 일반적인 외출복으로 충분합니다.`,
         };
 
   return { rainGuide, outsideGuide, clothesGuide };
@@ -975,6 +1160,288 @@ function getLawPrimaryContent(item) {
   return safeText(content, "상세 변경 내용은 원문에서 확인");
 }
 
+function getLawSummarySourceText(item) {
+  const source = getLawSummaryPayload(item);
+  if (!source) return "";
+
+  if (Array.isArray(source.value)) {
+    return source.value.map((entry) => safeText(entry, "")).filter(Boolean).join("\n");
+  }
+
+  if (source.value && typeof source.value === "object") {
+    const values = [
+      source.value.headline,
+      source.value.summary,
+      source.value.text,
+      source.value.content,
+      Array.isArray(source.value.bullets) ? source.value.bullets.join("\n") : "",
+      Array.isArray(source.value.items) ? source.value.items.join("\n") : "",
+    ].filter(Boolean);
+    return values.map((entry) => safeText(entry, "")).filter(Boolean).join("\n");
+  }
+
+  return safeText(source.value, "");
+}
+
+function getLawSummaryPayload(item) {
+  const candidates = [
+    { value: item?.ai_summary, source: "openai" },
+    { value: item?.practical_summary, source: "cache" },
+    { value: item?.aiSummary, source: "openai" },
+    { value: item?.practicalSummary, source: "cache" },
+  ];
+
+  return candidates.find((candidate) => safeText(candidate.value, ""));
+}
+
+function normalizeLawSummaryBullet(entry, index = 0) {
+  if (entry == null) return null;
+
+  if (typeof entry === "object" && !Array.isArray(entry)) {
+    const label = safeText(entry.label || entry.title || entry.headline || entry.key || "", "");
+    const text = safeText(entry.text || entry.summary || entry.content || entry.value || "", "");
+    if (label || text) {
+      return {
+        label: label || ["📝 핵심 변경", "🔁 변경 전후", "🏛️ 관련 조문", "✅ 실무 체크", "⚠️ 주의사항"][index] || "📝 핵심 변경",
+        text: text || label,
+      };
+    }
+  }
+
+  const normalized = shortenLawSummaryText(safeText(entry, ""), 120);
+  if (!normalized) return null;
+
+  const colonMatch = normalized.match(/^(.{1,20}?)[：:]\s*(.+)$/);
+  if (colonMatch) {
+    return {
+      label: colonMatch[1].trim(),
+      text: colonMatch[2].trim(),
+    };
+  }
+
+  return {
+    label: ["📝 핵심 변경", "🔁 변경 전후", "🏛️ 관련 조문", "✅ 실무 체크", "⚠️ 주의사항"][index] || "📝 핵심 변경",
+    text: normalized,
+  };
+}
+
+function normalizeLawSummaryBullets(entries) {
+  return (Array.isArray(entries) ? entries : [])
+    .map((entry, index) => normalizeLawSummaryBullet(entry, index))
+    .filter(Boolean)
+    .slice(0, 4);
+}
+
+function buildLawFallbackSummaryItems(item) {
+  const rawText = [
+    safeText(item?.change_reason, ""),
+    safeText(item?.amendment_text, ""),
+    safeText(item?.change_summary, ""),
+    safeText(item?.summary, ""),
+    safeText(item?.article, ""),
+  ].join(" ");
+
+  const items = [];
+  const nameChange = extractLawNameChange(rawText);
+  if (nameChange) {
+    items.push({ label: "🔁 변경 전후", text: nameChange });
+  }
+
+  const relatedText = shortenLawSummaryText(
+    safeText(item?.related_articles, "") ||
+      safeText(item?.article_references, "") ||
+      safeText(item?.change_reason, "") ||
+      safeText(item?.amendment_text, "") ||
+      safeText(item?.change_summary, "") ||
+      safeText(item?.summary, ""),
+    96
+  );
+  if (relatedText) {
+    items.push({ label: "🏛️ 관련 조문", text: relatedText });
+  }
+
+  const impactText = shortenLawSummaryText(
+    safeText(item?.impact, "") ||
+      safeText(item?.ministry, "") ||
+      safeText(item?.category, ""),
+    72
+  );
+  if (impactText) {
+    items.push({ label: "✅ 실무 체크", text: impactText });
+  }
+
+  const cautionText = shortenLawSummaryText(
+    safeText(item?.source_note, "") ||
+      safeText(item?.source_type, "") ||
+      safeText(item?.status_label, ""),
+    72
+  );
+  if (cautionText) {
+    items.push({ label: "⚠️ 주의사항", text: cautionText });
+  }
+
+  if (!items.length) {
+    items.push({ label: "📝 핵심 변경", text: "요약 준비 중" });
+  }
+
+  return items.slice(0, 4);
+}
+
+function getLawSummaryDisplay(item) {
+  const payload = getLawSummaryPayload(item);
+  const fallbackItems = buildLawFallbackSummaryItems(item);
+
+  if (!payload) {
+    return {
+      headline: "요약 준비 중",
+      bullets: fallbackItems,
+      confidence: "low",
+      source: "fallback",
+    };
+  }
+
+  const value = payload.value;
+  let headline = "";
+  let bullets = [];
+  let confidence = "medium";
+  let source = payload.source;
+
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    headline = shortenLawSummaryText(
+      safeText(value.headline || value.title || value.summary || value.text || value.content || "", ""),
+      84
+    );
+    bullets = normalizeLawSummaryBullets(
+      Array.isArray(value.bullets)
+        ? value.bullets
+        : Array.isArray(value.items)
+          ? value.items
+          : []
+    );
+    confidence = safeText(value.confidence || "", "").toLowerCase() || (source === "openai" ? "high" : "medium");
+    source = safeText(value.source || "", "") || source;
+  } else if (Array.isArray(value)) {
+    bullets = normalizeLawSummaryBullets(value);
+  } else {
+    const lines = splitLawSummaryText(safeText(value, ""));
+    headline = shortenLawSummaryText(lines.shift() || "", 84);
+    bullets = normalizeLawSummaryBullets(lines);
+  }
+
+  if (!headline) {
+    headline = shortenLawSummaryText(bullets[0]?.text || "", 84) || "핵심 변경 확인";
+  }
+
+  if (bullets.length < 2) {
+    const extraItems = fallbackItems.filter((itemEntry) => !bullets.some((entry) => entry.label === itemEntry.label));
+    bullets = bullets.concat(extraItems);
+  }
+
+  if (!bullets.length) {
+    bullets = fallbackItems;
+  }
+
+  return {
+    headline,
+    bullets: bullets.slice(0, 4),
+    confidence,
+    source,
+  };
+}
+
+function splitLawSummaryText(text) {
+  const normalized = String(text || "").replace(/\r\n/g, "\n");
+  const lines = normalized
+    .split(/\n+/)
+    .map((line) => line.replace(/^\s*[-*•·▪]\s*/, "").trim())
+    .filter(Boolean);
+
+  if (lines.length > 1) return lines.slice(0, 5);
+
+  return normalized
+    .split(/(?<=[.!?。])\s+|[;；]\s+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 5);
+}
+
+function shortenLawSummaryText(text, limit = 80) {
+  const normalized = String(text || "")
+    .replace(/\s+/g, " ")
+    .replace(/\s*([.;!?。])\s*/g, "$1 ")
+    .trim();
+
+  if (!normalized) return "";
+  if (normalized.length <= limit) return normalized;
+  return `${normalized.slice(0, limit - 1).trimEnd()}…`;
+}
+
+function extractLawNameChange(text) {
+  const value = String(text || "");
+  const patterns = [
+    /["“‘]([^"“”'‘’]{3,}?)["”’]\s*(?:를|을)?\s*각각\s*["“‘]([^"“”'‘’]{3,}?)["”’]\s*로\s*한다/,
+    /["“‘]([^"“”'‘’]{3,}?)["”’]\s*중\s*["“‘]([^"“”'‘’]{3,}?)["”’]\s*(?:를|을)?\s*["“‘]([^"“”'‘’]{3,}?)["”’]\s*로\s*한다/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = value.match(pattern);
+    if (!match) continue;
+
+    const from = match[1]?.trim();
+    const to = match[2]?.trim() || match[3]?.trim();
+    if (from && to && from !== to) return `${from} → ${to}`;
+  }
+
+  const quotes = Array.from(value.matchAll(/["“‘]([^"“”'‘’]{4,}?)["”’]/g))
+    .map((match) => match[1].trim())
+    .filter((segment) => segment && !/^(일부개정|개정이유 및 주요내용|본문 생략|생략)$/.test(segment));
+
+  if (quotes.length < 2) return "";
+
+  return `${quotes[0]} → ${quotes.find((segment) => segment !== quotes[0]) || quotes[1]}`;
+}
+
+function renderLawAiSummaryBlock(item) {
+  const summary = getLawSummaryDisplay(item);
+
+  return `
+    <section class="law-ai-summary-box law-summary-panel-inner">
+      <span class="law-ai-summary-label">📝 핵심 변경</span>
+      <p class="law-ai-summary-headline">${escapeHtml(summary.headline)}</p>
+      <div class="law-ai-summary-stack">
+        ${summary.bullets.map((entry) => `
+          <div class="law-ai-summary-item">
+            <div class="law-ai-summary-item-label">${escapeHtml(entry.label)}</div>
+            <p class="law-ai-summary-item-text">${escapeHtml(entry.text)}</p>
+          </div>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderLawOriginalPanel(item, index) {
+  const originalText = safeText(
+    item?.amendment_text ||
+      item?.["변경 내용"] ||
+      item?.["개정 조문"] ||
+      item?.article ||
+      item?.change_summary ||
+      item?.summary ||
+      "",
+    ""
+  );
+
+  if (!originalText) return "";
+
+  return `
+    <section class="law-change-summary-box law-original-panel-inner">
+      <span class="law-change-summary-title">원문</span>
+      <p class="law-original-text">${escapeHtml(originalText)}</p>
+    </section>
+  `;
+}
+
 function getLawDetailUrl(item) {
   return safeText(item.article_url || item.detail_url || item.source_url, "");
 }
@@ -1022,18 +1489,13 @@ function renderLawDetailCard(item, index = 0) {
         <div class="law-detail-summary-main">
           <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
           ${category ? `<span class="law-category">${escapeHtml(category)}</span>` : ""}
-          <div class="law-date-row law-date-row-preview">
-            ${renderLawPreviewDates(item)}
-          </div>
+          ${renderLawAiSummaryBlock(item)}
         </div>
         <span class="law-toggle-indicator" aria-hidden="true">열기</span>
       </summary>
       <div id="${escapeHtml(contentId)}" class="law-detail-body">
+        ${renderLawPrimaryContent(item, index)}
         ${renderLawExpandedDates(item)}
-        <div class="law-change-summary-box">
-          <span>변경 내용</span>
-          <p>${escapeHtml(getLawPrimaryContent(item))}</p>
-        </div>
         ${renderLawCardActions(item)}
       </div>
     </details>
@@ -1116,46 +1578,70 @@ function shouldShowLawContentMore(text) {
   return safeText(text, "").length > 140;
 }
 
-function renderLawCardActions(item) {
-  const url = getLawDetailUrl(item);
-  if (!url) return "";
-
+function renderLawCardActions(item, index) {
   return `
-    <div class="law-card-actions">
-      <a class="law-link-btn" href="${escapeHtml(url)}" target="_blank" rel="noreferrer">원문 보기</a>
+    <div class="law-card-actions law-card-toggle-actions">
+      <button type="button" class="law-section-btn" data-law-panel-target="${escapeHtml(`law-summary-panel-${index}`)}" aria-expanded="false">핵심변경</button>
+      <button type="button" class="law-section-btn" data-law-panel-target="${escapeHtml(`law-original-panel-${index}`)}" aria-expanded="false">원문 보기</button>
     </div>
   `;
 }
 
+function getLawKeywordText(item) {
+  return safeText(item.category || item.law_type || item.ministry || "", "");
+}
+
+function renderLawSummaryPanel(item, index) {
+  return `
+    <section id="${escapeHtml(`law-summary-panel-${index}`)}" class="law-card-panel law-summary-panel" hidden>
+      ${renderLawAiSummaryBlock(item)}
+    </section>
+  `;
+}
+
+function renderLawOriginalSection(item, index) {
+  const originalText = safeText(
+    item?.amendment_text ||
+      item?.["변경 내용"] ||
+      item?.["개정 조문"] ||
+      item?.article ||
+      item?.change_summary ||
+      item?.summary ||
+      "",
+    ""
+  );
+
+  if (!originalText) return "";
+
+  return `
+    <section id="${escapeHtml(`law-original-panel-${index}`)}" class="law-card-panel law-original-panel" hidden>
+      <div class="law-change-summary-box law-original-panel-inner">
+        <span class="law-change-summary-title">원문</span>
+        <p class="law-original-text">${escapeHtml(originalText)}</p>
+      </div>
+    </section>
+  `;
+}
+
 function renderLawDetailCard(item, index = 0) {
-  const contentId = `law-detail-content-${index}`;
-  const category = safeText(item.category, "");
-  const contentText = getLawPrimaryContent(item);
-  const showMore = shouldShowLawContentMore(contentText);
-  const contentClass = showMore ? "law-change-summary-text is-collapsed" : "law-change-summary-text";
-  const moreButton = showMore
-    ? `<button type="button" class="law-more-btn" data-target="${escapeHtml(contentId)}" aria-expanded="false">더보기</button>`
-    : "";
+  const keyword = getLawKeywordText(item);
 
   return `
     <details class="law-item law-item-changed law-detail-card">
-      <summary class="law-detail-summary" aria-controls="${escapeHtml(contentId)}">
+      <summary class="law-detail-summary" aria-controls="${escapeHtml(`law-card-body-${index}`)}">
         <div class="law-detail-summary-main">
           <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
-          ${category ? `<span class="law-category">${escapeHtml(category)}</span>` : ""}
+          ${keyword ? `<span class="law-keyword-chip">키워드 ${escapeHtml(keyword)}</span>` : ""}
           <div class="law-date-row law-date-row-preview">
             ${renderLawPreviewDates(item)}
           </div>
         </div>
         <span class="law-toggle-indicator" aria-hidden="true">열기</span>
       </summary>
-      <div id="${escapeHtml(contentId)}" class="law-detail-body">
-        <div class="law-change-summary-box">
-          <span>변경 내용</span>
-          <p class="${contentClass}">${escapeHtml(contentText)}</p>
-          ${moreButton}
-        </div>
-        ${renderLawCardActions(item)}
+      <div id="${escapeHtml(`law-card-body-${index}`)}" class="law-detail-body">
+        ${renderLawCardActions(item, index)}
+        ${renderLawSummaryPanel(item, index)}
+        ${renderLawOriginalSection(item, index)}
       </div>
     </details>
   `;
@@ -1305,8 +1791,8 @@ function renderLawDetailCard(item, index = 0) {
   const category = safeText(item.category, "");
 
   return `
-    <details class="law-item law-item-changed law-detail-card">
-      <summary class="law-detail-summary" aria-controls="${escapeHtml(`law-detail-content-${index}`)}">
+    <details class="law-item law-item-changed law-detail-card" open>
+      <summary class="law-detail-summary" aria-controls="${escapeHtml(`law-detail-body-${index}`)}">
         <div class="law-detail-summary-main">
           <span class="law-name">${safeHtml(item.law_name, "?뺣낫 ?놁쓬")}</span>
           ${category ? `<span class="law-category">${escapeHtml(category)}</span>` : ""}
@@ -1316,9 +1802,34 @@ function renderLawDetailCard(item, index = 0) {
         </div>
         <span class="law-toggle-indicator" aria-hidden="true">?닿린</span>
       </summary>
-      <div class="law-detail-body">
-        ${renderLawPrimaryContent(item, index)}
+      <div id="${escapeHtml(`law-detail-body-${index}`)}" class="law-detail-body">
+        ${renderLawAiSummaryBlock(item)}
+        ${renderLawOriginalFold(item, index)}
         ${renderLawCardActions(item)}
+      </div>
+    </details>
+  `;
+}
+
+function renderLawDetailCard(item, index = 0) {
+  const keyword = getLawKeywordText(item);
+
+  return `
+    <details class="law-item law-item-changed law-detail-card">
+      <summary class="law-detail-summary" aria-controls="${escapeHtml(`law-card-body-${index}`)}">
+        <div class="law-detail-summary-main">
+          <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
+          ${keyword ? `<span class="law-keyword-chip">키워드 ${escapeHtml(keyword)}</span>` : ""}
+          <div class="law-date-row law-date-row-preview">
+            ${renderLawPreviewDates(item)}
+          </div>
+        </div>
+        <span class="law-toggle-indicator" aria-hidden="true">열기</span>
+      </summary>
+      <div id="${escapeHtml(`law-card-body-${index}`)}" class="law-detail-body">
+        ${renderLawCardActions(item, index)}
+        ${renderLawSummaryPanel(item, index)}
+        ${renderLawOriginalSection(item, index)}
       </div>
     </details>
   `;
@@ -1777,12 +2288,27 @@ function loadNotificationSettings() {
 
 function toggleLawContentExpansion(targetId, button) {
   const container = document.getElementById(targetId);
-  const text = container?.querySelector(".law-change-summary-text");
-  if (!text || !button) return;
+  if (!container || !button) return;
 
-  const expanded = text.classList.toggle("is-collapsed");
-  button.setAttribute("aria-expanded", String(!expanded));
-  button.textContent = expanded ? "더보기" : "접기";
+  const text = container.querySelector(".law-change-summary-text");
+  if (text) {
+    const collapsed = text.classList.toggle("is-collapsed");
+    button.setAttribute("aria-expanded", String(!collapsed));
+    button.textContent = collapsed
+      ? button.dataset.collapsedLabel || "더보기"
+      : button.dataset.expandedLabel || "접기";
+    return;
+  }
+
+  const willOpen = container.hasAttribute("hidden");
+  container.hidden = !willOpen ? true : false;
+  if (willOpen) {
+    container.removeAttribute("hidden");
+  } else {
+    container.setAttribute("hidden", "");
+  }
+  button.setAttribute("aria-expanded", String(willOpen));
+  button.classList.toggle("is-active", willOpen);
 }
 
 function setupBottomNav() {
@@ -1838,10 +2364,32 @@ function bindNotificationEvents() {
     saveNotificationTime($("notificationTimeInput")?.value || DEFAULT_NOTIFICATION_TIME);
   });
   bindEvent(document, "click", (event) => {
-    const button = event.target.closest(".law-more-btn");
+    const button = event.target.closest(".law-more-btn, .law-section-btn");
     if (!button) return;
-    toggleLawContentExpansion(button.dataset.target, button);
+    toggleLawContentExpansion(button.dataset.lawPanelTarget || button.dataset.target, button);
   });
+  document.addEventListener("toggle", (event) => {
+    const details = event.target;
+    if (!(details instanceof HTMLDetailsElement) || !details.classList.contains("law-detail-card")) return;
+
+    details.classList.toggle("card-expanded", details.open);
+
+    const indicator = details.querySelector(".law-toggle-indicator");
+    if (indicator) {
+      indicator.textContent = details.open ? "닫기" : "열기";
+    }
+
+    if (details.open) return;
+
+    details.querySelectorAll(".law-card-panel").forEach((panel) => {
+      panel.hidden = true;
+    });
+
+    details.querySelectorAll(".law-section-btn").forEach((button) => {
+      button.setAttribute("aria-expanded", "false");
+      button.classList.remove("is-active");
+    });
+  }, true);
 }
 
 function bindEvents() {
@@ -1875,7 +2423,111 @@ function loadNotificationSettings() {
   renderNotificationTime();
 }
 
+function formatTemperature(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "-";
+  return `${numeric}℃`;
+}
+
+function renderWeather(dayIndex = 0) {
+  const snapshot = getWeatherSnapshot(dayIndex);
+  if (!snapshot) {
+    if (dayIndex === 1) {
+      setText("weatherDesc", "내일 날씨 정보를 아직 불러오지 못했습니다.");
+    }
+    return;
+  }
+
+  const section = $("weatherSection");
+  const label = dayIndex === 0 ? "오늘날씨" : "내일날씨";
+  const weatherSummary = section?.querySelector(".weather-summary");
+
+  if (weatherSummary) {
+    const heading = weatherSummary.querySelector("h3");
+    if (heading) heading.textContent = label;
+  }
+
+  const [title, desc] = weatherText(snapshot.weatherCode);
+  const rainSignal = dayIndex === 0 ? buildRainSignalSummary(state.weather) : null;
+
+  setText("locationName", state.city);
+  setText("currentTemp", formatTemperature(snapshot.temp));
+  setText("weatherDesc", `${title} · ${desc}`);
+  setText("highLow", `${formatTemperature(snapshot.high)} / ${formatTemperature(snapshot.low)}`);
+  setText("rainProb", `${dayIndex === 0 && rainSignal ? rainSignal.maxProbability : snapshot.rain}%`);
+
+  if (dayIndex === 0) {
+    setText("rainTime", rainSignal ? rainSignal.text : "시간대별 강수 정보 확인 중");
+    setText("humidity", `${snapshot.humidity}%`);
+    setText("wind", `${snapshot.wind} km/h`);
+  } else {
+    setText("rainTime", "내일 시간대 정보 미제공");
+    setText("humidity", "--");
+    setText("wind", "--");
+  }
+}
+
+function getGuideCopy(snapshot) {
+  const rainSignal = buildRainSignalSummary(state.weather);
+  const rainProbability = snapshot.dayIndex === 0 ? rainSignal.maxProbability : snapshot.rain;
+  const wind = typeof snapshot.wind === "string" ? 0 : snapshot.wind;
+  const rainText = rainSignal.text;
+
+  const rainGuide = rainSignal.hasSignal && rainSignal.maxPrecipitation < 1 && rainSignal.maxProbability >= 60
+    ? {
+      title: "비 가능성은 있으나 약할 수 있음",
+      text: `강수확률 ${rainProbability}%입니다. ${rainText}.`,
+    }
+    : rainProbability >= 60
+      ? {
+        title: "우산 필요 가능성 높음",
+        text: `강수확률 ${rainProbability}%입니다. ${rainText}.`,
+      }
+      : rainProbability >= 30
+        ? {
+          title: "접이식 우산 고려",
+          text: `강수확률 ${rainProbability}%입니다. ${rainText}.`,
+        }
+        : {
+          title: "비 가능성 낮음",
+          text: `강수확률 ${rainProbability}%입니다. ${rainText}.`,
+        };
+
+  const outsideGuide = (rainProbability >= 60 || wind >= 30)
+    ? {
+      title: "외근 일정은 여유 있게",
+      text: `바람 ${wind === 0 ? "정보 미제공" : `${wind}km/h`}, ${rainText}. 이동 시간을 넉넉하게 잡으세요.`,
+    }
+    : {
+      title: "외근 진행 무난",
+      text: `바람과 강수 신호가 모두 크지 않아 보입니다. ${rainText}.`,
+    };
+
+  const clothesGuide = snapshot.low <= 5
+    ? {
+      title: "아침 저녁 보온 필요",
+      text: `최저 ${formatTemperature(snapshot.low)}입니다. 겹쳐 입기와 보온이 좋습니다.`,
+    }
+    : snapshot.high >= 28
+      ? {
+        title: "여름 대비 필요",
+        text: `최고 ${formatTemperature(snapshot.high)}입니다. 가벼운 옷차림과 수분 보충을 권합니다.`,
+      }
+      : snapshot.high - snapshot.low >= 10
+        ? {
+          title: "일교차 주의",
+          text: `최고 ${formatTemperature(snapshot.high)}, 최저 ${formatTemperature(snapshot.low)}입니다. 얇게 겹쳐 입는 방식이 좋습니다.`,
+        }
+        : {
+          title: "무난한 옷차림",
+          text: `현재 ${formatTemperature(snapshot.temp)}, 최고 ${formatTemperature(snapshot.high)} / 최저 ${formatTemperature(snapshot.low)}입니다. 일반적인 외출복으로 충분합니다.`,
+        };
+
+  return { rainGuide, outsideGuide, clothesGuide };
+}
+
 async function init() {
+  applyAppTitle();
   updateDate();
   setupBottomNav();
   setupScheduleTimePicker();

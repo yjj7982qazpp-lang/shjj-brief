@@ -27,7 +27,10 @@ jobs:
       - name: Collect today effective law brief data
         env:
           LAW_OC: ${{ secrets.LAW_OC }}
-        run: python .github/scripts/collect_law_updates.py
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_SUMMARY_MODEL: ${{ vars.OPENAI_SUMMARY_MODEL }}
+          PYTHONUNBUFFERED: "1"
+        run: python -u .github/scripts/collect_law_updates.py
 
       - name: Inspect generated changes
         run: git status --short
@@ -36,11 +39,10 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add data/law_updates.json
+          git add data/law_updates.json data/law_summary_cache.json
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
             git commit -m "Auto update law brief data"
-            git pull --rebase origin "${GITHUB_REF_NAME}"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi

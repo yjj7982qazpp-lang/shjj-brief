@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import hashlib
 from html import unescape
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -14,6 +15,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parent
 
 WATCHED_PATH = SCRIPTS_DIR / "watched_laws.json"
 OUTPUT_PATH = ROOT / "data" / "law_updates.json"
+SUMMARY_CACHE_PATH = ROOT / "data" / "law_summary_cache.json"
 
 API_ENDPOINTS = [
     "https://www.law.go.kr/DRF/lawSearch.do",
@@ -28,6 +30,9 @@ API_RETRY_COUNT = 3
 API_RETRY_DELAY_SECONDS = 2
 API_DISPLAY = "100"
 MAX_ARTICLE_REFERENCES = 10
+MAX_AI_SUMMARIES_PER_RUN = 10
+OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
+DEFAULT_OPENAI_SUMMARY_MODEL = "gpt-4.1-mini"
 KST = timezone(timedelta(hours=9))
 NAME_CLEANUP_RE = re.compile(r"[\s\W_]+", re.UNICODE)
 HTML_TAG_RE = re.compile(r"<[^>]+>")
@@ -131,6 +136,357 @@ def safe_dict_list(value):
 
 def safe_dict(value):
     return value if isinstance(value, dict) else {}
+
+
+def normalize_summary_value(value):
+    if isinstance(value, dict):
+        return {
+            str(key): normalize_summary_value(value[key])
+            for key in sorted(value.keys(), key=lambda key: str(key))
+        }
+    if isinstance(value, list):
+        return [normalize_summary_value(entry) for entry in value]
+    return clean_text(value)
+
+
+def summary_key_payload(item):
+    related_articles = item.get("related_articles")
+    if not related_articles:
+        related_articles = item.get("changed_articles")
+    if not related_articles:
+        related_articles = item.get("article_text")
+
+    law_identifier = (
+        item.get("law_id")
+        or item.get("law_name")
+        or item.get("lawNm")
+        or item.get("law_name")
+    )
+
+    return {
+        "law_identifier": law_identifier,
+        "effective_date": item.get("effective_date", ""),
+        "promulgation_date": item.get("promulgation_date", ""),
+        "amendment_text": item.get("amendment_text", ""),
+        "change_reason": item.get("change_reason", ""),
+        "article_references": item.get("article_references", []),
+        "related_articles": related_articles or [],
+    }
+
+
+def build_summary_key(item):
+    payload = normalize_summary_value(summary_key_payload(item))
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def load_summary_cache():
+    cache = read_json(SUMMARY_CACHE_PATH, {})
+    if not isinstance(cache, dict):
+        return {"metadata": {}, "items": {}}
+
+    items = cache.get("items")
+    if isinstance(items, dict):
+        normalized_items = {str(key): value for key, value in items.items() if str(key)}
+    else:
+        normalized_items = {
+            str(key): value
+            for key, value in cache.items()
+            if key not in {"metadata", "items"} and str(key)
+        }
+
+    metadata = cache.get("metadata")
+    if not isinstance(metadata, dict):
+        metadata = {}
+
+    return {
+        "metadata": metadata,
+        "items": normalized_items,
+    }
+
+
+def save_summary_cache(cache, model, openai_call_count):
+    items = safe_dict(cache.get("items"))
+    payload = {
+        "metadata": {
+            "lastUpdated": datetime.now(KST).isoformat(timespec="seconds"),
+            "model": model,
+            "totalCount": len(items),
+            "openaiCallCount": openai_call_count,
+        },
+        "items": items,
+    }
+
+    SUMMARY_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SUMMARY_CACHE_PATH.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def normalize_ai_summary(summary, source):
+    data = safe_dict(summary)
+    headline = clean_text(data.get("headline")) or "요약 준비 중"
+    bullets_value = data.get("bullets")
+    bullets = []
+
+    if isinstance(bullets_value, list):
+        bullets = [clean_text(item) for item in bullets_value if clean_text(item)]
+    elif isinstance(bullets_value, str):
+        bullets = [clean_text(line) for line in bullets_value.splitlines() if clean_text(line)]
+
+    bullets = bullets[:4]
+    if not bullets:
+        text = clean_text(data.get("summary") or data.get("text") or data.get("content"))
+        if text:
+            bullets = [f"📝 핵심 변경: {text}"]
+        else:
+            bullets = ["📝 핵심 변경: 요약 준비 중"]
+
+    confidence = clean_text(data.get("confidence")).lower()
+    if confidence not in {"low", "medium", "high"}:
+        confidence = "low"
+
+    return {
+        "headline": headline,
+        "bullets": bullets,
+        "confidence": confidence,
+        "source": source,
+    }
+
+
+def extract_name_change_pair(text):
+    content = clean_text(text)
+    if not content:
+        return None
+
+    patterns = [
+        r'["“]([^"”]{2,80})["”]\s*(?:을|를|이|가|의)?\s*["“]([^"”]{2,80})["”]\s*(?:으로|로)\s*변경',
+        r'(["“]?[^"“”→]{2,80}["”]?)\s*→\s*(["“]?[^"“”→]{2,80}["”]?)',
+        r'["“]([^"”]{2,80})["”]\s*(?:은|는|이|가)\s*["“]([^"”]{2,80})["”]\s*(?:으로|로)\s*개정',
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, content)
+        if not match:
+            continue
+        left = clean_text(match.group(1))
+        right = clean_text(match.group(2))
+        if left and right and left != right:
+            return left, right
+    return None
+
+
+def summarize_reference_items(references):
+    parts = []
+    for reference in safe_dict_list(references):
+        if isinstance(reference, dict):
+            label = clean_text(reference.get("article_label") or reference.get("label"))
+            snippet = clean_text(reference.get("snippet") or reference.get("text"))
+            if label and snippet:
+                parts.append(f"{label}: {shorten_summary_text(snippet, 40)}")
+            elif label:
+                parts.append(label)
+            elif snippet:
+                parts.append(shorten_summary_text(snippet, 40))
+        else:
+            text = clean_text(reference)
+            if text:
+                parts.append(shorten_summary_text(text, 40))
+
+        if len(parts) >= 2:
+            break
+
+    return " / ".join(parts)
+
+
+def shorten_summary_text(text, limit=80):
+    normalized = re.sub(r"\s+", " ", clean_text(text))
+    if len(normalized) <= limit:
+        return normalized
+    return normalized[: max(limit - 1, 1)].rstrip() + "…"
+
+
+def extract_summary_highlights(item):
+    candidates = [
+        item.get("change_summary"),
+        item.get("summary"),
+        item.get("amendment_text"),
+        item.get("change_reason"),
+        item.get("article_text"),
+    ]
+    for candidate in candidates:
+        text = clean_text(candidate)
+        if text:
+            return text
+    return ""
+
+
+def build_fallback_ai_summary(item):
+    source_text = extract_summary_highlights(item)
+    change_pair = extract_name_change_pair(
+        " ".join(
+            clean_text(value)
+            for value in [
+                item.get("amendment_text"),
+                item.get("change_reason"),
+                item.get("article_text"),
+            ]
+            if clean_text(value)
+        )
+    )
+    reference_text = summarize_reference_items(item.get("article_references", []))
+    impact_text = clean_text(item.get("impact")) or "원문과 시행일을 함께 확인"
+
+    bullets = []
+    if source_text:
+        bullets.append(f"📝 핵심 변경: {shorten_summary_text(source_text, 70)}")
+    else:
+        bullets.append("📝 핵심 변경: 요약 준비 중")
+
+    if change_pair:
+        bullets.append(f"🔁 변경 전후: {change_pair[0]} → {change_pair[1]}")
+    else:
+        bullets.append("🔁 변경 전후: 원문에서 명칭/기준 변경 여부를 확인")
+
+    if reference_text:
+        bullets.append(f"🏛️ 관련 조문: {reference_text}")
+    else:
+        bullets.append("🏛️ 관련 조문: 관련 조문 확인 중")
+
+    bullets.append(f"✅ 실무 체크: {shorten_summary_text(impact_text, 60)}")
+
+    confidence = "low"
+    if item.get("amendment_text") and item.get("change_reason") and item.get("article_references"):
+        confidence = "medium"
+
+    headline = shorten_summary_text(clean_text(item.get("law_name")) or "법령 변경", 36)
+    return {
+        "headline": headline,
+        "bullets": bullets[:4],
+        "confidence": confidence,
+        "source": "fallback",
+    }
+
+
+def build_openai_summary_prompt(item):
+    payload = {
+        "law_name": clean_text(item.get("law_name")),
+        "effective_date": clean_text(item.get("effective_date")),
+        "promulgation_date": clean_text(item.get("promulgation_date")),
+        "revision_type": clean_text(item.get("revision_type")),
+        "change_summary": clean_text(item.get("change_summary")),
+        "amendment_text": clean_text(item.get("amendment_text")),
+        "change_reason": clean_text(item.get("change_reason")),
+        "article_references": item.get("article_references", []),
+        "article_text": clean_text(item.get("article_text")),
+        "impact": clean_text(item.get("impact")),
+    }
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+def call_openai_summary(api_key, model, item):
+    system_prompt = (
+        "너는 한국 법령 개정문을 모바일에서 읽기 쉬운 요약으로 바꾸는 편집자다. "
+        "반드시 JSON만 반환한다. "
+        "출력 키는 headline, bullets, confidence, source만 사용한다. "
+        "bullets는 2~4개이고 각 항목은 짧아야 한다. "
+        "명칭 변경, 기준 변경, 적용 대상 변경은 가능하면 A → B 형태로 적는다. "
+        "추상적인 표현보다 실제 변경 내용을 구체적으로 쓴다."
+    )
+    user_prompt = build_openai_summary_prompt(item)
+    payload = {
+        "model": model,
+        "temperature": 0.2,
+        "response_format": {"type": "json_object"},
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+    }
+    request = Request(
+        OPENAI_CHAT_COMPLETIONS_URL,
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    with urlopen(request, timeout=API_TIMEOUT) as response:
+        response_data = json.loads(response.read().decode("utf-8"))
+
+    choices = response_data.get("choices", []) if isinstance(response_data, dict) else []
+    if not choices:
+        return None
+
+    message = choices[0].get("message", {}) if isinstance(choices[0], dict) else {}
+    content = message.get("content", "")
+    if isinstance(content, list):
+        content = "".join(
+            part.get("text", "")
+            for part in content
+            if isinstance(part, dict)
+        )
+    if isinstance(content, dict):
+        parsed = content
+    else:
+        parsed = json.loads(content)
+
+    summary = normalize_ai_summary(parsed, "openai")
+    summary["source"] = "openai"
+    return summary
+
+
+def enrich_items_with_ai_summaries(items, summary_cache, api_key, model):
+    cache = safe_dict(summary_cache)
+    cache_items = safe_dict(cache.get("items"))
+    enriched_items = []
+    openai_call_count = 0
+    cache_hit_count = 0
+    fallback_count = 0
+
+    for item in items:
+        enriched = dict(item)
+        summary_key = build_summary_key(enriched)
+        enriched["summary_key"] = summary_key
+
+        cached_summary = safe_dict(cache_items.get(summary_key))
+        cached_source = clean_text(cached_summary.get("source")).lower()
+        if cached_summary and cached_source in {"openai", "cache"}:
+            enriched["ai_summary"] = normalize_ai_summary(cached_summary, "cache")
+            cache_hit_count += 1
+        elif api_key and openai_call_count < MAX_AI_SUMMARIES_PER_RUN:
+            openai_call_count += 1
+            try:
+                summary = call_openai_summary(api_key, model, enriched)
+            except Exception:
+                summary = None
+
+            if summary:
+                enriched["ai_summary"] = summary
+                cache_items[summary_key] = summary
+            else:
+                enriched["ai_summary"] = build_fallback_ai_summary(enriched)
+                fallback_count += 1
+        else:
+            enriched["ai_summary"] = build_fallback_ai_summary(enriched)
+            fallback_count += 1
+
+        enriched_items.append(enriched)
+
+    cache["metadata"] = {
+        "lastUpdated": datetime.now(KST).isoformat(timespec="seconds"),
+        "model": model,
+        "totalCount": len(cache_items),
+        "openaiCallCount": openai_call_count,
+        "cacheHitCount": cache_hit_count,
+        "fallbackCount": fallback_count,
+    }
+    cache["items"] = cache_items
+
+    return enriched_items, cache, openai_call_count
 
 
 def extract_items(data):
@@ -1351,6 +1707,9 @@ def main():
     today = today_kst()
     start_30 = today - timedelta(days=29)
     oc = os.environ.get("LAW_OC", "").strip()
+    openai_api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    summary_model = os.environ.get("OPENAI_SUMMARY_MODEL", DEFAULT_OPENAI_SUMMARY_MODEL).strip() or DEFAULT_OPENAI_SUMMARY_MODEL
+    summary_cache = load_summary_cache()
     watched_map = {
         normalize_name(law.get("name")): law
         for law in watched_laws
@@ -1378,6 +1737,7 @@ def main():
         )
         write_json(payload)
         print_collection_log(watched_laws, [], 0, 0, payload.get("metadata", {}).get("totalSavedCount", 0))
+        print("AI 요약 OpenAI 호출 횟수: 0")
         print("LAW_OC missing: wrote safe placeholder JSON.")
         return
 
@@ -1425,6 +1785,12 @@ def main():
 
     all_items = [item for item in dedupe(all_items) if item.get("law_name")]
     tracked_laws = build_tracked_laws(today, watched_laws, all_items, previous_data, failed_laws)
+    all_items, summary_cache, openai_call_count = enrich_items_with_ai_summaries(
+        all_items,
+        summary_cache,
+        openai_api_key,
+        summary_model,
+    )
 
     today_items = filter_window(all_items, today, today)
     last_7_days_items = filter_window(all_items, today - timedelta(days=6), today)
@@ -1462,6 +1828,7 @@ def main():
     )
 
     write_json(payload)
+    save_summary_cache(summary_cache, summary_model, openai_call_count)
     print_collection_log(
         watched_laws,
         per_law_logs,
@@ -1469,6 +1836,7 @@ def main():
         total_promulgated_count,
         payload.get("metadata", {}).get("totalSavedCount", len(payload.get("items", []))),
     )
+    print(f"AI 요약 OpenAI 호출 횟수: {openai_call_count}")
     print(
         "Watched laws collected: "
         f"today {payload['today_count']} / "
