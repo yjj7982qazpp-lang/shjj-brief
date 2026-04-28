@@ -67,3 +67,10 @@
 - 법령 데이터에 없는 변경 내용을 임의 생성하지 않는다.
 - 조항별 링크가 없으면 임의로 조항 링크를 만들지 않는다.
 - 기존 모바일 카드형 디자인 톤을 유지한다.
+
+
+## 법령 AI 요약/캐시
+- 법령 AI 요약은 `.github/scripts/collect_law_updates.py` 실행 시에만 생성한다.
+- `summary_key`는 법령명, 시행일, 공포일, 개정문, 변경 이유, 관련 조문을 정규화해 SHA256으로 만든다.
+- 같은 `summary_key`는 `data/law_summary_cache.json`의 기존 요약을 재사용한다.
+- `OPENAI_API_KEY`가 없어도 수집 전체가 실패하지 않도록 fallback 요약을 사용한다.
