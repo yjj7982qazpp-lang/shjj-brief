@@ -1,15 +1,15 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SHJJ Brief - Preview V4</title>
+  <title>SHJJ Brief</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="stylesheet" href="./styles.css" />
   <meta name="theme-color" content="#111827" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="법령 브리프" />
+  <meta name="apple-mobile-web-app-title" content="踰뺣졊 釉뚮━?? />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="apple-touch-icon" href="./icon-180.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
@@ -20,11 +20,14 @@
     <header class="topbar">
       <div>
         <p class="eyebrow">SHJJ PERSONAL ASSISTANT</p>
-        <h1>SHJJ Brief</h1>
+        <div class="app-title-row">
+          <h1 id="appTitleText">SHJJ Brief</h1>
+          <span id="appEnvBadge" class="app-env-badge" hidden></span>
+        </div>
       </div>
       <div class="topbar-actions">
-        <button id="weatherToggleBtn" class="top-action" data-active="false">내일날씨</button>
-        <button id="notifyBtn" class="top-action">알림</button>
+        <button id="weatherToggleBtn" class="top-action" data-active="false">?댁씪?좎뵪</button>
+        <button id="notifyBtn" class="top-action">?뚮┝</button>
       </div>
     </header>
 
@@ -32,7 +35,7 @@
       <section id="notificationSection" class="notification-top-wrap">
         <details id="notificationFold" class="notification-fold">
           <summary class="notification-pill">
-            <span class="notification-pill-label">알림</span>
+            <span class="notification-pill-label">?뚮┝</span>
             <strong id="notificationTimePill">09:20</strong>
           </summary>
 
@@ -40,22 +43,22 @@
             <div class="section-head notification-top-head">
               <div>
                 <p class="section-label">Notification</p>
-                <h3>매일 알림 시간</h3>
+                <h3>留ㅼ씪 ?뚮┝ ?쒓컙</h3>
               </div>
-              <span id="notificationTimeSummary" class="notification-time-badge">매일 09:20 알림 예정</span>
+              <span id="notificationTimeSummary" class="notification-time-badge">留ㅼ씪 09:20 ?뚮┝ ?덉젙</span>
             </div>
 
             <div class="notification-settings-body notification-settings-body-top">
               <label class="notification-time-field" for="notificationTimeInput">
-                <span>알림 희망 시간</span>
+                <span>?뚮┝ ?щ쭩 ?쒓컙</span>
                 <input id="notificationTimeInput" type="time" value="09:20" />
               </label>
-              <p id="notificationTimeCurrent" class="notification-settings-note">현재 저장된 알림 예정 시간: 매일 09:20</p>
+              <p id="notificationTimeCurrent" class="notification-settings-note">?꾩옱 ??λ맂 ?뚮┝ ?덉젙 ?쒓컙: 留ㅼ씪 09:20</p>
               <div class="notification-save-row">
                 <p id="notificationTimeHelper" class="notification-settings-note">
-                  실제 푸시 발송 연동 전까지는 앱에서 희망 시간만 저장합니다.
+                  ?ㅼ젣 ?몄떆 諛쒖넚 ?곕룞 ?꾧퉴吏???깆뿉???щ쭩 ?쒓컙留???ν빀?덈떎.
                 </p>
-                <button id="notificationTimeSaveBtn" type="button" class="notification-save-btn">저장</button>
+                <button id="notificationTimeSaveBtn" type="button" class="notification-save-btn">???/button>
               </div>
             </div>
           </div>
@@ -68,18 +71,18 @@
           <summary class="section-head weather-summary">
             <div>
               <p class="section-label">Weather</p>
-              <h3>오늘 날씨</h3>
-              <p id="todayDate" class="weather-summary-date">오늘 날짜</p>
+              <h3>?ㅻ뒛 ?좎뵪</h3>
+              <p id="todayDate" class="weather-summary-date">?ㅻ뒛 ?좎쭨</p>
             </div>
-            <button id="refreshWeatherBtn" type="button" class="ghost-btn">새로고침</button>
+            <button id="refreshWeatherBtn" type="button" class="ghost-btn">?덈줈怨좎묠</button>
           </summary>
 
           <div class="weather-fold-body">
             <div class="weather-main">
               <div>
-                <p id="locationName" class="location-name">서울</p>
-                <h2 id="currentTemp">--°</h2>
-                <p id="weatherDesc">날씨 정보를 불러오는 중</p>
+                <p id="locationName" class="location-name">?쒖슱</p>
+                <h2 id="currentTemp">--째</h2>
+                <p id="weatherDesc">?좎뵪 ?뺣낫瑜?遺덈윭?ㅻ뒗 以?/p>
               </div>
               <div class="weather-visual">
                 <div class="sun"></div>
@@ -89,23 +92,23 @@
 
             <div class="weather-metrics">
               <div>
-                <span>최고/최저</span>
-                <strong id="highLow">--° / --°</strong>
+                <span>理쒓퀬/理쒖?</span>
+                <strong id="highLow">--째 / --째</strong>
               </div>
               <div>
-                <span>강수확률</span>
+                <span>媛뺤닔?뺣쪧</span>
                 <strong id="rainProb">--%</strong>
               </div>
               <div class="rain-time-metric">
-                <span>강수 예상 시간</span>
-                <strong id="rainTime">확인 중</strong>
+                <span>媛뺤닔 ?덉긽 ?쒓컙</span>
+                <strong id="rainTime">?뺤씤 以?/strong>
               </div>
               <div>
-                <span>습도</span>
+                <span>?듬룄</span>
                 <strong id="humidity">--%</strong>
               </div>
               <div>
-                <span>바람</span>
+                <span>諛붾엺</span>
                 <strong id="wind">-- km/h</strong>
               </div>
             </div>
@@ -119,39 +122,39 @@
           <summary class="section-head fold-summary">
             <div>
               <p class="section-label">Daily Guide</p>
-              <h3>오늘 행동 가이드</h3>
-              <p class="fold-summary-text">강수, 외근, 옷차림 핵심만 먼저 보고 필요할 때 상세 확인</p>
+              <h3>?ㅻ뒛 ?됰룞 媛?대뱶</h3>
+              <p class="fold-summary-text">媛뺤닔, ?멸렐, ?룹감由??듭떖留?癒쇱? 蹂닿퀬 ?꾩슂?????곸꽭 ?뺤씤</p>
             </div>
             <div class="fold-summary-icons" aria-hidden="true">
-              <span class="guide-icon">☂</span>
-              <span class="guide-icon">外</span>
-              <span class="guide-icon">服</span>
+              <span class="guide-icon">??/span>
+              <span class="guide-icon">鸚?/span>
+              <span class="guide-icon">??/span>
             </div>
           </summary>
 
           <div class="fold-body">
             <div class="guide-grid">
               <article class="guide-item">
-                <div class="guide-icon">☂</div>
+                <div class="guide-icon">??/div>
                 <div>
-                  <strong id="rainGuideTitle">강수 확인 중</strong>
-                  <p id="rainGuideText">오늘 비 가능성을 확인하고 있습니다.</p>
+                  <strong id="rainGuideTitle">媛뺤닔 ?뺤씤 以?/strong>
+                  <p id="rainGuideText">?ㅻ뒛 鍮?媛?μ꽦???뺤씤?섍퀬 ?덉뒿?덈떎.</p>
                 </div>
               </article>
 
               <article class="guide-item">
-                <div class="guide-icon">外</div>
+                <div class="guide-icon">鸚?/div>
                 <div>
-                  <strong id="outsideGuideTitle">외근 판단</strong>
-                  <p id="outsideGuideText">외근 가능 여부를 확인하고 있습니다.</p>
+                  <strong id="outsideGuideTitle">?멸렐 ?먮떒</strong>
+                  <p id="outsideGuideText">?멸렐 媛???щ?瑜??뺤씤?섍퀬 ?덉뒿?덈떎.</p>
                 </div>
               </article>
 
               <article class="guide-item">
-                <div class="guide-icon">服</div>
+                <div class="guide-icon">??/div>
                 <div>
-                  <strong id="clothesGuideTitle">옷차림</strong>
-                  <p id="clothesGuideText">기온 기준 옷차림을 확인하고 있습니다.</p>
+                  <strong id="clothesGuideTitle">?룹감由?/strong>
+                  <p id="clothesGuideText">湲곗삩 湲곗? ?룹감由쇱쓣 ?뺤씤?섍퀬 ?덉뒿?덈떎.</p>
                 </div>
               </article>
             </div>
@@ -165,38 +168,38 @@
           <summary class="section-head fold-summary">
             <div>
               <p class="section-label">Calendar</p>
-              <h3>오늘 일정</h3>
-              <p class="fold-summary-text">필요할 때 펼쳐서 일정 입력과 목록 확인</p>
+              <h3>?ㅻ뒛 ?쇱젙</h3>
+              <p class="fold-summary-text">?꾩슂?????쇱퀜???쇱젙 ?낅젰怨?紐⑸줉 ?뺤씤</p>
             </div>
-            <span id="scheduleCount" class="status-chip">0건</span>
+            <span id="scheduleCount" class="status-chip">0嫄?/span>
           </summary>
 
           <div class="fold-body">
             <div class="schedule-composer">
               <div class="selected-time-card">
-                <span>선택 시간</span>
+                <span>?좏깮 ?쒓컙</span>
                 <strong id="selectedScheduleTime">09:00</strong>
               </div>
 
               <div class="time-select-row">
                 <label>
-                  <span>시</span>
+                  <span>??/span>
                   <select id="scheduleHourSelect"></select>
                 </label>
                 <label>
-                  <span>분</span>
+                  <span>遺?/span>
                   <select id="scheduleMinuteSelect"></select>
                 </label>
               </div>
 
               <div class="quick-time-wrap">
-                <p>자주 쓰는 시간</p>
+                <p>?먯＜ ?곕뒗 ?쒓컙</p>
                 <div id="quickTimeGrid" class="quick-time-grid"></div>
               </div>
 
               <div class="title-row">
-                <input id="scheduleTitleInput" placeholder="일정명 예: 건축주 미팅, 현장 확인" />
-                <button id="addScheduleBtn">추가</button>
+                <input id="scheduleTitleInput" placeholder="?쇱젙紐??? 嫄댁텞二?誘명똿, ?꾩옣 ?뺤씤" />
+                <button id="addScheduleBtn">異붽?</button>
               </div>
             </div>
 
@@ -210,51 +213,51 @@
         <div class="section-head">
           <div>
             <p class="section-label">Law Brief</p>
-            <h3>오늘 시행 법령 변경</h3>
+            <h3>?ㅻ뒛 ?쒗뻾 踰뺣졊 蹂寃?/h3>
           </div>
-          <span id="lawBasisChip" class="status-chip">시행일 기준</span>
+          <span id="lawBasisChip" class="status-chip">?쒗뻾??湲곗?</span>
         </div>
 
         <div class="law-brief-summary-card">
         <div class="law-intro">
-          <span id="lawMetaSummary">갱신 정보 -</span>
-          <p id="lawNotice">법령 변경 정보를 불러오는 중입니다.</p>
-          <span id="lawCheckedAt">확인일: -</span>
+          <span id="lawMetaSummary">媛깆떊 ?뺣낫 -</span>
+          <p id="lawNotice">踰뺣졊 蹂寃??뺣낫瑜?遺덈윭?ㅻ뒗 以묒엯?덈떎.</p>
+          <span id="lawCheckedAt">?뺤씤?? -</span>
         </div>
 
         <div class="law-action-box">
-          <strong id="lawActionTitle">오늘 확인 포인트</strong>
-          <p id="lawActionText">변경 여부를 확인한 뒤 필요한 법령 항목을 먼저 검토하세요.</p>
+          <strong id="lawActionTitle">?ㅻ뒛 ?뺤씤 ?ъ씤??/strong>
+          <p id="lawActionText">蹂寃??щ?瑜??뺤씤?????꾩슂??踰뺣졊 ??ぉ??癒쇱? 寃?좏븯?몄슂.</p>
         </div>
 
         <div class="tracked-law-box compact">
           <div class="tracked-law-head">
-            <strong>관심 법령 최신 업데이트 현황</strong>
-            <span id="trackedLawCount">전체 0건</span>
+            <strong>愿??踰뺣졊 理쒖떊 ?낅뜲?댄듃 ?꾪솴</strong>
+            <span id="trackedLawCount">?꾩껜 0嫄?/span>
           </div>
-          <p id="trackedLawUpdatedAt" class="tracked-law-meta">마지막 갱신 -</p>
+          <p id="trackedLawUpdatedAt" class="tracked-law-meta">留덉?留?媛깆떊 -</p>
         </div>
 
         <div class="law-summary-grid">
           <div>
-            <span>오늘</span>
-            <strong id="lawTodayCount">0건</strong>
+            <span>?ㅻ뒛</span>
+            <strong id="lawTodayCount">0嫄?/strong>
           </div>
           <div>
-            <span>최근 7일</span>
-            <strong id="lawWeekCount">0건</strong>
+            <span>理쒓렐 7??/span>
+            <strong id="lawWeekCount">0嫄?/strong>
           </div>
           <div>
-            <span>최근 30일</span>
-            <strong id="lawMonthCount">0건</strong>
+            <span>理쒓렐 30??/span>
+            <strong id="lawMonthCount">0嫄?/strong>
           </div>
         </div>
         </div>
 
         <div class="law-tabs">
-          <button class="law-tab-btn active" data-law-tab="today">오늘</button>
-          <button class="law-tab-btn" data-law-tab="week">7일</button>
-          <button class="law-tab-btn" data-law-tab="month">30일</button>
+          <button class="law-tab-btn active" data-law-tab="today">?ㅻ뒛</button>
+          <button class="law-tab-btn" data-law-tab="week">7??/button>
+          <button class="law-tab-btn" data-law-tab="month">30??/button>
         </div>
 
         <div id="lawPanelToday" class="law-panel active">
@@ -275,30 +278,30 @@
         <div class="section-head">
           <div>
             <p class="section-label">Settings</p>
-            <h3>앱 설정</h3>
+            <h3>???ㅼ젙</h3>
           </div>
         </div>
 
         <div class="settings-list">
           <div class="settings-row">
-            <span>기본 지역</span>
-            <strong id="settingCityName">서울</strong>
+            <span>湲곕낯 吏??/span>
+            <strong id="settingCityName">?쒖슱</strong>
           </div>
           <details class="notification-settings-card" hidden>
             <summary class="notification-settings-summary">
               <div>
-                <span class="notification-settings-label">알림 설정</span>
-                <strong>매일 알림 시간</strong>
+                <span class="notification-settings-label">?뚮┝ ?ㅼ젙</span>
+                <strong>留ㅼ씪 ?뚮┝ ?쒓컙</strong>
               </div>
-              <span id="notificationTimeSummary" class="notification-time-badge">매일 09:20 알림 예정</span>
+              <span id="notificationTimeSummary" class="notification-time-badge">留ㅼ씪 09:20 ?뚮┝ ?덉젙</span>
             </summary>
             <div class="notification-settings-body">
               <label class="notification-time-field" for="notificationTimeInput">
-                <span>알림 희망 시간</span>
+                <span>?뚮┝ ?щ쭩 ?쒓컙</span>
                 <input id="notificationTimeInput" type="time" value="09:20" />
               </label>
               <p id="notificationTimeHelper" class="notification-settings-note">
-                실제 푸시 발송 연동 전까지는 앱에서 희망 시간만 저장합니다.
+                ?ㅼ젣 ?몄떆 諛쒖넚 ?곕룞 ?꾧퉴吏???깆뿉???щ쭩 ?쒓컙留???ν빀?덈떎.
               </p>
             </div>
           </details>
@@ -306,14 +309,14 @@
       </section>
 
       <p id="notificationTestHint" class="notification-test-hint">
-        테스트 알림은 즉시 확인용입니다. 아래 버튼은 저장된 예정 시간과 별도로 바로 알림을 띄웁니다.
+        ?뚯뒪???뚮┝? 利됱떆 ?뺤씤?⑹엯?덈떎. ?꾨옒 踰꾪듉? ??λ맂 ?덉젙 ?쒓컙怨?蹂꾨룄濡?諛붾줈 ?뚮┝???꾩썎?덈떎.
       </p>
       <button id="testNotifyBtn" class="notify-test-btn">
-        오늘 브리핑 테스트 알림 보내기
+        ?ㅻ뒛 釉뚮━???뚯뒪???뚮┝ 蹂대궡湲?
       </button>
 
       <footer>
-        <p>SHJJ Brief v0.7 · iOS Home App</p>
+        <p>SHJJ Brief v0.7 쨌 iOS Home App</p>
       </footer>
     </main>
   </div>
@@ -321,23 +324,24 @@
   <!-- Navigation -->
   <nav class="bottom-nav">
     <button class="bottom-nav-btn active" data-target="weatherSection">
-      <span>⌂</span>
-      <strong>홈</strong>
+      <span>??/span>
+      <strong>??/strong>
     </button>
     <button class="bottom-nav-btn" data-target="guideSection">
-      <span>☂</span>
-      <strong>가이드</strong>
+      <span>??/span>
+      <strong>媛?대뱶</strong>
     </button>
     <button class="bottom-nav-btn" data-target="scheduleSection">
-      <span>◷</span>
-      <strong>일정</strong>
+      <span>??/span>
+      <strong>?쇱젙</strong>
     </button>
     <button class="bottom-nav-btn" data-target="workSection">
-      <span>▣</span>
-      <strong>업무</strong>
+      <span>??/span>
+      <strong>?낅Т</strong>
     </button>
   </nav>
   <div id="notificationToast" class="notification-toast" role="status" aria-live="polite"></div>
   <script src="./app.js"></script>
 </body>
 </html>
+

@@ -9,6 +9,12 @@
 const $ = (id) => document.getElementById(id);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
+const APP_VERSION = "0.1";
+const APP_TITLE = "SHJJ Brief";
+const PREVIEW_HOSTNAMES = ["shjj-brief-preview", "preview"];
+const PRODUCTION_HOSTNAMES = ["shjj-brief", "www.shjj-brief.com"];
+const APP_PREVIEW_QUERY_FLAGS = ["preview", "dev", "test"];
+
 const STORAGE_KEYS = {
   schedules: "shjj_brief_schedules_v4",
   notificationTime: "shjj_notification_time",
@@ -221,6 +227,48 @@ function activateButtonGroup(buttons, activeButton) {
 
 function weatherText(code) {
   return weatherMap[code] || [WEATHER_COPY.fallbackTitle, WEATHER_COPY.fallbackDesc];
+}
+
+function getAppEnv() {
+  const hostname = (window.location.hostname || "").toLowerCase();
+  const searchParams = new URLSearchParams(window.location.search);
+  const hasPreviewFlag = APP_PREVIEW_QUERY_FLAGS.some((flag) => searchParams.has(flag));
+
+  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
+    return "preview";
+  }
+
+  if (hostname.includes("preview") || hasPreviewFlag) {
+    return "preview";
+  }
+
+  if (PRODUCTION_HOSTNAMES.some((needle) => needle && hostname.includes(needle))) {
+    return "production";
+  }
+
+  if (PREVIEW_HOSTNAMES.some((needle) => needle && hostname.includes(needle))) {
+    return "preview";
+  }
+
+  return "production";
+}
+
+function getAppDisplayTitle() {
+  return getAppEnv() === "preview" ? `${APP_TITLE} Preview v${APP_VERSION}` : APP_TITLE;
+}
+
+function applyAppBranding() {
+  const appEnv = getAppEnv();
+  const displayTitle = getAppDisplayTitle();
+  document.title = displayTitle;
+  setText("appTitleText", APP_TITLE);
+
+  const badge = $("appEnvBadge");
+  if (badge) {
+    const isPreview = appEnv === "preview";
+    badge.hidden = !isPreview;
+    badge.textContent = isPreview ? `Preview v${APP_VERSION}` : "";
+  }
 }
 
 function formatRainTime(date) {
@@ -1806,6 +1854,7 @@ function loadNotificationSettings() {
 }
 
 async function init() {
+  applyAppBranding();
   updateDate();
   setupBottomNav();
   setupScheduleTimePicker();
