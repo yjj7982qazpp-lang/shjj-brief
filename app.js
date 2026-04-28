@@ -10,10 +10,15 @@ const $ = (id) => document.getElementById(id);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
 const APP_VERSION = "0.1";
-const APP_TITLE = "SHJJ Brief";
-const PREVIEW_HOSTNAMES = ["shjj-brief-preview", "preview"];
-const PRODUCTION_HOSTNAMES = ["shjj-brief", "www.shjj-brief.com"];
-const APP_PREVIEW_QUERY_FLAGS = ["preview", "dev", "test"];
+const PRODUCTION_HOSTNAMES = [
+  "shjj-brief.pages.dev",
+  "www.shjj-brief.com",
+  "shjj-brief.com",
+  "brief.shjj.co.kr",
+];
+const PREVIEW_HOSTNAMES = [
+  "preview.shjj-brief.pages.dev",
+];
 
 const STORAGE_KEYS = {
   schedules: "shjj_brief_schedules_v4",
@@ -229,46 +234,68 @@ function weatherText(code) {
   return weatherMap[code] || [WEATHER_COPY.fallbackTitle, WEATHER_COPY.fallbackDesc];
 }
 
+function normalizeHostname(hostname) {
+  return String(hostname || "").trim().toLowerCase();
+}
+
+function isLocalHostname(hostname) {
+  return ["localhost", "127.0.0.1", "::1"].includes(hostname);
+}
+
+function isProductionHostname(hostname) {
+  return PRODUCTION_HOSTNAMES.includes(hostname);
+}
+
+function isPreviewHostname(hostname) {
+  if (PREVIEW_HOSTNAMES.includes(hostname)) return true;
+
+  return (
+    hostname.endsWith(".pages.dev") &&
+    (
+      hostname.startsWith("preview-") ||
+      hostname.startsWith("preview.") ||
+      hostname.includes("preview-ui-") ||
+      hostname.includes("ui-cleanup")
+    )
+  );
+}
+
 function getAppEnv() {
-  const hostname = (window.location.hostname || "").toLowerCase();
-  const searchParams = new URLSearchParams(window.location.search);
-  const hasPreviewFlag = APP_PREVIEW_QUERY_FLAGS.some((flag) => searchParams.has(flag));
+  const hostname = normalizeHostname(window.location.hostname);
 
-  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
-    return "preview";
-  }
-
-  if (hostname.includes("preview") || hasPreviewFlag) {
-    return "preview";
-  }
-
-  if (PRODUCTION_HOSTNAMES.some((needle) => needle && hostname.includes(needle))) {
+  if (isProductionHostname(hostname)) {
     return "production";
   }
 
-  if (PREVIEW_HOSTNAMES.some((needle) => needle && hostname.includes(needle))) {
+  if (isLocalHostname(hostname)) {
+    return "preview";
+  }
+
+  if (isPreviewHostname(hostname)) {
     return "preview";
   }
 
   return "production";
 }
 
-function getAppDisplayTitle() {
-  return getAppEnv() === "preview" ? `${APP_TITLE} Preview v${APP_VERSION}` : APP_TITLE;
-}
+const APP_ENV = getAppEnv();
+const IS_PREVIEW = APP_ENV === "preview";
+const APP_TITLE = IS_PREVIEW ? `SHJJ Brief Preview v${APP_VERSION}` : "SHJJ Brief";
 
-function applyAppBranding() {
-  const appEnv = getAppEnv();
-  const displayTitle = getAppDisplayTitle();
-  document.title = displayTitle;
-  setText("appTitleText", APP_TITLE);
+function applyAppTitle() {
+  document.title = APP_TITLE;
 
-  const badge = $("appEnvBadge");
-  if (badge) {
-    const isPreview = appEnv === "preview";
-    badge.hidden = !isPreview;
-    badge.textContent = isPreview ? `Preview v${APP_VERSION}` : "";
-  }
+  const titleTargets = document.querySelectorAll("[data-app-title]");
+  titleTargets.forEach((target) => {
+    target.textContent = APP_TITLE;
+  });
+
+  const previewBadges = document.querySelectorAll("[data-preview-badge]");
+  previewBadges.forEach((badge) => {
+    badge.hidden = !IS_PREVIEW;
+    badge.style.display = IS_PREVIEW ? "" : "none";
+    badge.textContent = IS_PREVIEW ? `Preview v${APP_VERSION}` : "";
+  });
 }
 
 function formatRainTime(date) {
@@ -953,6 +980,179 @@ function getLawPrimaryContent(item) {
   return safeText(content, "상세 변경 내용은 원문에서 확인");
 }
 
+function getLawSummarySourceText(item) {
+  const candidates = [
+    item.practical_summary,
+    item.ai_summary,
+    item.practicalSummary,
+    item.aiSummary,
+  ];
+
+  const source = candidates.find((value) => safeText(value, ""));
+  if (!source) return "";
+
+  if (Array.isArray(source)) {
+    return source.map((entry) => safeText(entry, "")).filter(Boolean).join("\n");
+  }
+
+  if (source && typeof source === "object") {
+    const values = [
+      source.summary,
+      source.text,
+      source.content,
+      Array.isArray(source.bullets) ? source.bullets.join("\n") : "",
+      Array.isArray(source.items) ? source.items.join("\n") : "",
+    ].filter(Boolean);
+    return values.join("\n");
+  }
+
+  return safeText(source, "");
+}
+
+function splitLawSummaryText(text) {
+  const normalized = String(text || "").replace(/\r\n/g, "\n");
+  const lines = normalized
+    .split(/\n+/)
+    .map((line) => line.replace(/^\s*[-*•·▪]\s*/, "").trim())
+    .filter(Boolean);
+
+  if (lines.length > 1) return lines.slice(0, 5);
+
+  return normalized
+    .split(/(?<=[.!?。])\s+|[;；]\s+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 5);
+}
+
+function shortenLawSummaryText(text, limit = 80) {
+  const normalized = String(text || "")
+    .replace(/\s+/g, " ")
+    .replace(/\s*([.;!?。])\s*/g, "$1 ")
+    .trim();
+
+  if (!normalized) return "";
+  if (normalized.length <= limit) return normalized;
+  return `${normalized.slice(0, limit - 1).trimEnd()}…`;
+}
+
+function extractLawNameChange(text) {
+  const value = String(text || "");
+  const patterns = [
+    /["“‘]([^"“”'‘’]{3,}?)["”’]\s*(?:를|을)?\s*각각\s*["“‘]([^"“”'‘’]{3,}?)["”’]\s*로\s*한다/,
+    /["“‘]([^"“”'‘’]{3,}?)["”’]\s*중\s*["“‘]([^"“”'‘’]{3,}?)["”’]\s*(?:를|을)?\s*["“‘]([^"“”'‘’]{3,}?)["”’]\s*로\s*한다/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = value.match(pattern);
+    if (!match) continue;
+
+    const from = match[1]?.trim();
+    const to = match[2]?.trim() || match[3]?.trim();
+    if (from && to && from !== to) return `${from} → ${to}`;
+  }
+
+  const quotes = Array.from(value.matchAll(/["“‘]([^"“”'‘’]{4,}?)["”’]/g))
+    .map((match) => match[1].trim())
+    .filter((segment) => segment && !/^(일부개정|개정이유 및 주요내용|본문 생략|생략)$/.test(segment));
+
+  if (quotes.length < 2) return "";
+
+  return `${quotes[0]} → ${quotes.find((segment) => segment !== quotes[0]) || quotes[1]}`;
+}
+
+function buildLawSummaryItems(item) {
+  const directSummaryText = getLawSummarySourceText(item);
+  const items = [];
+
+  if (directSummaryText) {
+    const lines = splitLawSummaryText(directSummaryText);
+    if (lines.length) {
+      lines.slice(0, 5).forEach((line, index) => {
+        items.push({
+          label: index === 0 ? "📝 AI 요약" : "🔹",
+          text: shortenLawSummaryText(line, 96),
+        });
+      });
+    }
+  }
+
+  const rawText = [
+    safeText(item.change_reason, ""),
+    safeText(item.amendment_text, ""),
+    safeText(item.change_summary, ""),
+    safeText(item.summary, ""),
+  ].join(" ");
+
+  if (!items.length) {
+    const nameChange = extractLawNameChange(rawText);
+    if (nameChange) {
+      items.push({ label: "🔁 명칭 변경", text: nameChange });
+    }
+  }
+
+  if (!items.some((entry) => entry.label === "🏛️ 관련 조문")) {
+    const relatedText = shortenLawSummaryText(
+      safeText(item.change_reason, "") ||
+        safeText(item.amendment_text, "") ||
+        safeText(item.change_summary, "") ||
+        safeText(item.summary, ""),
+      96
+    );
+    if (relatedText) {
+      items.push({ label: "🏛️ 관련 조문", text: relatedText });
+    }
+  }
+
+  if (!items.some((entry) => entry.label === "✅ 실무 체크")) {
+    const impactText = shortenLawSummaryText(
+      safeText(item.impact, "") ||
+        safeText(item.ministry, "") ||
+        safeText(item.category, ""),
+      72
+    );
+    if (impactText) {
+      items.push({ label: "✅ 실무 체크", text: impactText });
+    }
+  }
+
+  if (!items.some((entry) => entry.label === "⚠️ 주의사항")) {
+    const cautionText = shortenLawSummaryText(
+      safeText(item.source_note, "") ||
+        safeText(item.source_type, "") ||
+        safeText(item.status_label, ""),
+      72
+    );
+    if (cautionText) {
+      items.push({ label: "⚠️ 주의사항", text: cautionText });
+    }
+  }
+
+  if (!items.length) {
+    items.push({ label: "📝 요약", text: "요약 준비 중" });
+  }
+
+  return items.slice(0, 5);
+}
+
+function renderLawAiSummaryBlock(item) {
+  const summaryItems = buildLawSummaryItems(item);
+
+  return `
+    <div class="law-ai-summary-box">
+      <span class="law-ai-summary-label">📝 핵심 변경 요약</span>
+      <ul class="law-ai-summary-list">
+        ${summaryItems.map((entry) => `
+          <li>
+            <strong>${escapeHtml(entry.label)}</strong>
+            <span>${escapeHtml(entry.text)}</span>
+          </li>
+        `).join("")}
+      </ul>
+    </div>
+  `;
+}
+
 function getLawDetailUrl(item) {
   return safeText(item.article_url || item.detail_url || item.source_url, "");
 }
@@ -1000,18 +1200,13 @@ function renderLawDetailCard(item, index = 0) {
         <div class="law-detail-summary-main">
           <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
           ${category ? `<span class="law-category">${escapeHtml(category)}</span>` : ""}
-          <div class="law-date-row law-date-row-preview">
-            ${renderLawPreviewDates(item)}
-          </div>
+          ${renderLawAiSummaryBlock(item)}
         </div>
         <span class="law-toggle-indicator" aria-hidden="true">열기</span>
       </summary>
       <div id="${escapeHtml(contentId)}" class="law-detail-body">
+        ${renderLawPrimaryContent(item, index)}
         ${renderLawExpandedDates(item)}
-        <div class="law-change-summary-box">
-          <span>변경 내용</span>
-          <p>${escapeHtml(getLawPrimaryContent(item))}</p>
-        </div>
         ${renderLawCardActions(item)}
       </div>
     </details>
@@ -1854,7 +2049,7 @@ function loadNotificationSettings() {
 }
 
 async function init() {
-  applyAppBranding();
+  applyAppTitle();
   updateDate();
   setupBottomNav();
   setupScheduleTimePicker();
