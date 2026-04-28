@@ -9,6 +9,76 @@
 const $ = (id) => document.getElementById(id);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
+const APP_VERSION = "0.1";
+const PRODUCTION_HOSTNAMES = [
+  "shjj-brief.pages.dev",
+  "www.shjj-brief.com",
+  "shjj-brief.com",
+  "brief.shjj.co.kr",
+];
+const PREVIEW_HOSTNAMES = [
+  "preview.shjj-brief.pages.dev",
+];
+
+function normalizeHostname(hostname) {
+  return String(hostname || "").trim().toLowerCase();
+}
+
+function isLocalHostname(hostname) {
+  return ["localhost", "127.0.0.1", "::1"].includes(hostname);
+}
+
+function isProductionHostname(hostname) {
+  return PRODUCTION_HOSTNAMES.includes(hostname);
+}
+
+function isPreviewHostname(hostname) {
+  if (PREVIEW_HOSTNAMES.includes(hostname)) return true;
+
+  return (
+    hostname.endsWith(".pages.dev") &&
+    (
+      hostname.startsWith("preview-") ||
+      hostname.startsWith("preview.")
+    )
+  );
+}
+
+function getAppEnv() {
+  const hostname = normalizeHostname(window.location.hostname);
+
+  if (isProductionHostname(hostname)) return "production";
+  if (isLocalHostname(hostname)) return "preview";
+  if (isPreviewHostname(hostname)) return "preview";
+  return "production";
+}
+
+const APP_ENV = getAppEnv();
+const IS_PREVIEW = APP_ENV === "preview";
+const APP_TITLE = IS_PREVIEW
+  ? `SHJJ Brief Preview v${APP_VERSION}`
+  : "SHJJ Brief";
+
+function applyAppTitle() {
+  document.title = APP_TITLE;
+
+  $$("[data-app-title]").forEach((target) => {
+    target.textContent = APP_TITLE;
+  });
+
+  $$("[data-preview-badge]").forEach((badge) => {
+    badge.hidden = !IS_PREVIEW;
+    badge.style.display = IS_PREVIEW ? "" : "none";
+    if (IS_PREVIEW) badge.textContent = `Preview v${APP_VERSION}`;
+  });
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", applyAppTitle, { once: true });
+} else {
+  applyAppTitle();
+}
+
 const STORAGE_KEYS = {
   schedules: "shjj_brief_schedules_v4",
   notificationTime: "shjj_notification_time",
