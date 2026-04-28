@@ -1589,6 +1589,54 @@ footer {
 .law-detail-summary-main {
   min-width: 0;
   flex: 1 1 auto;
+  display: grid;
+  gap: 10px;
+}
+
+.law-ai-summary-box {
+  padding: 12px 13px;
+  border-radius: 18px;
+  background: rgba(23, 32, 51, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(23, 32, 51, 0.06);
+}
+
+.law-ai-summary-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.law-ai-summary-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.law-ai-summary-list li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
+.law-ai-summary-list strong {
+  flex: 0 0 auto;
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.law-ai-summary-list span {
+  min-width: 0;
+  color: var(--text);
 }
 
 .law-date-row-preview {
