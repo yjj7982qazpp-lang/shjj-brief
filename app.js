@@ -660,7 +660,7 @@ function renderSchedules() {
   clearChildren(list);
 
   if (state.schedules.length === 0) {
-    list.appendChild(createEmptyListItem("등록된 일정이 없습니다."));
+    list.appendChild(createEmptyListItem("오늘 등록된 일정이 없습니다."));
     updateBrief();
     return;
   }
@@ -1613,13 +1613,13 @@ function renderLawDetailCard(item, index = 0) {
     <details class="law-item law-item-changed law-detail-card" open>
       <summary class="law-detail-summary" aria-controls="${escapeHtml(`law-detail-body-${index}`)}">
         <div class="law-detail-summary-main">
-          <span class="law-name">${safeHtml(item.law_name, "?뺣낫 ?놁쓬")}</span>
+          <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
           ${category ? `<span class="law-category">${escapeHtml(category)}</span>` : ""}
           <div class="law-date-row law-date-row-preview">
             ${renderLawPreviewDates(item)}
           </div>
         </div>
-        <span class="law-toggle-indicator" aria-hidden="true">?닿린</span>
+        <span class="law-toggle-indicator" aria-hidden="true">열기</span>
       </summary>
       <div id="${escapeHtml(`law-detail-body-${index}`)}" class="law-detail-body">
         ${renderLawAiSummaryBlock(item)}
