@@ -1051,8 +1051,14 @@ function renderScheduleInviteToggle() {
   button.setAttribute("aria-expanded", String(state.invitePanelOpen));
 }
 
+function setScheduleFoldOpen(open) {
+  const fold = $("scheduleSection")?.querySelector(".fold-card");
+  if (fold) fold.open = open;
+}
+
 function toggleScheduleInvitePanel() {
   state.invitePanelOpen = !state.invitePanelOpen;
+  if (state.invitePanelOpen) setScheduleFoldOpen(true);
   renderScheduleAccess();
   if (state.invitePanelOpen) $("inviteCodeInput")?.focus();
 }
