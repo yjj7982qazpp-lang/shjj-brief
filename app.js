@@ -945,7 +945,7 @@ function renderLawAccordionGroup(title, items, renderItem, options = {}) {
 
 function renderLawEmptyState(apiStatus, message) {
   const successLike = apiStatus === "success" || apiStatus === "no_data" || apiStatus === "partial_success";
-  const statusText = successLike ? "API 성공 0건" : "API 실패 0건";
+  const statusText = successLike ? "확인 완료 0건" : "확인 필요 0건";
 
   return `
     <div class="law-empty law-empty-status ${successLike ? "success" : "error"}">
@@ -1888,114 +1888,6 @@ function formatLawUpdatedAt(value) {
   });
 }
 
-function getAutomationStatusDate(value) {
-  const text = safeText(value, "");
-  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!match) return "";
-  return `${match[1]}-${match[2]}-${match[3]}`;
-}
-
-function getKstDateParts(date = new Date()) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(date);
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return {
-    dateText: `${values.year}-${values.month}-${values.day}`,
-    hour: Number(values.hour),
-    minute: Number(values.minute),
-  };
-}
-
-function isAutomationStatusDelayed(status) {
-  if (status?.skipDelay) return false;
-  const kst = getKstDateParts();
-  const afterCheckTime = kst.hour > 9 || (kst.hour === 9 && kst.minute >= 40);
-  if (!afterCheckTime) return false;
-  return getAutomationStatusDate(status?.last_run_kst) !== kst.dateText;
-}
-
-function setAutomationStatusClass(statusKey) {
-  const card = $("automationStatusCard");
-  if (!card) return;
-  card.classList.remove(
-    "is-no-change",
-    "is-changed",
-    "is-partial-failed",
-    "is-failed",
-    "is-pending",
-    "is-delayed"
-  );
-  card.classList.add(`is-${statusKey}`);
-}
-
-function renderAutomationStatus(status = {}) {
-  const delayed = isAutomationStatusDelayed(status);
-  const statusValue = delayed ? "delayed" : safeText(status.status, "pending");
-  const openaiCallCount = Number(status.openai_call_count) || 0;
-  const changeCount = Number(status.legal_change_count) || Number(status.today_count) || 0;
-  const copyMap = {
-    no_change: {
-      badge: "변경 없음",
-      message: "오늘 확인 결과 변경된 관심 법령이 없습니다.",
-      meta: "OpenAI 호출 0회",
-      className: "no-change",
-    },
-    changed: {
-      badge: "변경 있음",
-      message: "오늘 관심 법령 데이터가 갱신되었습니다.",
-      meta: `변경 후보 ${changeCount}건 · OpenAI 호출 ${openaiCallCount}회`,
-      className: "changed",
-    },
-    partial_failed: {
-      badge: "일부 실패",
-      message: "일부 관심 법령 확인에 실패했습니다. Actions 로그 확인 필요.",
-      meta: `OpenAI 호출 ${openaiCallCount}회`,
-      className: "partial-failed",
-    },
-    failed: {
-      badge: "실패",
-      message: "법령 자동 확인 실행에 실패했습니다.",
-      meta: `OpenAI 호출 ${openaiCallCount}회`,
-      className: "failed",
-    },
-    delayed: {
-      badge: "자동 확인 지연 또는 미실행",
-      message: "오늘 자동 확인 결과가 아직 갱신되지 않았습니다.",
-      meta: `OpenAI 호출 ${openaiCallCount}회`,
-      className: "delayed",
-    },
-    pending: {
-      badge: "확인 대기",
-      message: "아직 자동 확인 결과가 없습니다.",
-      meta: "OpenAI 호출 0회",
-      className: "pending",
-    },
-  };
-  const copy = copyMap[statusValue] || copyMap.pending;
-
-  setText("automationStatusBadge", copy.badge);
-  setText("automationStatusMessage", copy.message);
-  setText("automationStatusMeta", copy.meta);
-  setAutomationStatusClass(copy.className);
-}
-
-async function loadAutomationStatus() {
-  try {
-    const res = await fetch("./data/automation_status.json", { cache: "no-store" });
-    if (!res.ok) throw new Error("automation_status.json 로딩 실패");
-    renderAutomationStatus(await res.json());
-  } catch {
-    renderAutomationStatus({ status: "pending", skipDelay: true });
-  }
-}
-
 function normalizeLawUpdatesData(rawData) {
   if (Array.isArray(rawData)) {
     const today = new Date();
@@ -2092,8 +1984,8 @@ function updateLawAction(todayCount, weekCount, monthCount, apiStatus, apiError)
 
   if (apiStatus && apiStatus !== "success") {
     const suffix = apiError ? ` (${apiError})` : "";
-    setText("lawActionTitle", "API 조회 확인");
-    setText("lawActionText", `오늘 변경 0건처럼 보여도 실제로는 API 상태가 ${apiStatus}입니다. 최신성부터 다시 확인하세요.${suffix}`);
+    setText("lawActionTitle", "조회 상태 확인");
+    setText("lawActionText", `오늘 변경 0건처럼 보여도 일부 확인 상태가 ${apiStatus}입니다. 최신성부터 다시 확인하세요.${suffix}`);
     return;
   }
 
@@ -2681,7 +2573,6 @@ async function init() {
 
   const weatherLoadPromise = loadWeather().catch(handleWeatherLoadError);
   await registerSW();
-  await loadAutomationStatus();
   await loadLawUpdates();
   await weatherLoadPromise;
 }
