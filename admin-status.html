@@ -20,6 +20,7 @@
       --yellow: #92400e;
       --red-bg: #fee2e2;
       --red: #991b1b;
+      --dark: #0f172a;
     }
 
     * { box-sizing: border-box; }
@@ -33,7 +34,7 @@
     }
 
     main {
-      width: min(920px, calc(100% - 32px));
+      width: min(960px, calc(100% - 32px));
       margin: 0 auto;
       padding: 36px 0;
     }
@@ -65,7 +66,7 @@
       border: 0;
       border-radius: 999px;
       padding: 10px 14px;
-      background: #111827;
+      background: var(--dark);
       color: #fff;
       font-size: 13px;
       font-weight: 900;
@@ -76,32 +77,42 @@
     .card {
       border: 1px solid var(--line);
       border-radius: 26px;
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 255, 255, 0.94);
       box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
       padding: 22px;
+      margin-bottom: 14px;
     }
 
-    .status-head {
+    .hero {
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.96));
+      color: #fff;
+    }
+
+    .hero-top,
+    .section-head {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
-      padding-bottom: 18px;
-      border-bottom: 1px solid var(--line);
     }
 
-    .status-head h2 {
+    .hero h2,
+    .section-head h2 {
       margin: 0 0 6px;
       font-size: 22px;
       letter-spacing: -0.03em;
     }
 
-    .status-head p {
+    .hero p,
+    .section-head p {
       margin: 0;
       color: var(--muted);
       font-size: 14px;
       font-weight: 700;
+      line-height: 1.5;
     }
+
+    .hero p { color: #cbd5e1; }
 
     .badge {
       flex: 0 0 auto;
@@ -122,10 +133,51 @@
 
     .message {
       margin: 18px 0 0;
-      font-size: 18px;
-      font-weight: 900;
+      font-size: 20px;
+      font-weight: 950;
       line-height: 1.45;
       word-break: keep-all;
+    }
+
+    .hero-meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .hero-meta div,
+    .metric,
+    .history-row {
+      border-radius: 18px;
+      background: #f8fafc;
+      padding: 14px;
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.07);
+    }
+
+    .hero-meta div {
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+
+    .hero-meta span,
+    .metric span,
+    .history-row span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .hero-meta span { color: #94a3b8; }
+
+    .hero-meta strong,
+    .metric strong {
+      display: block;
+      font-size: 22px;
+      font-weight: 950;
+      letter-spacing: -0.03em;
     }
 
     .grid {
@@ -135,43 +187,52 @@
       margin-top: 18px;
     }
 
-    .metric {
-      border-radius: 18px;
-      background: #f8fafc;
-      padding: 14px;
-      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.07);
+    .wide-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
-    .metric span {
+    .metric small {
       display: block;
+      margin-top: 5px;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
-      margin-bottom: 6px;
     }
 
-    .metric strong {
-      display: block;
-      font-size: 22px;
-      font-weight: 950;
-      letter-spacing: -0.03em;
-    }
-
-    .details {
-      margin-top: 18px;
+    .hint {
+      margin-top: 14px;
+      padding: 13px 14px;
       border-radius: 18px;
-      background: #0f172a;
-      color: #e5e7eb;
-      padding: 16px;
-      overflow-x: auto;
+      background: #fff7ed;
+      color: #9a3412;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.5;
     }
 
-    .details pre {
-      margin: 0;
-      font-size: 12px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      word-break: break-word;
+    .history {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .history-row {
+      display: grid;
+      grid-template-columns: 1.1fr 0.8fr 0.8fr 0.8fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .history-row strong {
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .empty {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
     }
 
     .note {
@@ -182,12 +243,16 @@
       line-height: 1.5;
     }
 
-    @media (max-width: 680px) {
-      main { width: min(100% - 24px, 920px); padding: 22px 0; }
-      header { align-items: flex-start; flex-direction: column; }
+    @media (max-width: 760px) {
+      main { width: min(100% - 24px, 960px); padding: 22px 0; }
+      header,
+      .hero-top,
+      .section-head { align-items: flex-start; flex-direction: column; }
       .card { padding: 18px; border-radius: 22px; }
-      .status-head { align-items: flex-start; flex-direction: column; }
-      .grid { grid-template-columns: 1fr; }
+      .hero-meta,
+      .grid,
+      .wide-grid { grid-template-columns: 1fr; }
+      .history-row { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -196,39 +261,76 @@
     <header>
       <div>
         <p class="eyebrow">Admin Status</p>
-        <h1>자동확인 운영 상태</h1>
+        <h1>자동화 운영 대시보드</h1>
       </div>
       <a class="home-link" href="./index.html">앱으로 돌아가기</a>
     </header>
 
-    <section class="card">
-      <div class="status-head">
+    <section class="card hero">
+      <div class="hero-top">
         <div>
-          <h2>법령 자동확인 결과</h2>
-          <p id="lastRun">마지막 실행: 확인 중</p>
+          <h2>최근 자동 실행 상태</h2>
+          <p id="lastRun">최근 실행: 확인 중</p>
         </div>
         <span id="statusBadge" class="badge">확인 중</span>
       </div>
-
-      <p id="message" class="message">자동확인 결과를 불러오는 중입니다.</p>
-
-      <div class="grid">
-        <div class="metric">
-          <span>오늘</span>
-          <strong id="todayCount">-</strong>
-        </div>
-        <div class="metric">
-          <span>최근 7일</span>
-          <strong id="weekCount">-</strong>
-        </div>
-        <div class="metric">
-          <span>최근 30일</span>
-          <strong id="monthCount">-</strong>
-        </div>
-        <div class="metric">
+      <p id="message" class="message">자동화 결과를 불러오는 중입니다.</p>
+      <div class="hero-meta">
+        <div>
           <span>OpenAI 호출</span>
           <strong id="openaiCount">-</strong>
         </div>
+        <div>
+          <span>이번 실행 예상비용</span>
+          <strong id="runCost">-</strong>
+        </div>
+        <div>
+          <span>다음 예정 실행</span>
+          <strong id="nextRun">-</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>API 비용 요약</h2>
+          <p>이 화면의 비용은 자동화 로그 기준 예상치입니다.</p>
+        </div>
+      </div>
+      <div class="grid wide-grid">
+        <div class="metric">
+          <span>오늘</span>
+          <strong id="todayCost">-</strong>
+          <small id="todayCalls">-</small>
+        </div>
+        <div class="metric">
+          <span>최근 7일</span>
+          <strong id="weekCost">-</strong>
+          <small id="weekCalls">-</small>
+        </div>
+        <div class="metric">
+          <span>최근 30일</span>
+          <strong id="monthCost">-</strong>
+          <small id="monthCalls">-</small>
+        </div>
+        <div class="metric">
+          <span>누적</span>
+          <strong id="lifetimeCost">-</strong>
+          <small id="lifetimeCalls">-</small>
+        </div>
+      </div>
+      <p id="costNote" class="note">비용 단가 확인 중</p>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>운영 품질</h2>
+          <p>캐시가 잘 먹을수록 같은 법령에 대한 반복 비용이 줄어듭니다.</p>
+        </div>
+      </div>
+      <div class="grid">
         <div class="metric">
           <span>캐시 재사용</span>
           <strong id="cacheHitCount">-</strong>
@@ -237,15 +339,22 @@
           <span>신규 summary_key</span>
           <strong id="summaryKeyCount">-</strong>
         </div>
+        <div class="metric">
+          <span>실행 소요시간</span>
+          <strong id="duration">-</strong>
+        </div>
       </div>
+      <div id="failureHint" class="hint">특이사항 확인 중</div>
+    </section>
 
-      <p class="note">
-        이 페이지는 운영자 확인용입니다. 일반 앱 화면에는 OpenAI 호출 횟수, 실패 상세, 변경 파일 목록을 표시하지 않습니다.
-      </p>
-
-      <div class="details">
-        <pre id="rawJson">불러오는 중</pre>
+    <section class="card">
+      <div class="section-head">
+        <div>
+          <h2>최근 7회 실행 이력</h2>
+          <p>자동화가 꾸준히 돌고 있는지 확인하는 영역입니다.</p>
+        </div>
       </div>
+      <div id="history" class="history"></div>
     </section>
   </main>
 
@@ -253,8 +362,8 @@
     const $ = (id) => document.getElementById(id);
 
     const LABELS = {
-      no_change: "변경 없음",
-      changed: "변경 있음",
+      no_change: "정상 · 변경 없음",
+      changed: "정상 · 변경 있음",
       partial_failed: "일부 실패",
       failed: "실패",
       pending: "확인 대기",
@@ -271,11 +380,44 @@
       return text.replace("T", " ").replace(/\+09:00$/, "");
     }
 
+    function money(value) {
+      const number = Number(value || 0);
+      return `$${number.toFixed(4)}`;
+    }
+
     function setBadge(status) {
       const badge = $("statusBadge");
       const key = LABELS[status] ? status : "pending";
       badge.className = `badge ${key}`;
       badge.textContent = LABELS[key];
+    }
+
+    function callText(value) {
+      return `${Number(value || 0)}회 호출`;
+    }
+
+    function renderHistory(items) {
+      const wrap = $("history");
+      wrap.textContent = "";
+      if (!Array.isArray(items) || items.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty";
+        empty.textContent = "아직 실행 이력이 없습니다.";
+        wrap.appendChild(empty);
+        return;
+      }
+
+      [...items].reverse().forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "history-row";
+        row.innerHTML = `
+          <div><span>실행</span><strong>${formatRunTime(item.last_run_kst)}</strong></div>
+          <div><span>상태</span><strong>${safeText(LABELS[item.status], item.status)}</strong></div>
+          <div><span>호출</span><strong>${Number(item.openai_call_count || 0)}회</strong></div>
+          <div><span>비용</span><strong>${money(item.estimated_cost_usd)}</strong></div>
+        `;
+        wrap.appendChild(row);
+      });
     }
 
     async function loadStatus() {
@@ -284,22 +426,37 @@
         if (!res.ok) throw new Error("status load failed");
         const data = await res.json();
         const status = data.status || "pending";
+        const cost = data.cost_summary || {};
+        const calls = data.call_summary || {};
 
         setBadge(status);
-        $("lastRun").textContent = `마지막 실행: ${formatRunTime(data.last_run_kst)}`;
-        $("message").textContent = safeText(data.message, "자동확인 결과가 없습니다.");
-        $("todayCount").textContent = `${Number(data.today_count || 0)}건`;
-        $("weekCount").textContent = `${Number(data.last_7_days_count || 0)}건`;
-        $("monthCount").textContent = `${Number(data.last_30_days_count || 0)}건`;
+        $("lastRun").textContent = `최근 실행: ${formatRunTime(data.last_run_kst)}`;
+        $("message").textContent = safeText(data.message, "자동화 결과가 없습니다.");
         $("openaiCount").textContent = `${Number(data.openai_call_count || 0)}회`;
+        $("runCost").textContent = money(data.estimated_cost_usd);
+        $("nextRun").textContent = formatRunTime(data.next_run_kst);
+        $("todayCost").textContent = money(cost.today_estimated_cost_usd);
+        $("weekCost").textContent = money(cost.last_7_days_estimated_cost_usd);
+        $("monthCost").textContent = money(cost.last_30_days_estimated_cost_usd);
+        $("lifetimeCost").textContent = money(cost.lifetime_estimated_cost_usd);
+        $("todayCalls").textContent = callText(calls.today_openai_call_count);
+        $("weekCalls").textContent = callText(calls.last_7_days_openai_call_count);
+        $("monthCalls").textContent = callText(calls.last_30_days_openai_call_count);
+        $("lifetimeCalls").textContent = callText(calls.lifetime_openai_call_count);
         $("cacheHitCount").textContent = `${Number(data.cache_hit_count || 0)}개`;
         $("summaryKeyCount").textContent = `${Number(data.new_summary_key_count || 0)}개`;
-        $("rawJson").textContent = JSON.stringify(data, null, 2);
+        $("duration").textContent = `${Number(data.duration_seconds || 0).toFixed(1)}초`;
+        $("failureHint").textContent = safeText(data.failure_hint, "특이사항 없음");
+        $("costNote").textContent = data.cost_estimate_enabled
+          ? `예상 단가: OpenAI 호출 1회당 ${money(data.cost_per_openai_call_usd)} 기준`
+          : "예상 비용 단가가 아직 설정되지 않았습니다. GitHub 변수 OPENAI_ESTIMATED_COST_PER_CALL_USD를 설정하면 비용이 계산됩니다.";
+        renderHistory(data.recent_7_runs);
       } catch (error) {
         setBadge("failed");
-        $("lastRun").textContent = "마지막 실행: 확인 실패";
+        $("lastRun").textContent = "최근 실행: 확인 실패";
         $("message").textContent = "automation_status.json을 불러오지 못했습니다.";
-        $("rawJson").textContent = String(error);
+        $("failureHint").textContent = String(error);
+        renderHistory([]);
       }
     }
 
