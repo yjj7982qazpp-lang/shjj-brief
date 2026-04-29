@@ -253,10 +253,16 @@
               <p id="scheduleInviteFeedback" class="schedule-feedback" role="status" aria-live="polite"></p>
             </div>
 
+            <div id="scheduleBlockedPanel" class="schedule-invite-panel schedule-blocked-panel" hidden>
+              <strong>접속 권한이 없습니다.</strong>
+              <p>관리자에게 SHJJ 회사방 권한을 확인해 주세요.</p>
+            </div>
+
             <div id="scheduleRoomContent" hidden>
               <div class="schedule-room-meta">
                 <span id="scheduleCompanyBadge" class="schedule-room-badge">SHJJ 회사방</span>
                 <span id="scheduleRoleBadge" class="schedule-role-badge">관리자</span>
+                <span id="schedulePermissionBadge" class="schedule-role-badge">읽기/쓰기</span>
               </div>
 
               <p id="scheduleReadonlyNotice" class="schedule-readonly-notice"></p>
@@ -311,6 +317,14 @@
                   </div>
                   <div id="scheduleCalendarGrid" class="schedule-calendar-grid"></div>
                   <div id="scheduleSelectedDayList" class="schedule-selected-day-list"></div>
+                </div>
+              </details>
+
+              <details id="scheduleAdminPanel" class="schedule-admin-panel" hidden>
+                <summary>관리자</summary>
+                <div class="schedule-admin-body">
+                  <p>구성원 일정 권한</p>
+                  <div id="scheduleAdminMemberList" class="schedule-admin-member-list"></div>
                 </div>
               </details>
             </div>

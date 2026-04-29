@@ -686,6 +686,11 @@ textarea:focus {
   white-space: nowrap;
 }
 
+.schedule-blocked-panel {
+  border-color: rgba(185, 28, 28, 0.18);
+  background: rgba(254, 242, 242, 0.82);
+}
+
 .schedule-room-meta {
   display: flex;
   flex-wrap: wrap;
@@ -874,6 +879,70 @@ textarea:focus {
 .schedule-selected-day-list strong {
   color: var(--navy);
   font-size: 13px;
+}
+
+.schedule-admin-panel {
+  margin-top: 12px;
+  border-radius: 14px;
+  background: var(--card-soft);
+}
+
+.schedule-admin-panel summary {
+  cursor: pointer;
+  padding: 12px;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.schedule-admin-body {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
+.schedule-admin-body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.schedule-admin-member-list {
+  display: grid;
+  gap: 8px;
+}
+
+.schedule-admin-member {
+  display: grid;
+  grid-template-columns: 1fr minmax(120px, auto);
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.schedule-admin-member div {
+  display: grid;
+  gap: 3px;
+}
+
+.schedule-admin-member strong {
+  color: var(--navy);
+  font-size: 13px;
+}
+
+.schedule-admin-member span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.schedule-admin-member select {
+  min-height: 38px;
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .list {

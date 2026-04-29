@@ -26,6 +26,7 @@ const APP_NAME = "SHJJ Brief";
 const STORAGE_KEYS = {
   schedules: "shjj_brief_schedules_v4",
   companyMembership: "shjj_company_membership_v1",
+  companyMembers: "shjj_company_members_v1",
   notificationTime: "shjj_notification_time",
 };
 
@@ -53,13 +54,34 @@ const INVITE_CODES = {
     memberId: "local-admin",
     memberName: "관리자",
     role: "admin",
+    schedulePermission: "write",
+    status: "active",
   },
   "SHJJ-MEMBER": {
     memberId: "local-member",
     memberName: "구성원",
     role: "member",
+    schedulePermission: "read",
+    status: "active",
   },
 };
+
+const DEFAULT_COMPANY_MEMBERS = [
+  {
+    memberId: "local-admin",
+    memberName: "관리자",
+    role: "admin",
+    schedulePermission: "write",
+    status: "active",
+  },
+  {
+    memberId: "local-member",
+    memberName: "구성원",
+    role: "member",
+    schedulePermission: "read",
+    status: "active",
+  },
+];
 
 const WEATHER_COPY = {
   loading: "날씨 정보를 불러오는 중",
@@ -131,6 +153,7 @@ const state = {
   company: DEFAULT_COMPANY,
   member: null,
   companyMembership: null,
+  companyMembers: [],
   notificationTime: DEFAULT_NOTIFICATION_TIME,
   weatherMode: "today",
 };
@@ -599,8 +622,15 @@ function hasCompanyMembership() {
   return state.companyMembership?.status === "active" && state.companyMembership?.companyRoomId === DEFAULT_COMPANY.id;
 }
 
+function isCompanyMembershipInactive() {
+  return state.companyMembership?.status === "inactive" && state.companyMembership?.companyRoomId === DEFAULT_COMPANY.id;
+}
+
 function canWriteSchedule(member = state.member) {
-  return hasCompanyMembership() && member?.role === "admin";
+  return hasCompanyMembership() && (
+    member?.role === "admin" ||
+    (member?.role === "member" && member?.schedulePermission === "write")
+  );
 }
 
 function canManageCompany(member = state.member) {
@@ -613,19 +643,64 @@ function getMemberRoleLabel(member = state.member) {
   return "미참여";
 }
 
+function getSchedulePermissionLabel(member = state.member) {
+  if (!member || member.status === "inactive") return "접속 차단";
+  if (member.role === "admin" || member.schedulePermission === "write") return "읽기/쓰기";
+  return "읽기 전용";
+}
+
+function normalizeCompanyMember(value) {
+  const role = value?.role === "admin" ? "admin" : "member";
+  const fallback = role === "admin" ? DEFAULT_COMPANY_MEMBERS[0] : DEFAULT_COMPANY_MEMBERS[1];
+  const status = value?.status === "inactive" ? "inactive" : "active";
+  const schedulePermission = role === "admin"
+    ? "write"
+    : value?.schedulePermission === "write" ? "write" : "read";
+
+  return {
+    memberId: safeText(value?.memberId, fallback.memberId),
+    memberName: safeText(value?.memberName, fallback.memberName),
+    role,
+    schedulePermission,
+    status,
+  };
+}
+
+function getCompanyMemberById(memberId) {
+  return state.companyMembers.find((member) => member.memberId === memberId);
+}
+
+function loadCompanyMembers() {
+  const stored = loadArray(STORAGE_KEYS.companyMembers);
+  const byId = new Map(DEFAULT_COMPANY_MEMBERS.map((member) => [member.memberId, normalizeCompanyMember(member)]));
+  stored.forEach((member) => {
+    const normalized = normalizeCompanyMember(member);
+    byId.set(normalized.memberId, normalized);
+  });
+  state.companyMembers = Array.from(byId.values());
+  saveJson(STORAGE_KEYS.companyMembers, state.companyMembers);
+}
+
 function normalizeCompanyMembership(value) {
   if (!value || typeof value !== "object") return null;
-  if (value.companyRoomId !== DEFAULT_COMPANY.id || value.status !== "active") return null;
+  if (value.companyRoomId !== DEFAULT_COMPANY.id) return null;
   const role = value.role === "admin" ? "admin" : value.role === "member" ? "member" : "";
   if (!role) return null;
+  const memberId = safeText(value.memberId, role === "admin" ? "local-admin" : "local-member");
+  const managedMember = getCompanyMemberById(memberId);
+  const status = managedMember?.status || (value.status === "inactive" ? "inactive" : "active");
+  const schedulePermission = role === "admin"
+    ? "write"
+    : managedMember?.schedulePermission || (value.schedulePermission === "write" ? "write" : "read");
 
   return {
     companyRoomId: DEFAULT_COMPANY.id,
     companyRoomName: DEFAULT_COMPANY.name,
-    memberId: safeText(value.memberId, role === "admin" ? "local-admin" : "local-member"),
-    memberName: safeText(value.memberName, role === "admin" ? "관리자" : "구성원"),
+    memberId,
+    memberName: managedMember?.memberName || safeText(value.memberName, role === "admin" ? "관리자" : "구성원"),
     role,
-    status: "active",
+    schedulePermission,
+    status,
     joinedAt: safeText(value.joinedAt, new Date().toISOString()),
   };
 }
@@ -638,6 +713,8 @@ function applyCompanyMembership(membership) {
       id: state.companyMembership.memberId,
       name: state.companyMembership.memberName,
       role: state.companyMembership.role,
+      schedulePermission: state.companyMembership.schedulePermission,
+      status: state.companyMembership.status,
     }
     : null;
 }
@@ -659,7 +736,8 @@ function saveCompanyMembership(roleInfo) {
     memberId: roleInfo.memberId,
     memberName: roleInfo.memberName,
     role: roleInfo.role,
-    status: "active",
+    schedulePermission: roleInfo.schedulePermission,
+    status: roleInfo.status,
     joinedAt: new Date().toISOString(),
   };
 
@@ -682,6 +760,62 @@ function joinCompanyRoom() {
   if (input) input.value = "";
   renderSchedules();
   showScheduleFeedback("SHJJ 회사방에 참여했습니다.");
+}
+
+function updateCompanyMemberAccess(memberId, accessValue) {
+  if (!canManageCompany()) return;
+  state.companyMembers = state.companyMembers.map((member) => {
+    if (member.memberId !== memberId || member.role === "admin") return member;
+    if (accessValue === "inactive") {
+      return { ...member, status: "inactive", schedulePermission: "read" };
+    }
+    return {
+      ...member,
+      status: "active",
+      schedulePermission: accessValue === "write" ? "write" : "read",
+    };
+  });
+  saveJson(STORAGE_KEYS.companyMembers, state.companyMembers);
+  loadCompanyMembership();
+  renderSchedules();
+}
+
+function renderScheduleAdminPanel() {
+  const list = $("scheduleAdminMemberList");
+  if (!list) return;
+  clearChildren(list);
+
+  if (!canManageCompany()) return;
+
+  state.companyMembers.forEach((member) => {
+    const row = document.createElement("div");
+    row.className = "schedule-admin-member";
+
+    const info = document.createElement("div");
+    const name = document.createElement("strong");
+    name.textContent = member.memberName;
+    const meta = document.createElement("span");
+    meta.textContent = member.role === "admin" ? "관리자" : "구성원";
+    info.append(name, meta);
+
+    const select = document.createElement("select");
+    select.disabled = member.role === "admin";
+    [
+      ["write", "읽기/쓰기"],
+      ["read", "읽기 전용"],
+      ["inactive", "비활성화"],
+    ].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      select.appendChild(option);
+    });
+    select.value = member.status === "inactive" ? "inactive" : member.schedulePermission;
+    select.addEventListener("change", () => updateCompanyMemberAccess(member.memberId, select.value));
+
+    row.append(info, select);
+    list.appendChild(row);
+  });
 }
 
 function normalizeScheduleItem(item) {
@@ -953,8 +1087,11 @@ function renderScheduleSelectedDateList() {
   clearChildren(container);
   const selectedDate = getSelectedScheduleDate();
   const items = sortSchedules(state.schedules.filter((item) => item.date === selectedDate));
+  const selected = new Date(`${selectedDate}T00:00:00`);
   const title = document.createElement("strong");
-  title.textContent = selectedDate;
+  title.textContent = Number.isNaN(selected.getTime())
+    ? `${selectedDate} 일정`
+    : `${selected.getMonth() + 1}월 ${selected.getDate()}일 일정`;
   container.appendChild(title);
 
   if (items.length === 0) {
@@ -966,7 +1103,7 @@ function renderScheduleSelectedDateList() {
 
   items.forEach((item) => {
     const row = document.createElement("span");
-    row.textContent = `${safeText(item.time, "--:--")} ${safeText(item.title, "일정")}`;
+    row.textContent = safeText(item.title, "일정");
     container.appendChild(row);
   });
 }
@@ -1026,12 +1163,17 @@ function renderScheduleCalendar() {
 
 function renderScheduleAccess() {
   const joined = hasCompanyMembership();
+  const inactive = isCompanyMembershipInactive();
   const writable = canWriteSchedule();
   const invitePanel = $("scheduleInvitePanel");
   const roomContent = $("scheduleRoomContent");
+  const blockedPanel = $("scheduleBlockedPanel");
+  const adminPanel = $("scheduleAdminPanel");
 
-  if (invitePanel) invitePanel.hidden = joined;
+  if (invitePanel) invitePanel.hidden = joined || inactive;
+  if (blockedPanel) blockedPanel.hidden = !inactive;
   if (roomContent) roomContent.hidden = !joined;
+  if (adminPanel) adminPanel.hidden = !canManageCompany();
 
   if (!joined) {
     setText("scheduleCount", "0건");
@@ -1042,7 +1184,8 @@ function renderScheduleAccess() {
 
   setText("scheduleCompanyBadge", state.company.name);
   setText("scheduleRoleBadge", getMemberRoleLabel());
-  setText("scheduleReadonlyNotice", writable ? "" : "구성원은 오늘 배포용 테스트에서 읽기 전용입니다.");
+  setText("schedulePermissionBadge", getSchedulePermissionLabel());
+  setText("scheduleReadonlyNotice", writable ? "" : "구성원은 읽기 전용입니다.");
 
   const input = $("scheduleTitleInput");
   const openButton = $("openScheduleSheetBtn");
@@ -1058,6 +1201,7 @@ function renderScheduleAccess() {
   if (locationInput) locationInput.disabled = !writable;
   if (memoInput) memoInput.disabled = !writable;
   if (!writable) setScheduleSheetOpen(false);
+  renderScheduleAdminPanel();
 }
 
 function renderSchedules() {
@@ -2744,6 +2888,7 @@ async function init() {
   setupScheduleTimePicker();
   setupLawTabs();
 
+  loadCompanyMembers();
   loadCompanyMembership();
   state.schedules = loadSchedules();
   loadNotificationSettings();
