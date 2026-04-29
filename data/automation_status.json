@@ -1,0 +1,36 @@
+{
+  "last_run_kst": "-",
+  "next_run_kst": "매일 09:20 KST",
+  "status": "pending",
+  "message": "아직 자동 확인 결과가 없습니다. 다음 GitHub Actions 실행 후 갱신됩니다.",
+  "failure_hint": "특이사항 없음",
+  "legal_change_count": 0,
+  "today_count": 0,
+  "last_7_days_count": 0,
+  "last_30_days_count": 0,
+  "new_summary_key_count": 0,
+  "cache_hit_count": 0,
+  "openai_call_count": 0,
+  "estimated_cost_usd": 0,
+  "cost_per_openai_call_usd": 0,
+  "cost_estimate_enabled": false,
+  "cost_summary": {
+    "today_estimated_cost_usd": 0,
+    "last_7_days_estimated_cost_usd": 0,
+    "last_30_days_estimated_cost_usd": 0,
+    "lifetime_estimated_cost_usd": 0
+  },
+  "call_summary": {
+    "today_openai_call_count": 0,
+    "last_7_days_openai_call_count": 0,
+    "last_30_days_openai_call_count": 0,
+    "lifetime_openai_call_count": 0
+  },
+  "run_history": [],
+  "recent_7_runs": [],
+  "duration_seconds": 0,
+  "changed_files": [],
+  "workflow": "Auto Law Brief Update",
+  "branch": "main",
+  "source": "github_actions"
+}

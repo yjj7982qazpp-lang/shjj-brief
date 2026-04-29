@@ -945,7 +945,7 @@ function renderLawAccordionGroup(title, items, renderItem, options = {}) {
 
 function renderLawEmptyState(apiStatus, message) {
   const successLike = apiStatus === "success" || apiStatus === "no_data" || apiStatus === "partial_success";
-  const statusText = successLike ? "API 성공 0건" : "API 실패 0건";
+  const statusText = successLike ? "확인 완료 0건" : "확인 필요 0건";
 
   return `
     <div class="law-empty law-empty-status ${successLike ? "success" : "error"}">
@@ -1984,8 +1984,8 @@ function updateLawAction(todayCount, weekCount, monthCount, apiStatus, apiError)
 
   if (apiStatus && apiStatus !== "success") {
     const suffix = apiError ? ` (${apiError})` : "";
-    setText("lawActionTitle", "API 조회 확인");
-    setText("lawActionText", `오늘 변경 0건처럼 보여도 실제로는 API 상태가 ${apiStatus}입니다. 최신성부터 다시 확인하세요.${suffix}`);
+    setText("lawActionTitle", "조회 상태 확인");
+    setText("lawActionText", `오늘 변경 0건처럼 보여도 일부 확인 상태가 ${apiStatus}입니다. 최신성부터 다시 확인하세요.${suffix}`);
     return;
   }
 
@@ -2396,6 +2396,39 @@ function bindEvents() {
   bindWeatherEvents();
   bindScheduleEvents();
   bindNotificationEvents();
+  bindAdminStatusReveal();
+}
+
+function bindAdminStatusReveal() {
+  const triggerTargets = [
+    document.querySelector(".eyebrow"),
+    document.querySelector("[data-app-title]"),
+  ].filter(Boolean);
+  const button = $("adminStatusBtn");
+  if (!triggerTargets.length || !button) return;
+
+  let tapCount = 0;
+  let firstTapAt = 0;
+
+  const handleTap = () => {
+    const now = Date.now();
+    if (!firstTapAt || now - firstTapAt > 2500) {
+      firstTapAt = now;
+      tapCount = 0;
+    }
+
+    tapCount += 1;
+    if (tapCount >= 7) {
+      button.hidden = false;
+      tapCount = 0;
+      firstTapAt = 0;
+    }
+  };
+
+  triggerTargets.forEach((target) => bindEvent(target, "click", handleTap));
+  bindEvent(button, "click", () => {
+    window.location.href = "./admin-status.html";
+  });
 }
 
 function renderNotificationTime() {
