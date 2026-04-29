@@ -243,6 +243,19 @@
           </summary>
 
           <div class="fold-body">
+            <div class="schedule-room-meta">
+              <span id="scheduleCompanyBadge" class="schedule-room-badge">SHJJ 회사방</span>
+              <span id="scheduleRoleBadge" class="schedule-role-badge">관리자</span>
+            </div>
+
+            <div class="schedule-filter-row" aria-label="일정 필터">
+              <button type="button" class="schedule-filter-btn active" data-schedule-filter="today">오늘</button>
+              <button type="button" class="schedule-filter-btn" data-schedule-filter="week">이번주</button>
+              <button type="button" class="schedule-filter-btn" data-schedule-filter="all">전체</button>
+            </div>
+
+            <p id="scheduleReadonlyNotice" class="schedule-readonly-notice"></p>
+
             <div class="schedule-composer">
               <div class="selected-time-card">
                 <span>선택 시간</span>

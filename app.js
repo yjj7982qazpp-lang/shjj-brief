@@ -36,6 +36,17 @@ const DEFAULT_LOCATION = {
   longitude: 126.9780,
 };
 
+const DEFAULT_COMPANY = {
+  id: "shjj-default",
+  name: "SHJJ 회사방",
+};
+
+const DEFAULT_MEMBER = {
+  id: "local-admin",
+  name: "관리자",
+  role: "admin",
+};
+
 const WEATHER_COPY = {
   loading: "날씨 정보를 불러오는 중",
   failed: "날씨 정보를 불러오지 못했습니다.",
@@ -103,6 +114,9 @@ const state = {
   longitude: DEFAULT_LOCATION.longitude,
   weather: null,
   schedules: [],
+  scheduleFilter: "today",
+  company: DEFAULT_COMPANY,
+  member: DEFAULT_MEMBER,
   notificationTime: DEFAULT_NOTIFICATION_TIME,
   weatherMode: "today",
 };
@@ -546,6 +560,70 @@ function updateSettingsView() {
   setText("settingCityName", DEFAULT_LOCATION.city);
 }
 
+function getTodayDateString() {
+  const now = new Date();
+  return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+}
+
+function getWeekRange(dateString = getTodayDateString()) {
+  const base = new Date(`${dateString}T00:00:00`);
+  const day = base.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const start = new Date(base);
+  start.setDate(base.getDate() + mondayOffset);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  return {
+    start: `${start.getFullYear()}-${pad2(start.getMonth() + 1)}-${pad2(start.getDate())}`,
+    end: `${end.getFullYear()}-${pad2(end.getMonth() + 1)}-${pad2(end.getDate())}`,
+  };
+}
+
+function canWriteSchedule(member = state.member) {
+  return member?.role === "admin" || member?.role === "editor";
+}
+
+function canManageCompany(member = state.member) {
+  return member?.role === "admin";
+}
+
+function getMemberRoleLabel(member = state.member) {
+  if (member?.role === "admin") return "관리자";
+  if (member?.role === "editor") return "편집 가능";
+  return "읽기 전용";
+}
+
+function normalizeScheduleItem(item) {
+  const now = new Date().toISOString();
+  const id = safeText(item?.id, makeId());
+  const date = safeText(item?.date, getTodayDateString());
+  const time = safeText(item?.time, "09:00");
+
+  return {
+    id,
+    companyId: safeText(item?.companyId, DEFAULT_COMPANY.id),
+    calendarScope: safeText(item?.calendarScope, "company"),
+    date,
+    time,
+    title: safeText(item?.title, "제목 없음"),
+    memo: safeText(item?.memo, ""),
+    createdBy: safeText(item?.createdBy, DEFAULT_MEMBER.id),
+    createdAt: safeText(item?.createdAt, now),
+    updatedAt: safeText(item?.updatedAt, now),
+    source: safeText(item?.source, "manual"),
+  };
+}
+
+function loadSchedules() {
+  const stored = loadArray(STORAGE_KEYS.schedules);
+  const normalized = stored.map(normalizeScheduleItem);
+  if (JSON.stringify(stored) !== JSON.stringify(normalized)) {
+    saveJson(STORAGE_KEYS.schedules, normalized);
+  }
+  return normalized;
+}
+
 function getSelectedScheduleTime() {
   const hour = $("scheduleHourSelect")?.value || "09";
   const minute = $("scheduleMinuteSelect")?.value || "00";
@@ -624,33 +702,79 @@ function createScheduleRow(item) {
   const main = document.createElement("div");
   main.className = "item-main";
 
-  const time = document.createElement("span");
-  time.className = "item-time";
-  time.textContent = safeText(item.time, "--:--");
+  const datetime = document.createElement("span");
+  datetime.className = "item-time";
+  datetime.textContent = `${safeText(item.date, getTodayDateString())} ${safeText(item.time, "--:--")}`;
 
   const title = document.createElement("span");
   title.className = "item-title";
   title.textContent = safeText(item.title, "제목 없음");
 
+  const meta = document.createElement("span");
+  meta.className = "item-meta";
+  meta.textContent = item.calendarScope === "company"
+    ? `${state.company.name} · ${safeText(item.createdBy, "local")}`
+    : safeText(item.createdBy, "local");
+
   const actions = document.createElement("div");
   actions.className = "item-actions";
 
-  const deleteButton = createActionButton("삭제", "delete-schedule", item.id, () => {
-    removeSchedule(item.id);
-  });
+  if (canWriteSchedule()) {
+    const deleteButton = createActionButton("삭제", "delete-schedule", item.id, () => {
+      removeSchedule(item.id);
+    });
+    actions.appendChild(deleteButton);
+  }
 
-  main.append(time, title);
-  actions.appendChild(deleteButton);
+  main.append(datetime, title, meta);
   row.append(main, actions);
   return row;
 }
 
 function sortSchedules(items) {
-  return [...items].sort((a, b) => safeText(a.time, "").localeCompare(safeText(b.time, "")));
+  return [...items].sort((a, b) => {
+    const aKey = `${safeText(a.date, "")} ${safeText(a.time, "")}`;
+    const bKey = `${safeText(b.date, "")} ${safeText(b.time, "")}`;
+    return aKey.localeCompare(bKey);
+  });
+}
+
+function getVisibleSchedules() {
+  const today = getTodayDateString();
+  if (state.scheduleFilter === "today") {
+    return state.schedules.filter((item) => item.date === today);
+  }
+
+  if (state.scheduleFilter === "week") {
+    const { start, end } = getWeekRange(today);
+    return state.schedules.filter((item) => item.date >= start && item.date <= end);
+  }
+
+  return state.schedules;
 }
 
 function updateBrief() {
-  setText("scheduleCount", `${state.schedules.length}건`);
+  const visibleCount = getVisibleSchedules().length;
+  const totalCount = state.schedules.length;
+  setText("scheduleCount", state.scheduleFilter === "all" ? `${totalCount}건` : `${visibleCount}/${totalCount}건`);
+}
+
+function renderScheduleAccess() {
+  const writable = canWriteSchedule();
+  setText("scheduleCompanyBadge", state.company.name);
+  setText("scheduleRoleBadge", getMemberRoleLabel());
+  setText("scheduleReadonlyNotice", writable ? "" : "읽기 전용 권한입니다. 일정 추가와 삭제는 관리자 또는 편집자만 가능합니다.");
+
+  const input = $("scheduleTitleInput");
+  const addButton = $("addScheduleBtn");
+  if (input) input.disabled = !writable;
+  if (addButton) addButton.disabled = !writable;
+}
+
+function renderScheduleFilters() {
+  $$(".schedule-filter-btn").forEach((button) => {
+    button.classList.toggle("active", button.dataset.scheduleFilter === state.scheduleFilter);
+  });
 }
 
 function renderSchedules() {
@@ -658,26 +782,36 @@ function renderSchedules() {
   if (!list) return;
 
   clearChildren(list);
+  renderScheduleAccess();
+  renderScheduleFilters();
 
-  if (state.schedules.length === 0) {
-    list.appendChild(createEmptyListItem("오늘 등록된 일정이 없습니다."));
+  const visibleSchedules = getVisibleSchedules();
+
+  if (visibleSchedules.length === 0) {
+    const emptyMessage = state.scheduleFilter === "today"
+      ? "오늘 등록된 일정이 없습니다."
+      : "표시할 일정이 없습니다.";
+    list.appendChild(createEmptyListItem(emptyMessage));
     updateBrief();
     return;
   }
 
-  sortSchedules(state.schedules).forEach((item) => {
+  sortSchedules(visibleSchedules).forEach((item) => {
     list.appendChild(createScheduleRow(item));
   });
   updateBrief();
 }
 
 function removeSchedule(scheduleId) {
+  if (!canWriteSchedule()) return;
   state.schedules = state.schedules.filter((schedule) => schedule.id !== scheduleId);
   saveJson(STORAGE_KEYS.schedules, state.schedules);
   renderSchedules();
 }
 
 function addSchedule() {
+  if (!canWriteSchedule()) return;
+
   const input = $("scheduleTitleInput");
   const title = input?.value.trim() || "";
 
@@ -687,12 +821,19 @@ function addSchedule() {
     return;
   }
 
-  state.schedules.push({
+  state.schedules.push(normalizeScheduleItem({
     id: makeId(),
+    companyId: state.company.id,
+    calendarScope: "company",
+    date: getTodayDateString(),
     source: "manual",
     time: getSelectedScheduleTime(),
     title,
-  });
+    memo: "",
+    createdBy: state.member.id,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }));
 
   saveJson(STORAGE_KEYS.schedules, state.schedules);
   if (input) {
@@ -2101,6 +2242,12 @@ function bindScheduleEvents() {
   bindEvent($("scheduleTitleInput"), "keydown", (event) => {
     if (event.key === "Enter") addSchedule();
   });
+  $$(".schedule-filter-btn").forEach((button) => {
+    bindEvent(button, "click", () => {
+      state.scheduleFilter = button.dataset.scheduleFilter || "today";
+      renderSchedules();
+    });
+  });
 }
 
 function bindNotificationEvents() {
@@ -2312,7 +2459,7 @@ async function init() {
   setupScheduleTimePicker();
   setupLawTabs();
 
-  state.schedules = loadArray(STORAGE_KEYS.schedules);
+  state.schedules = loadSchedules();
   loadNotificationSettings();
   renderSchedules();
   bindEvents();
