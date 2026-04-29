@@ -966,8 +966,8 @@ textarea:focus {
 
 .schedule-admin-member {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(132px, 148px);
-  gap: 10px 12px;
+  grid-template-columns: minmax(0, 1fr) 116px;
+  gap: 10px;
   align-items: center;
   padding: 11px 12px;
   border-radius: 12px;
@@ -981,12 +981,31 @@ textarea:focus {
   gap: 6px;
 }
 
+.schedule-admin-controls {
+  align-items: center;
+}
+
 .schedule-admin-name-row,
 .schedule-admin-code-row {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   flex-wrap: wrap;
+}
+
+.schedule-admin-code-row {
+  display: grid;
+  align-items: center;
+  column-gap: 6px;
+  row-gap: 6px;
+}
+
+.schedule-admin-code-row.with-delete {
+  grid-template-columns: 92px 52px 28px;
+}
+
+.schedule-admin-code-row.without-delete {
+  grid-template-columns: 92px 52px;
 }
 
 .schedule-admin-member strong {
@@ -996,7 +1015,8 @@ textarea:focus {
 }
 
 .schedule-admin-edit-btn,
-.schedule-admin-copy-btn {
+.schedule-admin-copy-btn,
+.schedule-admin-delete-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1019,6 +1039,23 @@ textarea:focus {
   transform: scaleX(-1);
 }
 
+.schedule-admin-copy-btn {
+  width: 52px;
+  min-width: 52px;
+  padding: 0;
+}
+
+.schedule-admin-delete-btn {
+  width: 28px;
+  min-width: 28px;
+  padding: 0;
+  color: #9a4d4d;
+  background: rgba(185, 28, 28, 0.06);
+  border-color: rgba(185, 28, 28, 0.12);
+  font-size: 16px;
+  line-height: 1;
+}
+
 .schedule-admin-member span {
   color: var(--muted);
   font-size: 11px;
@@ -1028,19 +1065,27 @@ textarea:focus {
 .schedule-admin-code {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 26px;
-  padding: 0 9px;
+  width: 92px;
+  min-width: 92px;
+  max-width: 92px;
+  padding: 0 8px;
   border-radius: 999px;
   background: rgba(29, 78, 216, 0.08);
   color: var(--blue);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .schedule-admin-member select {
   min-height: 38px;
-  width: 100%;
+  width: 116px;
+  min-width: 116px;
+  max-width: 116px;
+  flex-shrink: 0;
   font-size: 13px;
   font-weight: 900;
 }
@@ -1057,6 +1102,16 @@ textarea:focus {
 
   .schedule-admin-controls {
     grid-template-columns: 1fr;
+  }
+
+  .schedule-admin-code-row.with-delete,
+  .schedule-admin-code-row.without-delete {
+    grid-template-columns: repeat(3, minmax(0, auto));
+    justify-content: start;
+  }
+
+  .schedule-admin-code-row.without-delete {
+    grid-template-columns: 92px 52px;
   }
 }
 

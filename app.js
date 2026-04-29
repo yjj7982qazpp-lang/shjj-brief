@@ -734,7 +734,7 @@ function generateMemberInviteCode(extraMembers = []) {
   const codes = buildInviteCodeSet(extraMembers);
   let code = "";
   do {
-    code = `MEMBER-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    code = `SHJJ-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
   } while (codes.has(code));
   return code;
 }
@@ -743,6 +743,15 @@ function getFixedInviteCodeByMemberId(memberId) {
   if (memberId === "local-admin") return "SHJJ-ADMIN";
   if (memberId === "local-member") return "SHJJ-MEMBER";
   return "";
+}
+
+function normalizeGeneratedInviteCode(rawCode, memberId, extraMembers = []) {
+  const fixedInviteCode = getFixedInviteCodeByMemberId(memberId);
+  if (fixedInviteCode) return fixedInviteCode;
+
+  const code = safeText(rawCode, "").trim().toUpperCase();
+  if (/^SHJJ-[A-Z0-9]{5}$/.test(code)) return code;
+  return generateMemberInviteCode(extraMembers);
 }
 
 function getNextMemberName() {
@@ -763,8 +772,7 @@ function normalizeCompanyMember(value) {
   const schedulePermission = role === "admin"
     ? "write"
     : value?.schedulePermission === "write" ? "write" : "read";
-  const fixedInviteCode = getFixedInviteCodeByMemberId(memberId);
-  const inviteCode = fixedInviteCode || safeText(value?.inviteCode, "").trim().toUpperCase() || generateMemberInviteCode();
+  const inviteCode = normalizeGeneratedInviteCode(value?.inviteCode, memberId);
 
   return {
     memberId,
@@ -781,12 +789,14 @@ function getCompanyMemberById(memberId) {
 }
 
 function loadCompanyMembers() {
-  const stored = loadArray(STORAGE_KEYS.companyMembers);
-  const byId = new Map(DEFAULT_COMPANY_MEMBERS.map((member) => [member.memberId, normalizeCompanyMember(member)]));
+  const rawStored = localStorage.getItem(STORAGE_KEYS.companyMembers);
+  const stored = rawStored ? loadArray(STORAGE_KEYS.companyMembers) : [];
+  const seedMembers = rawStored ? [DEFAULT_COMPANY_MEMBERS[0]] : DEFAULT_COMPANY_MEMBERS;
+  const byId = new Map(seedMembers.map((member) => [member.memberId, normalizeCompanyMember(member)]));
   stored.forEach((member) => {
     const normalized = normalizeCompanyMember({
       ...member,
-      inviteCode: getFixedInviteCodeByMemberId(member?.memberId) || member?.inviteCode || generateMemberInviteCode(Array.from(byId.values())),
+      inviteCode: normalizeGeneratedInviteCode(member?.inviteCode, member?.memberId, Array.from(byId.values())),
     });
     byId.set(normalized.memberId, normalized);
   });
@@ -823,6 +833,7 @@ function normalizeCompanyMembership(value) {
   if (!role) return null;
   const memberId = safeText(value.memberId, role === "admin" ? "local-admin" : "local-member");
   const managedMember = getCompanyMemberById(memberId);
+  if (memberId !== "local-admin" && !managedMember) return null;
   const status = managedMember?.status || (value.status === "inactive" ? "inactive" : "active");
   const schedulePermission = role === "admin"
     ? "write"
@@ -959,6 +970,11 @@ function addCompanyMember() {
   renderSchedules();
 }
 
+function canDeleteCompanyMember(member) {
+  if (!member) return false;
+  return member.memberId !== "local-admin";
+}
+
 function renameCompanyMember(memberId) {
   if (!canManageCompany()) return;
   const target = getCompanyMemberById(memberId);
@@ -973,6 +989,26 @@ function renameCompanyMember(memberId) {
   ));
   saveCompanyMembers();
   loadCompanyMembership();
+  renderSchedules();
+}
+
+function removeCompanyMember(memberId) {
+  if (!canManageCompany()) return;
+  const target = getCompanyMemberById(memberId);
+  if (!canDeleteCompanyMember(target)) return;
+  if (!confirm("이 구성원을 삭제할까요?")) return;
+
+  state.companyMembers = state.companyMembers.filter((member) => member.memberId !== memberId);
+  saveCompanyMembers();
+
+  if (state.companyMembership?.memberId === memberId) {
+    clearCompanyMembership();
+    state.invitePanelOpen = false;
+    state.inactiveNoticeShown = false;
+  } else {
+    loadCompanyMembership();
+  }
+
   renderSchedules();
 }
 
@@ -1023,6 +1059,8 @@ function renderScheduleAdminPanel() {
 
     const codeRow = document.createElement("div");
     codeRow.className = "schedule-admin-code-row";
+    codeRow.classList.toggle("with-delete", canDeleteCompanyMember(member));
+    codeRow.classList.toggle("without-delete", !canDeleteCompanyMember(member));
 
     const codeChip = document.createElement("span");
     codeChip.className = "schedule-admin-code";
@@ -1036,8 +1074,19 @@ function renderScheduleAdminPanel() {
       copyInviteCode(member.inviteCode);
     });
 
+    const deleteButton = document.createElement("button");
+    if (canDeleteCompanyMember(member)) {
+      deleteButton.type = "button";
+      deleteButton.className = "schedule-admin-delete-btn";
+      deleteButton.textContent = "−";
+      deleteButton.setAttribute("aria-label", "구성원 삭제");
+      deleteButton.setAttribute("title", "구성원 삭제");
+      deleteButton.addEventListener("click", () => removeCompanyMember(member.memberId));
+    }
+
     nameRow.append(name, editButton);
     codeRow.append(codeChip, copyButton);
+    if (canDeleteCompanyMember(member)) codeRow.append(deleteButton);
     info.append(nameRow, codeRow);
 
     const select = document.createElement("select");
