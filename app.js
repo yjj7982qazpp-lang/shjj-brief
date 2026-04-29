@@ -9,7 +9,7 @@
 const $ = (id) => document.getElementById(id);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
-const APP_VERSION = "0.1";
+const APP_VERSION = "0.2";
 const PRODUCTION_HOSTNAMES = [
   "shjj-brief.pages.dev",
   "shjjbrief.com",
@@ -79,6 +79,7 @@ const DEFAULT_COMPANY_MEMBERS = [
     role: "admin",
     schedulePermission: "write",
     status: "active",
+    inviteCode: "SHJJ-ADMIN",
   },
   {
     memberId: "local-member",
@@ -86,6 +87,7 @@ const DEFAULT_COMPANY_MEMBERS = [
     role: "member",
     schedulePermission: "read",
     status: "active",
+    inviteCode: "SHJJ-MEMBER",
   },
 ];
 
@@ -719,20 +721,58 @@ function getSchedulePermissionLabel(member = state.member) {
   return "읽기 전용";
 }
 
+function buildInviteCodeSet(extraMembers = []) {
+  const codes = new Set(Object.keys(INVITE_CODES));
+  [...state.companyMembers, ...extraMembers].forEach((member) => {
+    const code = safeText(member?.inviteCode, "").trim().toUpperCase();
+    if (code) codes.add(code);
+  });
+  return codes;
+}
+
+function generateMemberInviteCode(extraMembers = []) {
+  const codes = buildInviteCodeSet(extraMembers);
+  let code = "";
+  do {
+    code = `MEMBER-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  } while (codes.has(code));
+  return code;
+}
+
+function getFixedInviteCodeByMemberId(memberId) {
+  if (memberId === "local-admin") return "SHJJ-ADMIN";
+  if (memberId === "local-member") return "SHJJ-MEMBER";
+  return "";
+}
+
+function getNextMemberName() {
+  const usedNumbers = state.companyMembers.reduce((numbers, member) => {
+    const match = safeText(member?.memberName, "").match(/^구성원\s+(\d+)$/);
+    if (match) numbers.push(Number(match[1]));
+    return numbers;
+  }, []);
+  const nextNumber = usedNumbers.length ? Math.max(...usedNumbers) + 1 : 1;
+  return `구성원 ${nextNumber}`;
+}
+
 function normalizeCompanyMember(value) {
   const role = value?.role === "admin" ? "admin" : "member";
   const fallback = role === "admin" ? DEFAULT_COMPANY_MEMBERS[0] : DEFAULT_COMPANY_MEMBERS[1];
+  const memberId = safeText(value?.memberId, fallback.memberId);
   const status = value?.status === "inactive" ? "inactive" : "active";
   const schedulePermission = role === "admin"
     ? "write"
     : value?.schedulePermission === "write" ? "write" : "read";
+  const fixedInviteCode = getFixedInviteCodeByMemberId(memberId);
+  const inviteCode = fixedInviteCode || safeText(value?.inviteCode, "").trim().toUpperCase() || generateMemberInviteCode();
 
   return {
-    memberId: safeText(value?.memberId, fallback.memberId),
+    memberId,
     memberName: safeText(value?.memberName, fallback.memberName),
     role,
     schedulePermission,
     status,
+    inviteCode,
   };
 }
 
@@ -744,11 +784,36 @@ function loadCompanyMembers() {
   const stored = loadArray(STORAGE_KEYS.companyMembers);
   const byId = new Map(DEFAULT_COMPANY_MEMBERS.map((member) => [member.memberId, normalizeCompanyMember(member)]));
   stored.forEach((member) => {
-    const normalized = normalizeCompanyMember(member);
+    const normalized = normalizeCompanyMember({
+      ...member,
+      inviteCode: getFixedInviteCodeByMemberId(member?.memberId) || member?.inviteCode || generateMemberInviteCode(Array.from(byId.values())),
+    });
     byId.set(normalized.memberId, normalized);
   });
   state.companyMembers = Array.from(byId.values());
   saveJson(STORAGE_KEYS.companyMembers, state.companyMembers);
+}
+
+function saveCompanyMembers() {
+  saveJson(STORAGE_KEYS.companyMembers, state.companyMembers);
+}
+
+function findRoleInfoByInviteCode(code) {
+  const normalizedCode = safeText(code, "").trim().toUpperCase();
+  if (!normalizedCode) return null;
+
+  const managedMember = state.companyMembers.find((member) => member.inviteCode === normalizedCode);
+  if (managedMember) {
+    return {
+      memberId: managedMember.memberId,
+      memberName: managedMember.memberName,
+      role: managedMember.role,
+      schedulePermission: managedMember.role === "admin" ? "write" : managedMember.schedulePermission,
+      status: managedMember.status,
+    };
+  }
+
+  return INVITE_CODES[normalizedCode] || null;
 }
 
 function normalizeCompanyMembership(value) {
@@ -823,10 +888,16 @@ function clearCompanyMembership() {
 function joinCompanyRoom() {
   const input = $("inviteCodeInput");
   const code = (input?.value || "").trim().toUpperCase();
-  const roleInfo = INVITE_CODES[code];
+  const roleInfo = findRoleInfoByInviteCode(code);
 
   if (!roleInfo) {
     setText("scheduleInviteFeedback", "초대코드가 올바르지 않습니다.");
+    input?.focus();
+    return;
+  }
+
+  if (roleInfo.status === "inactive") {
+    setText("scheduleInviteFeedback", "비활성 구성원은 참여할 수 없습니다.");
     input?.focus();
     return;
   }
@@ -868,15 +939,64 @@ function updateCompanyMemberAccess(memberId, accessValue) {
       schedulePermission: accessValue === "write" ? "write" : "read",
     };
   });
-  saveJson(STORAGE_KEYS.companyMembers, state.companyMembers);
+  saveCompanyMembers();
   loadCompanyMembership();
   renderSchedules();
 }
 
+function addCompanyMember() {
+  if (!canManageCompany()) return;
+  const draftMember = normalizeCompanyMember({
+    memberId: makeId(),
+    memberName: getNextMemberName(),
+    role: "member",
+    schedulePermission: "read",
+    status: "active",
+    inviteCode: generateMemberInviteCode(),
+  });
+  state.companyMembers = [...state.companyMembers, draftMember];
+  saveCompanyMembers();
+  renderSchedules();
+}
+
+function renameCompanyMember(memberId) {
+  if (!canManageCompany()) return;
+  const target = getCompanyMemberById(memberId);
+  if (!target) return;
+  const nextName = prompt("구성원 이름을 입력하세요.", target.memberName);
+  if (nextName === null) return;
+  const trimmedName = nextName.trim();
+  if (!trimmedName) return;
+
+  state.companyMembers = state.companyMembers.map((member) => (
+    member.memberId === memberId ? { ...member, memberName: trimmedName } : member
+  ));
+  saveCompanyMembers();
+  loadCompanyMembership();
+  renderSchedules();
+}
+
+async function copyInviteCode(inviteCode) {
+  if (!inviteCode) return;
+  if (!navigator.clipboard?.writeText) {
+    prompt("초대코드를 확인하세요.", inviteCode);
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(inviteCode);
+    showNotificationToast("초대코드를 복사했습니다.");
+  } catch (error) {
+    console.warn("Failed to copy invite code", error);
+    prompt("초대코드를 확인하세요.", inviteCode);
+  }
+}
+
 function renderScheduleAdminPanel() {
   const list = $("scheduleAdminMemberList");
+  const addButton = $("addScheduleMemberBtn");
   if (!list) return;
   clearChildren(list);
+  if (addButton) addButton.hidden = !canManageCompany();
 
   if (!canManageCompany()) return;
 
@@ -885,11 +1005,40 @@ function renderScheduleAdminPanel() {
     row.className = "schedule-admin-member";
 
     const info = document.createElement("div");
+    info.className = "schedule-admin-member-info";
+
+    const nameRow = document.createElement("div");
+    nameRow.className = "schedule-admin-name-row";
+
     const name = document.createElement("strong");
     name.textContent = member.memberName;
-    const meta = document.createElement("span");
-    meta.textContent = member.role === "admin" ? "관리자" : "구성원";
-    info.append(name, meta);
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "schedule-admin-edit-btn";
+    editButton.textContent = "✎";
+    editButton.setAttribute("aria-label", "구성원 이름 수정");
+    editButton.setAttribute("title", "구성원 이름 수정");
+    editButton.addEventListener("click", () => renameCompanyMember(member.memberId));
+
+    const codeRow = document.createElement("div");
+    codeRow.className = "schedule-admin-code-row";
+
+    const codeChip = document.createElement("span");
+    codeChip.className = "schedule-admin-code";
+    codeChip.textContent = member.inviteCode;
+
+    const copyButton = document.createElement("button");
+    copyButton.type = "button";
+    copyButton.className = "schedule-admin-copy-btn";
+    copyButton.textContent = "복사";
+    copyButton.addEventListener("click", () => {
+      copyInviteCode(member.inviteCode);
+    });
+
+    nameRow.append(name, editButton);
+    codeRow.append(codeChip, copyButton);
+    info.append(nameRow, codeRow);
 
     const select = document.createElement("select");
     select.disabled = member.role === "admin";
@@ -906,7 +1055,11 @@ function renderScheduleAdminPanel() {
     select.value = member.status === "inactive" ? "inactive" : member.schedulePermission;
     select.addEventListener("change", () => updateCompanyMemberAccess(member.memberId, select.value));
 
-    row.append(info, select);
+    const controls = document.createElement("div");
+    controls.className = "schedule-admin-controls";
+    controls.appendChild(select);
+
+    row.append(info, controls);
     list.appendChild(row);
   });
 }
@@ -2768,6 +2921,7 @@ function bindScheduleEvents() {
     event.stopPropagation();
     toggleScheduleInvitePanel();
   });
+  bindEvent($("addScheduleMemberBtn"), "click", addCompanyMember);
   bindEvent($("joinCompanyRoomBtn"), "click", joinCompanyRoom);
   bindEvent($("inviteCodeInput"), "keydown", (event) => {
     if (event.key === "Enter") joinCompanyRoom();
