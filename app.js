@@ -12,6 +12,8 @@ const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selec
 const APP_VERSION = "0.1";
 const PRODUCTION_HOSTNAMES = [
   "shjj-brief.pages.dev",
+  "shjjbrief.com",
+  "www.shjjbrief.com",
   "www.shjj-brief.com",
   "shjj-brief.com",
   "brief.shjj.co.kr",
