@@ -20,9 +20,10 @@ function daysAgo(days) {
   return dateText(date);
 }
 
-function emptyMetrics(status = "pending", message = "분석 데이터 연동 대기") {
+function emptyMetrics(status = "pending", message = "분석 데이터 연동 대기", reason = "not_configured") {
   return {
     status,
+    reason,
     message,
     views: {
       today: null,
@@ -121,12 +122,16 @@ async function fetchZoneAnalytics(env) {
 }
 
 export async function onRequestGet({ env }) {
-  if (!env.CLOUDFLARE_API_TOKEN || !env.CLOUDFLARE_ACCOUNT_ID) {
-    return jsonResponse(emptyMetrics());
+  if (!env.CLOUDFLARE_ZONE_ID) {
+    return jsonResponse(emptyMetrics(
+      "pending",
+      "pages.dev 환경에서는 Zone Analytics를 사용할 수 없습니다.",
+      "missing_zone"
+    ));
   }
 
-  if (!env.CLOUDFLARE_ZONE_ID) {
-    return jsonResponse(emptyMetrics("pending", "CLOUDFLARE_ZONE_ID 설정 대기"));
+  if (!env.CLOUDFLARE_API_TOKEN || !env.CLOUDFLARE_ACCOUNT_ID) {
+    return jsonResponse(emptyMetrics());
   }
 
   try {

@@ -450,7 +450,9 @@
 
     function renderAnalytics(data) {
       const pending = data?.status !== "ready";
-      $("analyticsMessage").textContent = pending ? "분석 데이터 연동 대기" : safeText(data.message, "분석 데이터 연동 완료");
+      $("analyticsMessage").textContent = data?.reason === "missing_zone"
+        ? "커스텀 도메인 또는 Pages Analytics 연동 필요 · 현재 pages.dev 환경에서는 Zone 조회수 연동 대기"
+        : pending ? "분석 데이터 연동 대기" : safeText(data.message, "분석 데이터 연동 완료");
       setMetricValue("viewsToday", data?.views?.today);
       setMetricValue("viewsWeek", data?.views?.last_7_days);
       setMetricValue("viewsMonth", data?.views?.last_30_days);
