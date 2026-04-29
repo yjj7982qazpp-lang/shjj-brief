@@ -718,7 +718,7 @@ function getMemberRoleLabel(member = state.member) {
 function getSchedulePermissionLabel(member = state.member) {
   if (!member || member.status === "inactive") return "접속 차단";
   if (member.role === "admin" || member.schedulePermission === "write") return "읽기/쓰기";
-  return "읽기 전용";
+  return "읽기";
 }
 
 function buildInviteCodeSet(extraMembers = []) {
@@ -1093,7 +1093,7 @@ function renderScheduleAdminPanel() {
     select.disabled = member.role === "admin";
     [
       ["write", "읽기/쓰기"],
-      ["read", "읽기 전용"],
+      ["read", "읽기"],
       ["inactive", "비활성화"],
     ].forEach(([value, label]) => {
       const option = document.createElement("option");
@@ -1511,7 +1511,7 @@ function renderScheduleAccess() {
   setText("scheduleCompanyBadge", state.company.name);
   setText("scheduleRoleBadge", getMemberRoleLabel());
   setText("schedulePermissionBadge", getSchedulePermissionLabel());
-  setText("scheduleReadonlyNotice", writable ? "" : "구성원은 읽기 전용입니다.");
+  setText("scheduleReadonlyNotice", writable ? "" : "구성원은 읽기입니다.");
 
   const input = $("scheduleTitleInput");
   const openButton = $("openScheduleSheetBtn");
