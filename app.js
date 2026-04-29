@@ -599,6 +599,11 @@ function normalizeScheduleItem(item) {
   const id = safeText(item?.id, makeId());
   const date = safeText(item?.date, getTodayDateString());
   const time = safeText(item?.time, "09:00");
+  const rawEstimatedTravelMinutes = item?.estimatedTravelMinutes;
+  const estimatedTravelMinutes = rawEstimatedTravelMinutes === null || rawEstimatedTravelMinutes === undefined || rawEstimatedTravelMinutes === ""
+    ? NaN
+    : Number(rawEstimatedTravelMinutes);
+  const bufferMinutes = Number(item?.bufferMinutes);
 
   return {
     id,
@@ -608,6 +613,10 @@ function normalizeScheduleItem(item) {
     time,
     title: safeText(item?.title, "제목 없음"),
     memo: safeText(item?.memo, ""),
+    location: safeText(item?.location, ""),
+    estimatedTravelMinutes: Number.isFinite(estimatedTravelMinutes) ? estimatedTravelMinutes : null,
+    bufferMinutes: Number.isFinite(bufferMinutes) ? bufferMinutes : 15,
+    detailMemo: safeText(item?.detailMemo, ""),
     createdBy: safeText(item?.createdBy, DEFAULT_MEMBER.id),
     createdAt: safeText(item?.createdAt, now),
     updatedAt: safeText(item?.updatedAt, now),
@@ -630,6 +639,67 @@ function getSelectedScheduleTime() {
 
 function getSelectedScheduleDate() {
   return $("scheduleDateInput")?.value || getTodayDateString();
+}
+
+function toScheduleMinutes(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const minutes = Number(value);
+  return Number.isFinite(minutes) ? minutes : null;
+}
+
+function formatScheduleMinutes(value, emptyText = "이동시간 미입력") {
+  const minutes = toScheduleMinutes(value);
+  if (minutes === null) return emptyText;
+  return `${minutes}분`;
+}
+
+function getRecommendedDepartureTime(item) {
+  const travelMinutes = toScheduleMinutes(item.estimatedTravelMinutes);
+  const bufferMinutes = toScheduleMinutes(item.bufferMinutes) ?? 15;
+  if (travelMinutes === null) return "-";
+
+  const scheduleTime = new Date(`${item.date}T${safeText(item.time, "09:00")}`);
+  if (Number.isNaN(scheduleTime.getTime())) return "-";
+
+  const totalBuffer = travelMinutes + bufferMinutes;
+  scheduleTime.setMinutes(scheduleTime.getMinutes() - totalBuffer);
+  return `${pad2(scheduleTime.getHours())}:${pad2(scheduleTime.getMinutes())}`;
+}
+
+function createScheduleDetailView(item) {
+  const detail = document.createElement("details");
+  detail.className = "schedule-detail-fold";
+
+  const summary = document.createElement("summary");
+  summary.textContent = "상세 보기";
+
+  const body = document.createElement("div");
+  body.className = "schedule-detail-body";
+
+  const rows = [
+    ["도착지", safeText(item.location, "도착지 없음")],
+    ["예상 이동시간", formatScheduleMinutes(item.estimatedTravelMinutes)],
+    ["여유시간", formatScheduleMinutes(item.bufferMinutes, "15분")],
+    ["권장 출발시간", toScheduleMinutes(item.estimatedTravelMinutes) !== null ? getRecommendedDepartureTime(item) : "-"],
+    ["메모", safeText(item.detailMemo, "메모 없음")],
+  ];
+
+  rows.forEach(([label, value]) => {
+    const row = document.createElement("div");
+    row.className = "schedule-detail-row";
+
+    const labelEl = document.createElement("span");
+    labelEl.textContent = label;
+
+    const valueEl = document.createElement("strong");
+    valueEl.textContent = value;
+
+    row.append(labelEl, valueEl);
+    body.appendChild(row);
+  });
+
+  detail.append(summary, body);
+  return detail;
 }
 
 function setupScheduleTimePicker() {
@@ -677,7 +747,7 @@ function createScheduleRow(item) {
     actions.appendChild(deleteButton);
   }
 
-  main.append(datetime, title, meta, weather);
+  main.append(datetime, title, meta, weather, createScheduleDetailView(item));
   row.append(main, actions);
   return row;
 }
@@ -813,8 +883,10 @@ function renderScheduleAccess() {
 
   const input = $("scheduleTitleInput");
   const addButton = $("addScheduleBtn");
+  const locationInput = $("scheduleLocationInput");
   if (input) input.disabled = !writable;
   if (addButton) addButton.disabled = !writable;
+  if (locationInput) locationInput.disabled = !writable;
 }
 
 function renderSchedules() {
@@ -850,6 +922,7 @@ function addSchedule() {
   if (!canWriteSchedule()) return;
 
   const input = $("scheduleTitleInput");
+  const locationInput = $("scheduleLocationInput");
   const title = input?.value.trim() || "";
 
   if (!title) {
@@ -867,6 +940,10 @@ function addSchedule() {
     time: getSelectedScheduleTime(),
     title,
     memo: "",
+    location: locationInput?.value.trim() || "",
+    estimatedTravelMinutes: null,
+    bufferMinutes: 15,
+    detailMemo: "",
     createdBy: state.member.id,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -877,6 +954,7 @@ function addSchedule() {
     input.value = "";
     input.focus();
   }
+  if (locationInput) locationInput.value = "";
   renderSchedules();
 }
 
@@ -2160,38 +2238,6 @@ async function requestNotification() {
   return false;
 }
 
-function buildNotificationWeatherLine() {
-  const snapshot = getWeatherSnapshot(0);
-  if (!snapshot) return "날씨 정보 확인 중";
-
-  const [title] = weatherText(snapshot.weatherCode);
-  return `${state.city} ${snapshot.temp}° · ${title} · 최고 ${snapshot.high}° / 최저 ${snapshot.low}°`;
-}
-
-async function showBriefNotification() {
-  if (!("Notification" in window)) return;
-
-  if (Notification.permission !== "granted") {
-    const ok = await requestNotification();
-    if (!ok) return;
-  }
-
-  const title = "SHJJ Brief · 오늘 브리핑";
-  const body = `${buildNotificationWeatherLine()}\n오늘 일정 ${state.schedules.length}건`;
-  const reg = await navigator.serviceWorker.getRegistration();
-
-  if (reg) {
-    reg.showNotification(title, {
-      body,
-      tag: "shjj-brief-test",
-      renotify: true,
-    });
-    return;
-  }
-
-  new Notification(title, { body });
-}
-
 function showNotificationToast(message) {
   const toast = $("notificationToast");
   if (!toast) return;
@@ -2290,7 +2336,6 @@ function bindScheduleEvents() {
 
 function bindNotificationEvents() {
   bindEvent($("notifyBtn"), "click", requestNotification);
-  bindEvent($("testNotifyBtn"), "click", showBriefNotification);
   bindEvent($("notificationTimeSaveBtn"), "click", () => {
     saveNotificationTime($("notificationTimeInput")?.value || DEFAULT_NOTIFICATION_TIME);
   });

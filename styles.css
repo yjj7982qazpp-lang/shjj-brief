@@ -707,6 +707,10 @@ textarea:focus {
   font-weight: 900;
 }
 
+.schedule-location-input {
+  width: 100%;
+}
+
 .list {
   display: grid;
   gap: 9px;
@@ -760,6 +764,45 @@ textarea:focus {
   color: var(--blue);
   font-size: 12px;
   font-weight: 900;
+}
+
+.schedule-detail-fold {
+  flex-basis: 100%;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.72);
+  box-shadow: inset 0 0 0 1px rgba(17,24,39,0.05);
+  overflow: hidden;
+}
+
+.schedule-detail-fold summary {
+  padding: 10px 12px;
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.schedule-detail-body {
+  display: grid;
+  gap: 7px;
+  padding: 0 12px 12px;
+}
+
+.schedule-detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.schedule-detail-row strong {
+  color: var(--text);
+  font-size: 12px;
+  text-align: right;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .schedule-calendar-fold {
@@ -1074,8 +1117,7 @@ textarea:focus {
   box-shadow: inset 0 0 0 1px rgba(17,24,39,0.06);
 }
 
-.notification-settings-note,
-.notification-test-hint {
+.notification-settings-note {
   margin: 0;
   color: var(--muted);
   font-size: 12px;
@@ -1099,22 +1141,6 @@ textarea:focus {
   font-size: 13px;
   font-weight: 900;
   box-shadow: 0 8px 18px rgba(23, 32, 51, 0.12);
-}
-
-.notification-test-hint {
-  margin: 6px 4px 10px;
-}
-
-.notify-test-btn {
-  width: 100%;
-  min-height: 54px;
-  margin: 2px 0 8px;
-  border: 0;
-  border-radius: 22px;
-  background: linear-gradient(145deg, var(--navy), var(--blue));
-  color: white;
-  font-weight: 900;
-  box-shadow: var(--shadow);
 }
 
 .notification-toast {
