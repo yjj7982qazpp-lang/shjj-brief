@@ -154,6 +154,7 @@ const state = {
   member: null,
   companyMembership: null,
   companyMembers: [],
+  inactiveNoticeShown: false,
   notificationTime: DEFAULT_NOTIFICATION_TIME,
   weatherMode: "today",
 };
@@ -758,8 +759,9 @@ function joinCompanyRoom() {
 
   saveCompanyMembership(roleInfo);
   if (input) input.value = "";
+  state.inactiveNoticeShown = false;
   renderSchedules();
-  showScheduleFeedback("SHJJ 회사방에 참여했습니다.");
+  showNotificationToast("SHJJ 회사방에 참여했습니다.");
 }
 
 function updateCompanyMemberAccess(memberId, accessValue) {
@@ -962,6 +964,12 @@ function setScheduleSheetOpen(open) {
 
 function showScheduleFeedback(message) {
   setText("scheduleFeedback", message);
+  clearTimeout(showScheduleFeedback.timerId);
+  if (message) {
+    showScheduleFeedback.timerId = setTimeout(() => {
+      setText("scheduleFeedback", "");
+    }, 2200);
+  }
 }
 
 function createScheduleRow(item) {
@@ -1167,13 +1175,16 @@ function renderScheduleAccess() {
   const writable = canWriteSchedule();
   const invitePanel = $("scheduleInvitePanel");
   const roomContent = $("scheduleRoomContent");
-  const blockedPanel = $("scheduleBlockedPanel");
   const adminPanel = $("scheduleAdminPanel");
 
   if (invitePanel) invitePanel.hidden = joined || inactive;
-  if (blockedPanel) blockedPanel.hidden = !inactive;
   if (roomContent) roomContent.hidden = !joined;
   if (adminPanel) adminPanel.hidden = !canManageCompany();
+
+  if (inactive && !state.inactiveNoticeShown) {
+    showNotificationToast("접속 권한이 없습니다.");
+    state.inactiveNoticeShown = true;
+  }
 
   if (!joined) {
     setText("scheduleCount", "0건");

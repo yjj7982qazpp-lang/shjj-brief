@@ -645,21 +645,21 @@ textarea:focus {
 
 .schedule-composer {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .schedule-invite-panel {
   display: grid;
-  gap: 10px;
-  padding: 14px;
+  gap: 8px;
+  padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--card-soft);
 }
 
 .schedule-invite-panel strong {
   color: var(--navy);
-  font-size: 17px;
+  font-size: 16px;
 }
 
 .schedule-invite-panel p {
@@ -677,35 +677,30 @@ textarea:focus {
 }
 
 .schedule-invite-form button {
-  min-height: 44px;
+  min-height: 40px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--blue);
   color: #fff;
   font-weight: 900;
   white-space: nowrap;
 }
 
-.schedule-blocked-panel {
-  border-color: rgba(185, 28, 28, 0.18);
-  background: rgba(254, 242, 242, 0.82);
-}
-
 .schedule-room-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
 .schedule-room-badge,
 .schedule-role-badge {
   display: inline-flex;
   align-items: center;
-  min-height: 30px;
-  padding: 0 10px;
+  min-height: 26px;
+  padding: 0 9px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
 }
 
@@ -720,7 +715,7 @@ textarea:focus {
 }
 
 .schedule-readonly-notice {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;
@@ -730,7 +725,7 @@ textarea:focus {
 .schedule-input-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 
 .schedule-input-grid label {
@@ -745,7 +740,7 @@ textarea:focus {
 }
 
 .schedule-input-grid input {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 900;
 }
 
@@ -755,19 +750,19 @@ textarea:focus {
 
 .schedule-memo-input {
   width: 100%;
-  min-height: 86px;
+  min-height: 76px;
   resize: vertical;
 }
 
 .schedule-open-btn {
   width: 100%;
-  min-height: 46px;
-  margin: 12px 0 8px;
+  min-height: 42px;
+  margin: 10px 0 6px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--blue);
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 900;
 }
 
@@ -777,8 +772,8 @@ textarea:focus {
 }
 
 .schedule-feedback {
-  min-height: 18px;
-  margin: 0 0 10px;
+  min-height: 16px;
+  margin: 0 0 8px;
   color: var(--blue);
   font-size: 12px;
   font-weight: 900;
@@ -799,17 +794,17 @@ textarea:focus {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: 18px;
+  padding: 14px;
   background: rgba(7, 17, 35, 0.38);
 }
 
 .schedule-sheet-panel {
   width: min(100%, 520px);
-  max-height: calc(100vh - 36px);
+  max-height: calc(100vh - 28px);
   overflow: auto;
-  padding: 18px;
+  padding: 16px;
   border: 1px solid var(--border);
-  border-radius: 22px 22px 18px 18px;
+  border-radius: 20px 20px 16px 16px;
   background: var(--card);
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
 }
@@ -823,17 +818,17 @@ textarea:focus {
 }
 
 .schedule-sheet-head {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .schedule-sheet-head strong {
   color: var(--navy);
-  font-size: 18px;
+  font-size: 17px;
 }
 
 .schedule-sheet-close {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border: 0;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.07);
@@ -843,14 +838,14 @@ textarea:focus {
 }
 
 .schedule-sheet-actions {
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 .schedule-sheet-actions button {
   flex: 1;
-  min-height: 44px;
+  min-height: 42px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 12px;
   font-weight: 900;
 }
 
@@ -866,10 +861,10 @@ textarea:focus {
 
 .schedule-selected-day-list {
   display: grid;
-  gap: 6px;
-  margin-top: 12px;
-  padding: 10px;
-  border-radius: 14px;
+  gap: 5px;
+  margin-top: 10px;
+  padding: 9px;
+  border-radius: 12px;
   background: rgba(15, 23, 42, 0.05);
   color: var(--muted);
   font-size: 12px;
@@ -882,14 +877,14 @@ textarea:focus {
 }
 
 .schedule-admin-panel {
-  margin-top: 12px;
-  border-radius: 14px;
+  margin-top: 10px;
+  border-radius: 12px;
   background: var(--card-soft);
 }
 
 .schedule-admin-panel summary {
   cursor: pointer;
-  padding: 12px;
+  padding: 10px;
   color: var(--navy);
   font-size: 13px;
   font-weight: 900;
@@ -897,8 +892,8 @@ textarea:focus {
 
 .schedule-admin-body {
   display: grid;
-  gap: 10px;
-  padding: 0 12px 12px;
+  gap: 8px;
+  padding: 0 10px 10px;
 }
 
 .schedule-admin-body p {
@@ -910,16 +905,16 @@ textarea:focus {
 
 .schedule-admin-member-list {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .schedule-admin-member {
   display: grid;
   grid-template-columns: 1fr minmax(120px, auto);
-  gap: 10px;
+  gap: 8px;
   align-items: center;
-  padding: 10px;
-  border-radius: 12px;
+  padding: 9px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.72);
 }
 
@@ -940,7 +935,7 @@ textarea:focus {
 }
 
 .schedule-admin-member select {
-  min-height: 38px;
+  min-height: 36px;
   font-size: 13px;
   font-weight: 900;
 }
@@ -1040,15 +1035,15 @@ textarea:focus {
 }
 
 .schedule-calendar-fold {
-  margin-bottom: 13px;
-  border-radius: 18px;
+  margin-bottom: 10px;
+  border-radius: 14px;
   background: var(--card-soft);
   box-shadow: inset 0 0 0 1px rgba(17,24,39,0.04);
   overflow: hidden;
 }
 
 .schedule-calendar-fold summary {
-  padding: 13px;
+  padding: 11px;
   color: var(--navy);
   font-size: 13px;
   font-weight: 900;
@@ -1057,8 +1052,8 @@ textarea:focus {
 
 .schedule-calendar-panel {
   display: grid;
-  gap: 10px;
-  padding: 0 13px 13px;
+  gap: 8px;
+  padding: 0 11px 11px;
 }
 
 .schedule-calendar-head {
@@ -1069,8 +1064,8 @@ textarea:focus {
 }
 
 .schedule-calendar-head button {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border: 1px solid rgba(17,24,39,0.06);
   border-radius: 12px;
   background: white;
@@ -1088,13 +1083,13 @@ textarea:focus {
 .schedule-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 5px;
+  gap: 4px;
 }
 
 .schedule-calendar-weekday,
 .schedule-calendar-empty,
 .schedule-calendar-day {
-  min-height: 32px;
+  min-height: 30px;
 }
 
 .schedule-calendar-weekday {
@@ -1145,7 +1140,7 @@ textarea:focus {
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  margin: 0 0 9px;
+  margin: 0 0 7px;
 }
 
 .schedule-today-head strong {
