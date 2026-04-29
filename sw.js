@@ -1,4 +1,4 @@
-const CACHE_NAME = "shjj-brief-v11-fresh-nav";
+const CACHE_NAME = "shjj-brief-v12-admin-ui";
 
 const ASSETS = [
   "./",

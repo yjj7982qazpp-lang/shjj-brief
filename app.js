@@ -9,7 +9,7 @@
 const $ = (id) => document.getElementById(id);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
-const APP_VERSION = "0.1";
+const APP_VERSION = "0.2";
 const PRODUCTION_HOSTNAMES = [
   "shjj-brief.pages.dev",
   "shjjbrief.com",
@@ -25,9 +25,17 @@ const APP_NAME = "SHJJ Brief";
 
 const STORAGE_KEYS = {
   schedules: "shjj_brief_schedules_v4",
+  companyMembership: "shjj_company_membership_v1",
+  companyMembers: "shjj_company_members_v1",
   notificationTime: "shjj_notification_time",
 };
 
+const SCHEDULE_STORAGE_VERSION = 1;
+
+// 일정 데이터는 운영 업데이트 후에도 같은 도메인/localStorage key에서 보존되어야 한다.
+// 이 key를 바꾸면 기존 일정이 사라진 것처럼 보일 수 있으므로 migration 없이 변경하지 않는다.
+// preview와 main은 도메인이 달라 localStorage가 자동 공유되지 않는다.
+// 여러 직원 기기 간 실제 일정 공유는 향후 서버/DB 연동이 필요하다.
 const DEFAULT_NOTIFICATION_TIME = "09:20";
 
 const DEFAULT_LOCATION = {
@@ -35,6 +43,53 @@ const DEFAULT_LOCATION = {
   latitude: 37.5665,
   longitude: 126.9780,
 };
+
+const DEFAULT_COMPANY = {
+  id: "shjj-default",
+  name: "SHJJ 회사방",
+};
+
+const DEFAULT_MEMBER = {
+  id: "local-admin",
+  name: "관리자",
+  role: "admin",
+};
+
+const INVITE_CODES = {
+  "SHJJ-ADMIN": {
+    memberId: "local-admin",
+    memberName: "관리자",
+    role: "admin",
+    schedulePermission: "write",
+    status: "active",
+  },
+  "SHJJ-MEMBER": {
+    memberId: "local-member",
+    memberName: "구성원",
+    role: "member",
+    schedulePermission: "read",
+    status: "active",
+  },
+};
+
+const DEFAULT_COMPANY_MEMBERS = [
+  {
+    memberId: "local-admin",
+    memberName: "관리자",
+    role: "admin",
+    schedulePermission: "write",
+    status: "active",
+    inviteCode: "SHJJ-ADMIN",
+  },
+  {
+    memberId: "local-member",
+    memberName: "구성원",
+    role: "member",
+    schedulePermission: "read",
+    status: "active",
+    inviteCode: "SHJJ-MEMBER",
+  },
+];
 
 const WEATHER_COPY = {
   loading: "날씨 정보를 불러오는 중",
@@ -74,13 +129,12 @@ const WEATHER_FIELD_PARAMS = {
     "precipitation_probability_max",
   ],
   hourly: [
+    "temperature_2m",
     "precipitation_probability",
     "precipitation",
   ],
 };
 
-const QUICK_SCHEDULE_TIMES = ["09:00", "10:00", "11:00", "13:30", "14:00", "15:00", "16:00", "17:00"];
-const SCHEDULE_MINUTES = ["00", "10", "20", "30", "40", "50"];
 const LAW_MAJOR_GROUPS = ["건축", "도시주택", "소방안전", "교통기타", "기타"];
 const LAW_GROUP_LABELS = {
   건축: "건축",
@@ -103,6 +157,13 @@ const state = {
   longitude: DEFAULT_LOCATION.longitude,
   weather: null,
   schedules: [],
+  scheduleCalendarMonth: null,
+  company: DEFAULT_COMPANY,
+  member: null,
+  companyMembership: null,
+  companyMembers: [],
+  inactiveNoticeShown: false,
+  invitePanelOpen: false,
   notificationTime: DEFAULT_NOTIFICATION_TIME,
   weatherMode: "today",
 };
@@ -183,6 +244,68 @@ function saveJson(key, value) {
 function loadArray(key) {
   const value = loadJson(key, []);
   return Array.isArray(value) ? value : [];
+}
+
+function readScheduleStoragePayload() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.schedules);
+    if (!raw) return { version: SCHEDULE_STORAGE_VERSION, items: [] };
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return { version: 0, items: parsed };
+    }
+    if (parsed && typeof parsed === "object" && Array.isArray(parsed.items)) {
+      return {
+        version: Number.isFinite(Number(parsed.version)) ? Number(parsed.version) : 0,
+        items: parsed.items,
+      };
+    }
+  } catch (error) {
+    console.warn("Failed to read schedule storage. Falling back to empty list.", error);
+  }
+  return { version: SCHEDULE_STORAGE_VERSION, items: [] };
+}
+
+function saveSchedulesSafe(items) {
+  const normalized = Array.isArray(items) ? items.map(normalizeScheduleItem) : [];
+  saveJson(STORAGE_KEYS.schedules, {
+    version: SCHEDULE_STORAGE_VERSION,
+    items: normalized,
+  });
+  return normalized;
+}
+
+function migrateSchedulesIfNeeded() {
+  const payload = readScheduleStoragePayload();
+  const normalized = Array.isArray(payload.items) ? payload.items.map(normalizeScheduleItem) : [];
+  const shouldSave = payload.version !== SCHEDULE_STORAGE_VERSION ||
+    !Array.isArray(payload.items) ||
+    JSON.stringify(payload.items) !== JSON.stringify(normalized);
+
+  if (shouldSave) return saveSchedulesSafe(normalized);
+  return normalized;
+}
+
+function loadSchedulesSafe() {
+  return migrateSchedulesIfNeeded();
+}
+
+function exportSchedulesBackup() {
+  const items = state.schedules.length ? state.schedules : loadSchedulesSafe();
+  return JSON.stringify({
+    version: SCHEDULE_STORAGE_VERSION,
+    exportedAt: new Date().toISOString(),
+    items: items.map(normalizeScheduleItem),
+  }, null, 2);
+}
+
+function importSchedulesBackup(json) {
+  const parsed = typeof json === "string" ? JSON.parse(json) : json;
+  const items = Array.isArray(parsed) ? parsed : parsed?.items;
+  const normalized = saveSchedulesSafe(Array.isArray(items) ? items : []);
+  state.schedules = normalized;
+  renderSchedules();
+  return normalized;
 }
 
 function normalizeNotificationTime(value) {
@@ -523,6 +646,7 @@ async function loadWeather() {
   renderDailyGuide(dayIndex);
   updateSettingsView();
   updateBrief();
+  renderSchedules();
 }
 
 function handleWeatherLoadError() {
@@ -546,75 +670,618 @@ function updateSettingsView() {
   setText("settingCityName", DEFAULT_LOCATION.city);
 }
 
+function getTodayDateString() {
+  const now = new Date();
+  return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+}
+
+function getWeekRange(dateString = getTodayDateString()) {
+  const base = new Date(`${dateString}T00:00:00`);
+  const day = base.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const start = new Date(base);
+  start.setDate(base.getDate() + mondayOffset);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  return {
+    start: `${start.getFullYear()}-${pad2(start.getMonth() + 1)}-${pad2(start.getDate())}`,
+    end: `${end.getFullYear()}-${pad2(end.getMonth() + 1)}-${pad2(end.getDate())}`,
+  };
+}
+
+function hasCompanyMembership() {
+  return state.companyMembership?.status === "active" && state.companyMembership?.companyRoomId === DEFAULT_COMPANY.id;
+}
+
+function isCompanyMembershipInactive() {
+  return state.companyMembership?.status === "inactive" && state.companyMembership?.companyRoomId === DEFAULT_COMPANY.id;
+}
+
+function canWriteSchedule(member = state.member) {
+  return hasCompanyMembership() && (
+    member?.role === "admin" ||
+    (member?.role === "member" && member?.schedulePermission === "write")
+  );
+}
+
+function canManageCompany(member = state.member) {
+  return hasCompanyMembership() && member?.role === "admin";
+}
+
+function getMemberRoleLabel(member = state.member) {
+  if (member?.role === "admin") return "관리자";
+  if (member?.role === "member") return "구성원";
+  return "미참여";
+}
+
+function getSchedulePermissionLabel(member = state.member) {
+  if (!member || member.status === "inactive") return "접속 차단";
+  if (member.role === "admin" || member.schedulePermission === "write") return "읽기/쓰기";
+  return "읽기 전용";
+}
+
+function buildInviteCodeSet(extraMembers = []) {
+  const codes = new Set(Object.keys(INVITE_CODES));
+  [...state.companyMembers, ...extraMembers].forEach((member) => {
+    const code = safeText(member?.inviteCode, "").trim().toUpperCase();
+    if (code) codes.add(code);
+  });
+  return codes;
+}
+
+function generateMemberInviteCode(extraMembers = []) {
+  const codes = buildInviteCodeSet(extraMembers);
+  let code = "";
+  do {
+    code = `SHJJ-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+  } while (codes.has(code));
+  return code;
+}
+
+function getFixedInviteCodeByMemberId(memberId) {
+  if (memberId === "local-admin") return "SHJJ-ADMIN";
+  if (memberId === "local-member") return "SHJJ-MEMBER";
+  return "";
+}
+
+function normalizeGeneratedInviteCode(rawCode, memberId, extraMembers = []) {
+  const fixedInviteCode = getFixedInviteCodeByMemberId(memberId);
+  if (fixedInviteCode) return fixedInviteCode;
+
+  const code = safeText(rawCode, "").trim().toUpperCase();
+  if (/^SHJJ-[A-Z0-9]{5}$/.test(code)) return code;
+  return generateMemberInviteCode(extraMembers);
+}
+
+function getNextMemberName() {
+  const usedNumbers = state.companyMembers.reduce((numbers, member) => {
+    const match = safeText(member?.memberName, "").match(/^구성원\s+(\d+)$/);
+    if (match) numbers.push(Number(match[1]));
+    return numbers;
+  }, []);
+  const nextNumber = usedNumbers.length ? Math.max(...usedNumbers) + 1 : 1;
+  return `구성원 ${nextNumber}`;
+}
+
+function normalizeCompanyMember(value) {
+  const role = value?.role === "admin" ? "admin" : "member";
+  const fallback = role === "admin" ? DEFAULT_COMPANY_MEMBERS[0] : DEFAULT_COMPANY_MEMBERS[1];
+  const memberId = safeText(value?.memberId, fallback.memberId);
+  const status = value?.status === "inactive" ? "inactive" : "active";
+  const schedulePermission = role === "admin"
+    ? "write"
+    : value?.schedulePermission === "write" ? "write" : "read";
+  const inviteCode = normalizeGeneratedInviteCode(value?.inviteCode, memberId);
+
+  return {
+    memberId,
+    memberName: safeText(value?.memberName, fallback.memberName),
+    role,
+    schedulePermission,
+    status,
+    inviteCode,
+  };
+}
+
+function getCompanyMemberById(memberId) {
+  return state.companyMembers.find((member) => member.memberId === memberId);
+}
+
+function loadCompanyMembers() {
+  const rawStored = localStorage.getItem(STORAGE_KEYS.companyMembers);
+  const stored = rawStored ? loadArray(STORAGE_KEYS.companyMembers) : [];
+  const seedMembers = rawStored ? [DEFAULT_COMPANY_MEMBERS[0]] : DEFAULT_COMPANY_MEMBERS;
+  const byId = new Map(seedMembers.map((member) => [member.memberId, normalizeCompanyMember(member)]));
+  stored.forEach((member) => {
+    const normalized = normalizeCompanyMember({
+      ...member,
+      inviteCode: normalizeGeneratedInviteCode(member?.inviteCode, member?.memberId, Array.from(byId.values())),
+    });
+    byId.set(normalized.memberId, normalized);
+  });
+  state.companyMembers = Array.from(byId.values());
+  saveJson(STORAGE_KEYS.companyMembers, state.companyMembers);
+}
+
+function saveCompanyMembers() {
+  saveJson(STORAGE_KEYS.companyMembers, state.companyMembers);
+}
+
+function findRoleInfoByInviteCode(code) {
+  const normalizedCode = safeText(code, "").trim().toUpperCase();
+  if (!normalizedCode) return null;
+
+  const managedMember = state.companyMembers.find((member) => member.inviteCode === normalizedCode);
+  if (managedMember) {
+    return {
+      memberId: managedMember.memberId,
+      memberName: managedMember.memberName,
+      role: managedMember.role,
+      schedulePermission: managedMember.role === "admin" ? "write" : managedMember.schedulePermission,
+      status: managedMember.status,
+    };
+  }
+
+  return INVITE_CODES[normalizedCode] || null;
+}
+
+function normalizeCompanyMembership(value) {
+  if (!value || typeof value !== "object") return null;
+  if (value.companyRoomId !== DEFAULT_COMPANY.id) return null;
+  const role = value.role === "admin" ? "admin" : value.role === "member" ? "member" : "";
+  if (!role) return null;
+  const memberId = safeText(value.memberId, role === "admin" ? "local-admin" : "local-member");
+  const managedMember = getCompanyMemberById(memberId);
+  if (memberId !== "local-admin" && !managedMember) return null;
+  const status = managedMember?.status || (value.status === "inactive" ? "inactive" : "active");
+  const schedulePermission = role === "admin"
+    ? "write"
+    : managedMember?.schedulePermission || (value.schedulePermission === "write" ? "write" : "read");
+
+  return {
+    companyRoomId: DEFAULT_COMPANY.id,
+    companyRoomName: DEFAULT_COMPANY.name,
+    memberId,
+    memberName: managedMember?.memberName || safeText(value.memberName, role === "admin" ? "관리자" : "구성원"),
+    role,
+    schedulePermission,
+    status,
+    joinedAt: safeText(value.joinedAt, new Date().toISOString()),
+  };
+}
+
+function applyCompanyMembership(membership) {
+  state.companyMembership = normalizeCompanyMembership(membership);
+  state.company = DEFAULT_COMPANY;
+  state.member = state.companyMembership
+    ? {
+      id: state.companyMembership.memberId,
+      name: state.companyMembership.memberName,
+      role: state.companyMembership.role,
+      schedulePermission: state.companyMembership.schedulePermission,
+      status: state.companyMembership.status,
+    }
+    : null;
+}
+
+function loadCompanyMembership() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.companyMembership);
+    applyCompanyMembership(raw ? JSON.parse(raw) : null);
+  } catch (error) {
+    console.warn("Failed to load company membership", error);
+    applyCompanyMembership(null);
+  }
+}
+
+function saveCompanyMembership(roleInfo) {
+  const membership = {
+    companyRoomId: DEFAULT_COMPANY.id,
+    companyRoomName: DEFAULT_COMPANY.name,
+    memberId: roleInfo.memberId,
+    memberName: roleInfo.memberName,
+    role: roleInfo.role,
+    schedulePermission: roleInfo.schedulePermission,
+    status: roleInfo.status,
+    joinedAt: new Date().toISOString(),
+  };
+
+  saveJson(STORAGE_KEYS.companyMembership, membership);
+  applyCompanyMembership(membership);
+}
+
+function clearCompanyMembership() {
+  localStorage.removeItem(STORAGE_KEYS.companyMembership);
+  applyCompanyMembership(null);
+}
+
+function joinCompanyRoom() {
+  const input = $("inviteCodeInput");
+  const code = (input?.value || "").trim().toUpperCase();
+  const roleInfo = findRoleInfoByInviteCode(code);
+
+  if (!roleInfo) {
+    setText("scheduleInviteFeedback", "초대코드가 올바르지 않습니다.");
+    input?.focus();
+    return;
+  }
+
+  if (roleInfo.status === "inactive") {
+    setText("scheduleInviteFeedback", "비활성 구성원은 참여할 수 없습니다.");
+    input?.focus();
+    return;
+  }
+
+  saveCompanyMembership(roleInfo);
+  if (input) input.value = "";
+  state.inactiveNoticeShown = false;
+  state.invitePanelOpen = false;
+  renderSchedules();
+  if (isCompanyMembershipInactive()) {
+    showNotificationToast("접속 권한이 없습니다. 관리자에게 SHJJ 회사방 권한을 확인해 주세요.");
+    state.inactiveNoticeShown = true;
+    return;
+  }
+  showNotificationToast(`${DEFAULT_COMPANY.name}에 참여하였습니다.`);
+}
+
+function logoutCompanyRoom() {
+  clearCompanyMembership();
+  state.inactiveNoticeShown = false;
+  state.invitePanelOpen = false;
+  setText("scheduleInviteFeedback", "");
+  const input = $("inviteCodeInput");
+  if (input) input.value = "";
+  renderSchedules();
+  showNotificationToast("로그아웃되었습니다.");
+}
+
+function updateCompanyMemberAccess(memberId, accessValue) {
+  if (!canManageCompany()) return;
+  state.companyMembers = state.companyMembers.map((member) => {
+    if (member.memberId !== memberId || member.role === "admin") return member;
+    if (accessValue === "inactive") {
+      return { ...member, status: "inactive", schedulePermission: "read" };
+    }
+    return {
+      ...member,
+      status: "active",
+      schedulePermission: accessValue === "write" ? "write" : "read",
+    };
+  });
+  saveCompanyMembers();
+  loadCompanyMembership();
+  renderSchedules();
+}
+
+function addCompanyMember() {
+  if (!canManageCompany()) return;
+  const draftMember = normalizeCompanyMember({
+    memberId: makeId(),
+    memberName: getNextMemberName(),
+    role: "member",
+    schedulePermission: "read",
+    status: "active",
+    inviteCode: generateMemberInviteCode(),
+  });
+  state.companyMembers = [...state.companyMembers, draftMember];
+  saveCompanyMembers();
+  renderSchedules();
+}
+
+function canDeleteCompanyMember(member) {
+  if (!member) return false;
+  return member.memberId !== "local-admin";
+}
+
+function renameCompanyMember(memberId) {
+  if (!canManageCompany()) return;
+  const target = getCompanyMemberById(memberId);
+  if (!target) return;
+  const nextName = prompt("구성원 이름을 입력하세요.", target.memberName);
+  if (nextName === null) return;
+  const trimmedName = nextName.trim();
+  if (!trimmedName) return;
+
+  state.companyMembers = state.companyMembers.map((member) => (
+    member.memberId === memberId ? { ...member, memberName: trimmedName } : member
+  ));
+  saveCompanyMembers();
+  loadCompanyMembership();
+  renderSchedules();
+}
+
+function removeCompanyMember(memberId) {
+  if (!canManageCompany()) return;
+  const target = getCompanyMemberById(memberId);
+  if (!canDeleteCompanyMember(target)) return;
+  if (!confirm("이 구성원을 삭제할까요?")) return;
+
+  state.companyMembers = state.companyMembers.filter((member) => member.memberId !== memberId);
+  saveCompanyMembers();
+
+  if (state.companyMembership?.memberId === memberId) {
+    clearCompanyMembership();
+    state.invitePanelOpen = false;
+    state.inactiveNoticeShown = false;
+  } else {
+    loadCompanyMembership();
+  }
+
+  renderSchedules();
+}
+
+async function copyInviteCode(inviteCode) {
+  if (!inviteCode) return;
+  if (!navigator.clipboard?.writeText) {
+    prompt("초대코드를 확인하세요.", inviteCode);
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(inviteCode);
+    showNotificationToast("초대코드를 복사했습니다.");
+  } catch (error) {
+    console.warn("Failed to copy invite code", error);
+    prompt("초대코드를 확인하세요.", inviteCode);
+  }
+}
+
+function renderScheduleAdminPanel() {
+  const list = $("scheduleAdminMemberList");
+  const addButton = $("addScheduleMemberBtn");
+  if (!list) return;
+  clearChildren(list);
+  if (addButton) addButton.hidden = !canManageCompany();
+
+  if (!canManageCompany()) return;
+
+  state.companyMembers.forEach((member) => {
+    const row = document.createElement("div");
+    row.className = "schedule-admin-member";
+
+    const info = document.createElement("div");
+    info.className = "schedule-admin-member-info";
+
+    const nameRow = document.createElement("div");
+    nameRow.className = "schedule-admin-name-row";
+
+    const name = document.createElement("strong");
+    name.textContent = member.memberName;
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "schedule-admin-edit-btn";
+    editButton.textContent = "✎";
+    editButton.setAttribute("aria-label", "구성원 이름 수정");
+    editButton.setAttribute("title", "구성원 이름 수정");
+    editButton.addEventListener("click", () => renameCompanyMember(member.memberId));
+
+    const codeRow = document.createElement("div");
+    codeRow.className = "schedule-admin-code-row";
+    codeRow.classList.toggle("with-delete", canDeleteCompanyMember(member));
+    codeRow.classList.toggle("without-delete", !canDeleteCompanyMember(member));
+
+    const codeChip = document.createElement("span");
+    codeChip.className = "schedule-admin-code";
+    codeChip.textContent = member.inviteCode;
+
+    const copyButton = document.createElement("button");
+    copyButton.type = "button";
+    copyButton.className = "schedule-admin-copy-btn";
+    copyButton.textContent = "복사";
+    copyButton.addEventListener("click", () => {
+      copyInviteCode(member.inviteCode);
+    });
+
+    const deleteButton = document.createElement("button");
+    if (canDeleteCompanyMember(member)) {
+      deleteButton.type = "button";
+      deleteButton.className = "schedule-admin-delete-btn";
+      deleteButton.textContent = "−";
+      deleteButton.setAttribute("aria-label", "구성원 삭제");
+      deleteButton.setAttribute("title", "구성원 삭제");
+      deleteButton.addEventListener("click", () => removeCompanyMember(member.memberId));
+    }
+
+    nameRow.append(name, editButton);
+    codeRow.append(codeChip, copyButton);
+    if (canDeleteCompanyMember(member)) codeRow.append(deleteButton);
+    info.append(nameRow, codeRow);
+
+    const select = document.createElement("select");
+    select.disabled = member.role === "admin";
+    [
+      ["write", "읽기/쓰기"],
+      ["read", "읽기 전용"],
+      ["inactive", "비활성화"],
+    ].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      select.appendChild(option);
+    });
+    select.value = member.status === "inactive" ? "inactive" : member.schedulePermission;
+    select.addEventListener("change", () => updateCompanyMemberAccess(member.memberId, select.value));
+
+    const controls = document.createElement("div");
+    controls.className = "schedule-admin-controls";
+    controls.appendChild(select);
+
+    row.append(info, controls);
+    list.appendChild(row);
+  });
+}
+
+function normalizeScheduleItem(item) {
+  const now = new Date().toISOString();
+  const id = safeText(item?.id, makeId());
+  const date = safeText(item?.date, getTodayDateString());
+  const time = safeText(item?.time, "09:00");
+  const rawEstimatedTravelMinutes = item?.estimatedTravelMinutes;
+  const estimatedTravelMinutes = rawEstimatedTravelMinutes === null || rawEstimatedTravelMinutes === undefined || rawEstimatedTravelMinutes === ""
+    ? NaN
+    : Number(rawEstimatedTravelMinutes);
+  const bufferMinutes = Number(item?.bufferMinutes);
+
+  return {
+    id,
+    companyId: safeText(item?.companyId, DEFAULT_COMPANY.id),
+    calendarScope: safeText(item?.calendarScope, "company"),
+    date,
+    time,
+    title: safeText(item?.title, "제목 없음"),
+    memo: safeText(item?.memo, ""),
+    location: safeText(item?.location, ""),
+    estimatedTravelMinutes: Number.isFinite(estimatedTravelMinutes) ? estimatedTravelMinutes : null,
+    bufferMinutes: Number.isFinite(bufferMinutes) ? bufferMinutes : 15,
+    detailMemo: safeText(item?.detailMemo, ""),
+    createdBy: safeText(item?.createdBy, DEFAULT_MEMBER.id),
+    createdAt: safeText(item?.createdAt, now),
+    updatedAt: safeText(item?.updatedAt, now),
+    source: safeText(item?.source, "manual"),
+  };
+}
+
+function loadSchedules() {
+  return loadSchedulesSafe();
+}
+
 function getSelectedScheduleTime() {
-  const hour = $("scheduleHourSelect")?.value || "09";
-  const minute = $("scheduleMinuteSelect")?.value || "00";
-  return `${hour}:${minute}`;
+  return $("scheduleTimeInput")?.value || "09:00";
 }
 
-function updateSelectedScheduleTime() {
-  const time = getSelectedScheduleTime();
-  setText("selectedScheduleTime", time);
-  $$(".quick-time-btn").forEach((button) => {
-    button.classList.toggle("active", button.dataset.time === time);
+function getSelectedScheduleDate() {
+  return $("scheduleDateInput")?.value || getTodayDateString();
+}
+
+function toScheduleMinutes(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const minutes = Number(value);
+  return Number.isFinite(minutes) ? minutes : null;
+}
+
+function formatScheduleMinutes(value, emptyText = "이동시간 미입력") {
+  const minutes = toScheduleMinutes(value);
+  if (minutes === null) return emptyText;
+  return `${minutes}분`;
+}
+
+function getRecommendedDepartureTime(item) {
+  const travelMinutes = toScheduleMinutes(item.estimatedTravelMinutes);
+  const bufferMinutes = toScheduleMinutes(item.bufferMinutes) ?? 15;
+  if (travelMinutes === null) return "-";
+
+  const scheduleTime = new Date(`${item.date}T${safeText(item.time, "09:00")}`);
+  if (Number.isNaN(scheduleTime.getTime())) return "-";
+
+  const totalBuffer = travelMinutes + bufferMinutes;
+  scheduleTime.setMinutes(scheduleTime.getMinutes() - totalBuffer);
+  return `${pad2(scheduleTime.getHours())}:${pad2(scheduleTime.getMinutes())}`;
+}
+
+function createScheduleDetailView(item) {
+  const detail = document.createElement("details");
+  detail.className = "schedule-detail-fold";
+
+  const summary = document.createElement("summary");
+  summary.textContent = "상세 보기";
+
+  const body = document.createElement("div");
+  body.className = "schedule-detail-body";
+
+  const rows = [
+    ["도착지", safeText(item.location, "도착지 없음")],
+    ["예상 이동시간", formatScheduleMinutes(item.estimatedTravelMinutes)],
+    ["여유시간", formatScheduleMinutes(item.bufferMinutes, "15분")],
+    ["권장 출발시간", toScheduleMinutes(item.estimatedTravelMinutes) !== null ? getRecommendedDepartureTime(item) : "-"],
+    ["메모", safeText(item.detailMemo, "메모 없음")],
+  ];
+
+  rows.forEach(([label, value]) => {
+    const row = document.createElement("div");
+    row.className = "schedule-detail-row";
+
+    const labelEl = document.createElement("span");
+    labelEl.textContent = label;
+
+    const valueEl = document.createElement("strong");
+    valueEl.textContent = value;
+
+    row.append(labelEl, valueEl);
+    body.appendChild(row);
   });
-}
 
-function setScheduleTime(time) {
-  const [hour, minute] = time.split(":");
-  const hourSelect = $("scheduleHourSelect");
-  const minuteSelect = $("scheduleMinuteSelect");
-
-  if (hourSelect) hourSelect.value = hour;
-  if (minuteSelect) minuteSelect.value = minute;
-
-  updateSelectedScheduleTime();
-  $("scheduleTitleInput")?.focus();
-}
-
-function buildScheduleTimeOptions(select, values, formatter) {
-  clearChildren(select);
-  values.forEach((value) => {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = formatter(value);
-    select.appendChild(option);
-  });
-}
-
-function buildQuickTimeButtons(container) {
-  clearChildren(container);
-  QUICK_SCHEDULE_TIMES.forEach((time) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "quick-time-btn";
-    button.dataset.time = time;
-    button.textContent = time;
-    button.addEventListener("click", () => setScheduleTime(time));
-    container.appendChild(button);
-  });
+  detail.append(summary, body);
+  return detail;
 }
 
 function setupScheduleTimePicker() {
-  const hourSelect = $("scheduleHourSelect");
-  const minuteSelect = $("scheduleMinuteSelect");
-  const quickGrid = $("quickTimeGrid");
+  const dateInput = $("scheduleDateInput");
+  const timeInput = $("scheduleTimeInput");
+  const today = getTodayDateString();
 
-  if (!hourSelect || !minuteSelect || !quickGrid) return;
+  if (dateInput && !dateInput.value) dateInput.value = today;
+  if (timeInput && !timeInput.value) timeInput.value = "09:00";
+  state.scheduleCalendarMonth = `${today.slice(0, 7)}-01`;
+}
 
-  buildScheduleTimeOptions(
-    hourSelect,
-    Array.from({ length: 18 }, (_, index) => pad2(index + 6)),
-    (value) => `${value}시`
-  );
-  buildScheduleTimeOptions(minuteSelect, SCHEDULE_MINUTES, (value) => `${value}분`);
-  buildQuickTimeButtons(quickGrid);
+function resetScheduleForm() {
+  const dateInput = $("scheduleDateInput");
+  const timeInput = $("scheduleTimeInput");
+  const titleInput = $("scheduleTitleInput");
+  const locationInput = $("scheduleLocationInput");
+  const memoInput = $("scheduleMemoInput");
 
-  hourSelect.value = "09";
-  minuteSelect.value = "00";
-  bindEvent(hourSelect, "change", updateSelectedScheduleTime);
-  bindEvent(minuteSelect, "change", updateSelectedScheduleTime);
-  updateSelectedScheduleTime();
+  if (dateInput) dateInput.value = getTodayDateString();
+  if (timeInput) timeInput.value = "09:00";
+  if (titleInput) titleInput.value = "";
+  if (locationInput) locationInput.value = "";
+  if (memoInput) memoInput.value = "";
+}
+
+function setScheduleSheetOpen(open) {
+  const sheet = $("scheduleSheet");
+  if (!sheet) return;
+  sheet.hidden = !open;
+  if (open) {
+    setupScheduleTimePicker();
+    $("scheduleTitleInput")?.focus();
+  }
+}
+
+function showScheduleFeedback(message) {
+  setText("scheduleFeedback", message);
+  clearTimeout(showScheduleFeedback.timerId);
+  if (message) {
+    showScheduleFeedback.timerId = setTimeout(() => {
+      setText("scheduleFeedback", "");
+    }, 2200);
+  }
+}
+
+function renderScheduleInviteToggle() {
+  const button = $("toggleScheduleInviteBtn");
+  if (!button) return;
+  const joined = hasCompanyMembership();
+  button.hidden = false;
+  button.textContent = joined ? "로그아웃" : "참여";
+  button.setAttribute("aria-expanded", String(!joined && state.invitePanelOpen));
+}
+
+function setScheduleFoldOpen(open) {
+  const fold = $("scheduleSection")?.querySelector(".fold-card");
+  if (fold) fold.open = open;
+}
+
+function toggleScheduleInvitePanel() {
+  if (hasCompanyMembership()) {
+    logoutCompanyRoom();
+    return;
+  }
+  state.invitePanelOpen = !state.invitePanelOpen;
+  renderScheduleAccess();
+  if (state.invitePanelOpen) $("inviteCodeInput")?.focus();
 }
 
 function createScheduleRow(item) {
@@ -624,61 +1291,284 @@ function createScheduleRow(item) {
   const main = document.createElement("div");
   main.className = "item-main";
 
-  const time = document.createElement("span");
-  time.className = "item-time";
-  time.textContent = safeText(item.time, "--:--");
+  const datetime = document.createElement("span");
+  datetime.className = "item-time";
+  datetime.textContent = `${safeText(item.date, getTodayDateString())} ${safeText(item.time, "--:--")}`;
 
   const title = document.createElement("span");
   title.className = "item-title";
   title.textContent = safeText(item.title, "제목 없음");
 
+  const meta = document.createElement("span");
+  meta.className = "item-meta";
+  meta.textContent = item.calendarScope === "company"
+    ? `${state.company.name} · ${safeText(item.createdBy, "local")}`
+    : safeText(item.createdBy, "local");
+
+  const weather = document.createElement("span");
+  weather.className = "item-weather";
+  weather.textContent = getScheduleWeatherText(item);
+
   const actions = document.createElement("div");
   actions.className = "item-actions";
 
-  const deleteButton = createActionButton("삭제", "delete-schedule", item.id, () => {
-    removeSchedule(item.id);
-  });
+  if (canWriteSchedule()) {
+    const deleteButton = createActionButton("삭제", "delete-schedule", item.id, () => {
+      removeSchedule(item.id);
+    });
+    actions.appendChild(deleteButton);
+  }
 
-  main.append(time, title);
-  actions.appendChild(deleteButton);
+  main.append(datetime, title, meta, weather, createScheduleDetailView(item));
   row.append(main, actions);
   return row;
 }
 
 function sortSchedules(items) {
-  return [...items].sort((a, b) => safeText(a.time, "").localeCompare(safeText(b.time, "")));
+  return [...items].sort((a, b) => {
+    const aKey = `${safeText(a.date, "")} ${safeText(a.time, "")}`;
+    const bKey = `${safeText(b.date, "")} ${safeText(b.time, "")}`;
+    return aKey.localeCompare(bKey);
+  });
+}
+
+function getVisibleSchedules() {
+  const today = getTodayDateString();
+  return state.schedules.filter((item) => item.date === today);
 }
 
 function updateBrief() {
-  setText("scheduleCount", `${state.schedules.length}건`);
+  if (!hasCompanyMembership()) {
+    setText("scheduleCount", "0건");
+    return;
+  }
+  const visibleCount = getVisibleSchedules().length;
+  const totalCount = state.schedules.length;
+  setText("scheduleCount", `${visibleCount}/${totalCount}건`);
+}
+
+function getScheduleWeatherText(item) {
+  if (item.date !== getTodayDateString()) return "";
+  if (!state.weather?.hourly?.time?.length) return "예상 날씨 확인 중";
+
+  const hourly = state.weather.hourly;
+  const targetTime = new Date(`${item.date}T${safeText(item.time, "09:00")}`);
+  if (Number.isNaN(targetTime.getTime())) return "예보 없음";
+
+  const slots = hourly.time
+    .map((time, index) => ({
+      time: new Date(time),
+      temp: Number(hourly.temperature_2m?.[index]),
+      rain: Number(hourly.precipitation_probability?.[index] ?? 0),
+    }))
+    .filter((slot) => !Number.isNaN(slot.time.getTime()));
+
+  const nearby = slots.filter((slot) => Math.abs(slot.time.getTime() - targetTime.getTime()) <= 60 * 60 * 1000);
+  const closest = slots
+    .map((slot) => ({ ...slot, distance: Math.abs(slot.time.getTime() - targetTime.getTime()) }))
+    .sort((a, b) => a.distance - b.distance)[0];
+
+  if (!closest || !Number.isFinite(closest.temp)) return "예보 없음";
+
+  const maxRain = nearby.length
+    ? Math.max(...nearby.map((slot) => Number.isFinite(slot.rain) ? slot.rain : 0))
+    : closest.rain;
+  const currentTemp = Number(state.weather.current?.temperature_2m);
+
+  return `예상 ${round(closest.temp)}° · 강수 ${round(maxRain)}% · 현재 ${Number.isFinite(currentTemp) ? `${round(currentTemp)}°` : "-"}`;
+}
+
+function getScheduleCountByDate() {
+  return state.schedules.reduce((counts, item) => {
+    const date = safeText(item.date, "");
+    if (date) counts.set(date, (counts.get(date) || 0) + 1);
+    return counts;
+  }, new Map());
+}
+
+function moveScheduleCalendarMonth(offset) {
+  const current = new Date(`${state.scheduleCalendarMonth || `${getTodayDateString().slice(0, 7)}-01`}T00:00:00`);
+  current.setMonth(current.getMonth() + offset);
+  state.scheduleCalendarMonth = `${current.getFullYear()}-${pad2(current.getMonth() + 1)}-01`;
+  renderScheduleCalendar();
+}
+
+function selectScheduleDate(dateString) {
+  const input = $("scheduleDateInput");
+  if (input) input.value = dateString;
+  state.scheduleCalendarMonth = `${dateString.slice(0, 7)}-01`;
+  renderScheduleCalendar();
+}
+
+function renderScheduleSelectedDateList() {
+  const container = $("scheduleSelectedDayList");
+  if (!container) return;
+
+  clearChildren(container);
+  const selectedDate = getSelectedScheduleDate();
+  const items = sortSchedules(state.schedules.filter((item) => item.date === selectedDate));
+  const selected = new Date(`${selectedDate}T00:00:00`);
+  const title = document.createElement("strong");
+  title.textContent = Number.isNaN(selected.getTime())
+    ? `${selectedDate} 일정`
+    : `${selected.getMonth() + 1}월 ${selected.getDate()}일 일정`;
+  container.appendChild(title);
+
+  if (items.length === 0) {
+    const empty = document.createElement("span");
+    empty.textContent = "등록된 일정이 없습니다.";
+    container.appendChild(empty);
+    return;
+  }
+
+  items.forEach((item) => {
+    const row = document.createElement("span");
+    row.textContent = safeText(item.title, "일정");
+    container.appendChild(row);
+  });
+}
+
+function renderScheduleCalendar() {
+  const container = $("scheduleCalendarGrid");
+  const title = $("scheduleCalendarTitle");
+  if (!container || !title) return;
+
+  clearChildren(container);
+  const monthKey = state.scheduleCalendarMonth || `${getTodayDateString().slice(0, 7)}-01`;
+  const monthDate = new Date(`${monthKey}T00:00:00`);
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const selectedDate = getSelectedScheduleDate();
+  const counts = getScheduleCountByDate();
+
+  title.textContent = `${year}년 ${month + 1}월`;
+  ["일", "월", "화", "수", "목", "금", "토"].forEach((day) => {
+    const cell = document.createElement("span");
+    cell.className = "schedule-calendar-weekday";
+    cell.textContent = day;
+    container.appendChild(cell);
+  });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const lastDate = new Date(year, month + 1, 0).getDate();
+  for (let index = 0; index < firstDay; index += 1) {
+    const blank = document.createElement("span");
+    blank.className = "schedule-calendar-empty";
+    container.appendChild(blank);
+  }
+
+  for (let day = 1; day <= lastDate; day += 1) {
+    const dateString = `${year}-${pad2(month + 1)}-${pad2(day)}`;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "schedule-calendar-day";
+    button.classList.toggle("has-schedule", counts.has(dateString));
+    button.classList.toggle("selected", selectedDate === dateString);
+    button.textContent = String(day);
+    button.addEventListener("click", () => selectScheduleDate(dateString));
+
+    const count = counts.get(dateString) || 0;
+    if (count > 0) {
+      const marker = document.createElement("span");
+      marker.className = "schedule-calendar-marker";
+      marker.textContent = count > 1 ? String(count) : "";
+      button.appendChild(marker);
+    }
+
+    container.appendChild(button);
+  }
+
+  renderScheduleSelectedDateList();
+}
+
+function renderScheduleAccess() {
+  const joined = hasCompanyMembership();
+  const inactive = isCompanyMembershipInactive();
+  const writable = canWriteSchedule();
+  const inviteSection = $("scheduleJoinSection");
+  const invitePanel = $("scheduleInvitePanel");
+  const roomContent = $("scheduleRoomContent");
+  const adminPanel = $("scheduleAdminPanel");
+
+  renderScheduleInviteToggle();
+  if (inviteSection) inviteSection.hidden = joined || !state.invitePanelOpen;
+  if (invitePanel) invitePanel.hidden = joined || !state.invitePanelOpen;
+  if (roomContent) roomContent.hidden = !joined;
+  if (adminPanel) adminPanel.hidden = !canManageCompany();
+
+  if (inactive && !state.inactiveNoticeShown) {
+    showNotificationToast("접속 권한이 없습니다. 관리자에게 SHJJ 회사방 권한을 확인해 주세요.");
+    state.inactiveNoticeShown = true;
+  }
+
+  if (!joined) {
+    setText("scheduleCount", "0건");
+    setText("scheduleInviteFeedback", "");
+    setScheduleSheetOpen(false);
+    return;
+  }
+
+  setText("scheduleCompanyBadge", state.company.name);
+  setText("scheduleRoleBadge", getMemberRoleLabel());
+  setText("schedulePermissionBadge", getSchedulePermissionLabel());
+  setText("scheduleReadonlyNotice", writable ? "" : "구성원은 읽기 전용입니다.");
+
+  const input = $("scheduleTitleInput");
+  const openButton = $("openScheduleSheetBtn");
+  const confirmButton = $("confirmScheduleBtn");
+  const locationInput = $("scheduleLocationInput");
+  const memoInput = $("scheduleMemoInput");
+  if (input) input.disabled = !writable;
+  if (openButton) {
+    openButton.disabled = !writable;
+    openButton.hidden = !writable;
+  }
+  if (confirmButton) confirmButton.disabled = !writable;
+  if (locationInput) locationInput.disabled = !writable;
+  if (memoInput) memoInput.disabled = !writable;
+  if (!writable) setScheduleSheetOpen(false);
+  renderScheduleAdminPanel();
 }
 
 function renderSchedules() {
   const list = $("scheduleList");
+  renderScheduleAccess();
+  if (!hasCompanyMembership()) {
+    updateBrief();
+    return;
+  }
   if (!list) return;
 
   clearChildren(list);
+  renderScheduleCalendar();
 
-  if (state.schedules.length === 0) {
+  const visibleSchedules = getVisibleSchedules();
+
+  if (visibleSchedules.length === 0) {
     list.appendChild(createEmptyListItem("오늘 등록된 일정이 없습니다."));
     updateBrief();
     return;
   }
 
-  sortSchedules(state.schedules).forEach((item) => {
+  sortSchedules(visibleSchedules).forEach((item) => {
     list.appendChild(createScheduleRow(item));
   });
   updateBrief();
 }
 
 function removeSchedule(scheduleId) {
+  if (!canWriteSchedule()) return;
   state.schedules = state.schedules.filter((schedule) => schedule.id !== scheduleId);
-  saveJson(STORAGE_KEYS.schedules, state.schedules);
+  state.schedules = saveSchedulesSafe(state.schedules);
   renderSchedules();
 }
 
 function addSchedule() {
+  if (!canWriteSchedule()) return;
+
   const input = $("scheduleTitleInput");
+  const locationInput = $("scheduleLocationInput");
+  const memoInput = $("scheduleMemoInput");
   const title = input?.value.trim() || "";
 
   if (!title) {
@@ -687,18 +1577,28 @@ function addSchedule() {
     return;
   }
 
-  state.schedules.push({
+  state.schedules.push(normalizeScheduleItem({
     id: makeId(),
+    companyId: state.company.id,
+    calendarScope: "company",
+    date: getSelectedScheduleDate(),
     source: "manual",
     time: getSelectedScheduleTime(),
     title,
-  });
+    memo: "",
+    location: locationInput?.value.trim() || "",
+    estimatedTravelMinutes: null,
+    bufferMinutes: 15,
+    detailMemo: memoInput?.value.trim() || "",
+    createdBy: state.member.id,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }));
 
-  saveJson(STORAGE_KEYS.schedules, state.schedules);
-  if (input) {
-    input.value = "";
-    input.focus();
-  }
+  state.schedules = saveSchedulesSafe(state.schedules);
+  resetScheduleForm();
+  setScheduleSheetOpen(false);
+  showScheduleFeedback("일정이 등록되었습니다.");
   renderSchedules();
 }
 
@@ -1982,38 +2882,6 @@ async function requestNotification() {
   return false;
 }
 
-function buildNotificationWeatherLine() {
-  const snapshot = getWeatherSnapshot(0);
-  if (!snapshot) return "날씨 정보 확인 중";
-
-  const [title] = weatherText(snapshot.weatherCode);
-  return `${state.city} ${snapshot.temp}° · ${title} · 최고 ${snapshot.high}° / 최저 ${snapshot.low}°`;
-}
-
-async function showBriefNotification() {
-  if (!("Notification" in window)) return;
-
-  if (Notification.permission !== "granted") {
-    const ok = await requestNotification();
-    if (!ok) return;
-  }
-
-  const title = "SHJJ Brief · 오늘 브리핑";
-  const body = `${buildNotificationWeatherLine()}\n오늘 일정 ${state.schedules.length}건`;
-  const reg = await navigator.serviceWorker.getRegistration();
-
-  if (reg) {
-    reg.showNotification(title, {
-      body,
-      tag: "shjj-brief-test",
-      renotify: true,
-    });
-    return;
-  }
-
-  new Notification(title, { body });
-}
-
 function showNotificationToast(message) {
   const toast = $("notificationToast");
   if (!toast) return;
@@ -2097,15 +2965,55 @@ function bindWeatherEvents() {
 }
 
 function bindScheduleEvents() {
-  bindEvent($("addScheduleBtn"), "click", addSchedule);
+  bindEvent($("toggleScheduleInviteBtn"), "click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleScheduleInvitePanel();
+  });
+  bindEvent($("addScheduleMemberBtn"), "click", addCompanyMember);
+  bindEvent($("joinCompanyRoomBtn"), "click", joinCompanyRoom);
+  bindEvent($("inviteCodeInput"), "keydown", (event) => {
+    if (event.key === "Enter") joinCompanyRoom();
+  });
+  bindEvent($("openScheduleSheetBtn"), "click", () => {
+    showScheduleFeedback("");
+    setScheduleSheetOpen(true);
+  });
+  bindEvent($("closeScheduleSheetBtn"), "click", () => {
+    resetScheduleForm();
+    setScheduleSheetOpen(false);
+  });
+  bindEvent($("cancelScheduleBtn"), "click", () => {
+    resetScheduleForm();
+    setScheduleSheetOpen(false);
+  });
+  bindEvent($("confirmScheduleBtn"), "click", addSchedule);
   bindEvent($("scheduleTitleInput"), "keydown", (event) => {
     if (event.key === "Enter") addSchedule();
   });
+  bindEvent($("scheduleSheet"), "click", (event) => {
+    if (event.target === $("scheduleSheet")) {
+      resetScheduleForm();
+      setScheduleSheetOpen(false);
+    }
+  });
+  bindEvent(document, "keydown", (event) => {
+    if (event.key === "Escape" && !$("scheduleSheet")?.hidden) {
+      resetScheduleForm();
+      setScheduleSheetOpen(false);
+    }
+  });
+  bindEvent($("scheduleDateInput"), "change", () => {
+    const selected = getSelectedScheduleDate();
+    state.scheduleCalendarMonth = `${selected.slice(0, 7)}-01`;
+    renderSchedules();
+  });
+  bindEvent($("schedulePrevMonthBtn"), "click", () => moveScheduleCalendarMonth(-1));
+  bindEvent($("scheduleNextMonthBtn"), "click", () => moveScheduleCalendarMonth(1));
 }
 
 function bindNotificationEvents() {
   bindEvent($("notifyBtn"), "click", requestNotification);
-  bindEvent($("testNotifyBtn"), "click", showBriefNotification);
   bindEvent($("notificationTimeSaveBtn"), "click", () => {
     saveNotificationTime($("notificationTimeInput")?.value || DEFAULT_NOTIFICATION_TIME);
   });
@@ -2312,7 +3220,9 @@ async function init() {
   setupScheduleTimePicker();
   setupLawTabs();
 
-  state.schedules = loadArray(STORAGE_KEYS.schedules);
+  loadCompanyMembers();
+  loadCompanyMembership();
+  state.schedules = loadSchedules();
   loadNotificationSettings();
   renderSchedules();
   bindEvents();
