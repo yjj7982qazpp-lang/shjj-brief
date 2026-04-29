@@ -199,6 +199,11 @@
       font-weight: 800;
     }
 
+    .metric.pending strong,
+    .metric.pending small {
+      color: var(--muted);
+    }
+
     .hint {
       margin-top: 14px;
       padding: 13px 14px;
@@ -326,6 +331,41 @@
     <section class="card">
       <div class="section-head">
         <div>
+          <h2>홈페이지 분석</h2>
+          <p id="analyticsMessage">분석 데이터 연동 대기</p>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="metric pending">
+          <span>오늘 조회수</span>
+          <strong id="viewsToday">-</strong>
+        </div>
+        <div class="metric pending">
+          <span>최근 7일 조회수</span>
+          <strong id="viewsWeek">-</strong>
+        </div>
+        <div class="metric pending">
+          <span>최근 30일 조회수</span>
+          <strong id="viewsMonth">-</strong>
+        </div>
+        <div class="metric pending">
+          <span>오늘 방문자 수</span>
+          <strong id="visitorsToday">-</strong>
+        </div>
+        <div class="metric pending">
+          <span>최근 7일 방문자 수</span>
+          <strong id="visitorsWeek">-</strong>
+        </div>
+        <div class="metric pending">
+          <span>최근 30일 방문자 수</span>
+          <strong id="visitorsMonth">-</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <div>
           <h2>운영 품질</h2>
           <p>캐시가 잘 먹을수록 같은 법령에 대한 반복 비용이 줄어듭니다.</p>
         </div>
@@ -396,6 +436,39 @@
       return `${Number(value || 0)}회 호출`;
     }
 
+    function countText(value) {
+      if (value === null || value === undefined) return "-";
+      return `${Number(value || 0).toLocaleString("ko-KR")}회`;
+    }
+
+    function setMetricValue(id, value) {
+      const el = $(id);
+      if (!el) return;
+      el.textContent = countText(value);
+      el.closest(".metric")?.classList.toggle("pending", value === null || value === undefined);
+    }
+
+    function renderAnalytics(data) {
+      const pending = data?.status !== "ready";
+      $("analyticsMessage").textContent = pending ? "분석 데이터 연동 대기" : safeText(data.message, "분석 데이터 연동 완료");
+      setMetricValue("viewsToday", data?.views?.today);
+      setMetricValue("viewsWeek", data?.views?.last_7_days);
+      setMetricValue("viewsMonth", data?.views?.last_30_days);
+      setMetricValue("visitorsToday", data?.visitors?.today);
+      setMetricValue("visitorsWeek", data?.visitors?.last_7_days);
+      setMetricValue("visitorsMonth", data?.visitors?.last_30_days);
+    }
+
+    async function loadAnalytics() {
+      try {
+        const res = await fetch("./api/analytics", { cache: "no-store" });
+        if (!res.ok) throw new Error("analytics load failed");
+        renderAnalytics(await res.json());
+      } catch {
+        renderAnalytics({ status: "pending" });
+      }
+    }
+
     function renderHistory(items) {
       const wrap = $("history");
       wrap.textContent = "";
@@ -461,6 +534,7 @@
     }
 
     loadStatus();
+    loadAnalytics();
   </script>
 </body>
 </html>
