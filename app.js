@@ -1888,6 +1888,104 @@ function formatLawUpdatedAt(value) {
   });
 }
 
+function getAutomationStatusDate(value) {
+  const text = safeText(value, "");
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return "";
+  return `${match[1]}-${match[2]}-${match[3]}`;
+}
+
+function getTodayDateText() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function isAutomationStatusDelayed(status) {
+  if (status?.skipDelay) return false;
+  const now = new Date();
+  const afterCheckTime = now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() >= 40);
+  if (!afterCheckTime) return false;
+  return getAutomationStatusDate(status?.last_run_kst) !== getTodayDateText();
+}
+
+function setAutomationStatusClass(statusKey) {
+  const card = $("automationStatusCard");
+  if (!card) return;
+  card.classList.remove(
+    "is-no-change",
+    "is-changed",
+    "is-partial-failed",
+    "is-failed",
+    "is-pending",
+    "is-delayed"
+  );
+  card.classList.add(`is-${statusKey}`);
+}
+
+function renderAutomationStatus(status = {}) {
+  const delayed = isAutomationStatusDelayed(status);
+  const statusValue = delayed ? "delayed" : safeText(status.status, "pending");
+  const openaiCallCount = Number(status.openai_call_count) || 0;
+  const changeCount = Number(status.legal_change_count) || Number(status.today_count) || 0;
+  const copyMap = {
+    no_change: {
+      badge: "변경 없음",
+      message: "오늘 확인 결과 변경된 관심 법령이 없습니다.",
+      meta: "OpenAI 호출 0회",
+      className: "no-change",
+    },
+    changed: {
+      badge: "변경 있음",
+      message: "오늘 관심 법령 데이터가 갱신되었습니다.",
+      meta: `변경 후보 ${changeCount}건 · OpenAI 호출 ${openaiCallCount}회`,
+      className: "changed",
+    },
+    partial_failed: {
+      badge: "일부 실패",
+      message: "일부 관심 법령 확인에 실패했습니다. Actions 로그 확인 필요.",
+      meta: `OpenAI 호출 ${openaiCallCount}회`,
+      className: "partial-failed",
+    },
+    failed: {
+      badge: "실패",
+      message: "법령 자동 확인 실행에 실패했습니다.",
+      meta: `OpenAI 호출 ${openaiCallCount}회`,
+      className: "failed",
+    },
+    delayed: {
+      badge: "자동 확인 지연 또는 미실행",
+      message: "오늘 자동 확인 결과가 아직 갱신되지 않았습니다.",
+      meta: `OpenAI 호출 ${openaiCallCount}회`,
+      className: "delayed",
+    },
+    pending: {
+      badge: "확인 대기",
+      message: "아직 자동 확인 결과가 없습니다.",
+      meta: "OpenAI 호출 0회",
+      className: "pending",
+    },
+  };
+  const copy = copyMap[statusValue] || copyMap.pending;
+
+  setText("automationStatusBadge", copy.badge);
+  setText("automationStatusMessage", copy.message);
+  setText("automationStatusMeta", copy.meta);
+  setAutomationStatusClass(copy.className);
+}
+
+async function loadAutomationStatus() {
+  try {
+    const res = await fetch("./data/automation_status.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("automation_status.json 로딩 실패");
+    renderAutomationStatus(await res.json());
+  } catch {
+    renderAutomationStatus({ status: "pending", skipDelay: true });
+  }
+}
+
 function normalizeLawUpdatesData(rawData) {
   if (Array.isArray(rawData)) {
     const today = new Date();
@@ -2540,6 +2638,7 @@ async function init() {
 
   const weatherLoadPromise = loadWeather().catch(handleWeatherLoadError);
   await registerSW();
+  await loadAutomationStatus();
   await loadLawUpdates();
   await weatherLoadPromise;
 }

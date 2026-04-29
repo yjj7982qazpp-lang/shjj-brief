@@ -219,16 +219,25 @@
         </div>
 
         <div class="law-brief-summary-card">
-        <div class="law-intro">
-          <span id="lawMetaSummary">갱신 정보 -</span>
-          <p id="lawNotice">법령 변경 정보를 불러오는 중입니다.</p>
-          <span id="lawCheckedAt">확인일: -</span>
-        </div>
+          <div class="automation-status-card" id="automationStatusCard">
+            <div class="automation-status-head">
+              <strong>오늘 자동확인 결과</strong>
+              <span id="automationStatusBadge">확인 대기</span>
+            </div>
+            <p id="automationStatusMessage">아직 자동 확인 결과가 없습니다.</p>
+            <span id="automationStatusMeta">OpenAI 호출 0회</span>
+          </div>
 
-        <div class="law-action-box">
-          <strong id="lawActionTitle">오늘 확인 포인트</strong>
-          <p id="lawActionText">변경 여부를 확인한 뒤 필요한 법령 항목을 먼저 검토하세요.</p>
-        </div>
+          <div class="law-intro">
+            <span id="lawMetaSummary">갱신 정보 -</span>
+            <p id="lawNotice">법령 변경 정보를 불러오는 중입니다.</p>
+            <span id="lawCheckedAt">확인일: -</span>
+          </div>
+
+          <div class="law-action-box">
+            <strong id="lawActionTitle">오늘 확인 포인트</strong>
+            <p id="lawActionText">변경 여부를 확인한 뒤 필요한 법령 항목을 먼저 검토하세요.</p>
+          </div>
 
         <div class="tracked-law-box compact">
           <div class="tracked-law-head">
