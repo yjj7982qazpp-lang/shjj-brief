@@ -248,42 +248,42 @@
               <span id="scheduleRoleBadge" class="schedule-role-badge">관리자</span>
             </div>
 
-            <div class="schedule-filter-row" aria-label="일정 필터">
-              <button type="button" class="schedule-filter-btn active" data-schedule-filter="today">오늘</button>
-              <button type="button" class="schedule-filter-btn" data-schedule-filter="week">이번주</button>
-              <button type="button" class="schedule-filter-btn" data-schedule-filter="all">전체</button>
-            </div>
-
             <p id="scheduleReadonlyNotice" class="schedule-readonly-notice"></p>
 
             <div class="schedule-composer">
-              <div class="selected-time-card">
-                <span>선택 시간</span>
-                <strong id="selectedScheduleTime">09:00</strong>
-              </div>
-
-              <div class="time-select-row">
+              <div class="schedule-input-grid">
                 <label>
-                  <span>시</span>
-                  <select id="scheduleHourSelect"></select>
+                  <span>날짜</span>
+                  <input id="scheduleDateInput" type="date" />
                 </label>
                 <label>
-                  <span>분</span>
-                  <select id="scheduleMinuteSelect"></select>
+                  <span>시간</span>
+                  <input id="scheduleTimeInput" type="time" value="09:00" />
                 </label>
-              </div>
-
-              <div class="quick-time-wrap">
-                <p>자주 쓰는 시간</p>
-                <div id="quickTimeGrid" class="quick-time-grid"></div>
               </div>
 
               <div class="title-row">
-                <input id="scheduleTitleInput" placeholder="일정명 예: 건축주 미팅, 현장 확인" />
+                <input id="scheduleTitleInput" placeholder="일정명 예: 안전점검, 현장 확인" />
                 <button id="addScheduleBtn">추가</button>
               </div>
             </div>
 
+            <details class="schedule-calendar-fold">
+              <summary>월별 미리보기</summary>
+              <div class="schedule-calendar-panel">
+                <div class="schedule-calendar-head">
+                  <button id="schedulePrevMonthBtn" type="button" aria-label="이전 달">‹</button>
+                  <strong id="scheduleCalendarTitle">이번 달</strong>
+                  <button id="scheduleNextMonthBtn" type="button" aria-label="다음 달">›</button>
+                </div>
+                <div id="scheduleCalendarGrid" class="schedule-calendar-grid"></div>
+              </div>
+            </details>
+
+            <div class="schedule-today-head">
+              <strong>오늘 일정</strong>
+              <span>오늘 날짜 일정만 표시</span>
+            </div>
             <div id="scheduleList" class="list"></div>
           </div>
         </details>

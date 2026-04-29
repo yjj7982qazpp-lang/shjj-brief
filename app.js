@@ -85,13 +85,12 @@ const WEATHER_FIELD_PARAMS = {
     "precipitation_probability_max",
   ],
   hourly: [
+    "temperature_2m",
     "precipitation_probability",
     "precipitation",
   ],
 };
 
-const QUICK_SCHEDULE_TIMES = ["09:00", "10:00", "11:00", "13:30", "14:00", "15:00", "16:00", "17:00"];
-const SCHEDULE_MINUTES = ["00", "10", "20", "30", "40", "50"];
 const LAW_MAJOR_GROUPS = ["건축", "도시주택", "소방안전", "교통기타", "기타"];
 const LAW_GROUP_LABELS = {
   건축: "건축",
@@ -114,7 +113,7 @@ const state = {
   longitude: DEFAULT_LOCATION.longitude,
   weather: null,
   schedules: [],
-  scheduleFilter: "today",
+  scheduleCalendarMonth: null,
   company: DEFAULT_COMPANY,
   member: DEFAULT_MEMBER,
   notificationTime: DEFAULT_NOTIFICATION_TIME,
@@ -537,6 +536,7 @@ async function loadWeather() {
   renderDailyGuide(dayIndex);
   updateSettingsView();
   updateBrief();
+  renderSchedules();
 }
 
 function handleWeatherLoadError() {
@@ -625,74 +625,21 @@ function loadSchedules() {
 }
 
 function getSelectedScheduleTime() {
-  const hour = $("scheduleHourSelect")?.value || "09";
-  const minute = $("scheduleMinuteSelect")?.value || "00";
-  return `${hour}:${minute}`;
+  return $("scheduleTimeInput")?.value || "09:00";
 }
 
-function updateSelectedScheduleTime() {
-  const time = getSelectedScheduleTime();
-  setText("selectedScheduleTime", time);
-  $$(".quick-time-btn").forEach((button) => {
-    button.classList.toggle("active", button.dataset.time === time);
-  });
-}
-
-function setScheduleTime(time) {
-  const [hour, minute] = time.split(":");
-  const hourSelect = $("scheduleHourSelect");
-  const minuteSelect = $("scheduleMinuteSelect");
-
-  if (hourSelect) hourSelect.value = hour;
-  if (minuteSelect) minuteSelect.value = minute;
-
-  updateSelectedScheduleTime();
-  $("scheduleTitleInput")?.focus();
-}
-
-function buildScheduleTimeOptions(select, values, formatter) {
-  clearChildren(select);
-  values.forEach((value) => {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = formatter(value);
-    select.appendChild(option);
-  });
-}
-
-function buildQuickTimeButtons(container) {
-  clearChildren(container);
-  QUICK_SCHEDULE_TIMES.forEach((time) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "quick-time-btn";
-    button.dataset.time = time;
-    button.textContent = time;
-    button.addEventListener("click", () => setScheduleTime(time));
-    container.appendChild(button);
-  });
+function getSelectedScheduleDate() {
+  return $("scheduleDateInput")?.value || getTodayDateString();
 }
 
 function setupScheduleTimePicker() {
-  const hourSelect = $("scheduleHourSelect");
-  const minuteSelect = $("scheduleMinuteSelect");
-  const quickGrid = $("quickTimeGrid");
+  const dateInput = $("scheduleDateInput");
+  const timeInput = $("scheduleTimeInput");
+  const today = getTodayDateString();
 
-  if (!hourSelect || !minuteSelect || !quickGrid) return;
-
-  buildScheduleTimeOptions(
-    hourSelect,
-    Array.from({ length: 18 }, (_, index) => pad2(index + 6)),
-    (value) => `${value}시`
-  );
-  buildScheduleTimeOptions(minuteSelect, SCHEDULE_MINUTES, (value) => `${value}분`);
-  buildQuickTimeButtons(quickGrid);
-
-  hourSelect.value = "09";
-  minuteSelect.value = "00";
-  bindEvent(hourSelect, "change", updateSelectedScheduleTime);
-  bindEvent(minuteSelect, "change", updateSelectedScheduleTime);
-  updateSelectedScheduleTime();
+  if (dateInput && !dateInput.value) dateInput.value = today;
+  if (timeInput && !timeInput.value) timeInput.value = "09:00";
+  state.scheduleCalendarMonth = `${today.slice(0, 7)}-01`;
 }
 
 function createScheduleRow(item) {
@@ -716,6 +663,10 @@ function createScheduleRow(item) {
     ? `${state.company.name} · ${safeText(item.createdBy, "local")}`
     : safeText(item.createdBy, "local");
 
+  const weather = document.createElement("span");
+  weather.className = "item-weather";
+  weather.textContent = getScheduleWeatherText(item);
+
   const actions = document.createElement("div");
   actions.className = "item-actions";
 
@@ -726,7 +677,7 @@ function createScheduleRow(item) {
     actions.appendChild(deleteButton);
   }
 
-  main.append(datetime, title, meta);
+  main.append(datetime, title, meta, weather);
   row.append(main, actions);
   return row;
 }
@@ -741,22 +692,117 @@ function sortSchedules(items) {
 
 function getVisibleSchedules() {
   const today = getTodayDateString();
-  if (state.scheduleFilter === "today") {
-    return state.schedules.filter((item) => item.date === today);
-  }
-
-  if (state.scheduleFilter === "week") {
-    const { start, end } = getWeekRange(today);
-    return state.schedules.filter((item) => item.date >= start && item.date <= end);
-  }
-
-  return state.schedules;
+  return state.schedules.filter((item) => item.date === today);
 }
 
 function updateBrief() {
   const visibleCount = getVisibleSchedules().length;
   const totalCount = state.schedules.length;
-  setText("scheduleCount", state.scheduleFilter === "all" ? `${totalCount}건` : `${visibleCount}/${totalCount}건`);
+  setText("scheduleCount", `${visibleCount}/${totalCount}건`);
+}
+
+function getScheduleWeatherText(item) {
+  if (item.date !== getTodayDateString()) return "";
+  if (!state.weather?.hourly?.time?.length) return "예상 날씨 확인 중";
+
+  const hourly = state.weather.hourly;
+  const targetTime = new Date(`${item.date}T${safeText(item.time, "09:00")}`);
+  if (Number.isNaN(targetTime.getTime())) return "예보 없음";
+
+  const slots = hourly.time
+    .map((time, index) => ({
+      time: new Date(time),
+      temp: Number(hourly.temperature_2m?.[index]),
+      rain: Number(hourly.precipitation_probability?.[index] ?? 0),
+    }))
+    .filter((slot) => !Number.isNaN(slot.time.getTime()));
+
+  const nearby = slots.filter((slot) => Math.abs(slot.time.getTime() - targetTime.getTime()) <= 60 * 60 * 1000);
+  const closest = slots
+    .map((slot) => ({ ...slot, distance: Math.abs(slot.time.getTime() - targetTime.getTime()) }))
+    .sort((a, b) => a.distance - b.distance)[0];
+
+  if (!closest || !Number.isFinite(closest.temp)) return "예보 없음";
+
+  const maxRain = nearby.length
+    ? Math.max(...nearby.map((slot) => Number.isFinite(slot.rain) ? slot.rain : 0))
+    : closest.rain;
+  const currentTemp = Number(state.weather.current?.temperature_2m);
+
+  return `예상 ${round(closest.temp)}° · 강수 ${round(maxRain)}% · 현재 ${Number.isFinite(currentTemp) ? `${round(currentTemp)}°` : "-"}`;
+}
+
+function getScheduleCountByDate() {
+  return state.schedules.reduce((counts, item) => {
+    const date = safeText(item.date, "");
+    if (date) counts.set(date, (counts.get(date) || 0) + 1);
+    return counts;
+  }, new Map());
+}
+
+function moveScheduleCalendarMonth(offset) {
+  const current = new Date(`${state.scheduleCalendarMonth || `${getTodayDateString().slice(0, 7)}-01`}T00:00:00`);
+  current.setMonth(current.getMonth() + offset);
+  state.scheduleCalendarMonth = `${current.getFullYear()}-${pad2(current.getMonth() + 1)}-01`;
+  renderScheduleCalendar();
+}
+
+function selectScheduleDate(dateString) {
+  const input = $("scheduleDateInput");
+  if (input) input.value = dateString;
+  state.scheduleCalendarMonth = `${dateString.slice(0, 7)}-01`;
+  renderScheduleCalendar();
+}
+
+function renderScheduleCalendar() {
+  const container = $("scheduleCalendarGrid");
+  const title = $("scheduleCalendarTitle");
+  if (!container || !title) return;
+
+  clearChildren(container);
+  const monthKey = state.scheduleCalendarMonth || `${getTodayDateString().slice(0, 7)}-01`;
+  const monthDate = new Date(`${monthKey}T00:00:00`);
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const selectedDate = getSelectedScheduleDate();
+  const counts = getScheduleCountByDate();
+
+  title.textContent = `${year}년 ${month + 1}월`;
+  ["일", "월", "화", "수", "목", "금", "토"].forEach((day) => {
+    const cell = document.createElement("span");
+    cell.className = "schedule-calendar-weekday";
+    cell.textContent = day;
+    container.appendChild(cell);
+  });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const lastDate = new Date(year, month + 1, 0).getDate();
+  for (let index = 0; index < firstDay; index += 1) {
+    const blank = document.createElement("span");
+    blank.className = "schedule-calendar-empty";
+    container.appendChild(blank);
+  }
+
+  for (let day = 1; day <= lastDate; day += 1) {
+    const dateString = `${year}-${pad2(month + 1)}-${pad2(day)}`;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "schedule-calendar-day";
+    button.classList.toggle("has-schedule", counts.has(dateString));
+    button.classList.toggle("selected", selectedDate === dateString);
+    button.textContent = String(day);
+    button.addEventListener("click", () => selectScheduleDate(dateString));
+
+    const count = counts.get(dateString) || 0;
+    if (count > 0) {
+      const marker = document.createElement("span");
+      marker.className = "schedule-calendar-marker";
+      marker.textContent = count > 1 ? String(count) : "";
+      button.appendChild(marker);
+    }
+
+    container.appendChild(button);
+  }
 }
 
 function renderScheduleAccess() {
@@ -771,27 +817,18 @@ function renderScheduleAccess() {
   if (addButton) addButton.disabled = !writable;
 }
 
-function renderScheduleFilters() {
-  $$(".schedule-filter-btn").forEach((button) => {
-    button.classList.toggle("active", button.dataset.scheduleFilter === state.scheduleFilter);
-  });
-}
-
 function renderSchedules() {
   const list = $("scheduleList");
   if (!list) return;
 
   clearChildren(list);
   renderScheduleAccess();
-  renderScheduleFilters();
+  renderScheduleCalendar();
 
   const visibleSchedules = getVisibleSchedules();
 
   if (visibleSchedules.length === 0) {
-    const emptyMessage = state.scheduleFilter === "today"
-      ? "오늘 등록된 일정이 없습니다."
-      : "표시할 일정이 없습니다.";
-    list.appendChild(createEmptyListItem(emptyMessage));
+    list.appendChild(createEmptyListItem("오늘 등록된 일정이 없습니다."));
     updateBrief();
     return;
   }
@@ -825,7 +862,7 @@ function addSchedule() {
     id: makeId(),
     companyId: state.company.id,
     calendarScope: "company",
-    date: getTodayDateString(),
+    date: getSelectedScheduleDate(),
     source: "manual",
     time: getSelectedScheduleTime(),
     title,
@@ -2242,12 +2279,13 @@ function bindScheduleEvents() {
   bindEvent($("scheduleTitleInput"), "keydown", (event) => {
     if (event.key === "Enter") addSchedule();
   });
-  $$(".schedule-filter-btn").forEach((button) => {
-    bindEvent(button, "click", () => {
-      state.scheduleFilter = button.dataset.scheduleFilter || "today";
-      renderSchedules();
-    });
+  bindEvent($("scheduleDateInput"), "change", () => {
+    const selected = getSelectedScheduleDate();
+    state.scheduleCalendarMonth = `${selected.slice(0, 7)}-01`;
+    renderSchedules();
   });
+  bindEvent($("schedulePrevMonthBtn"), "click", () => moveScheduleCalendarMonth(-1));
+  bindEvent($("scheduleNextMonthBtn"), "click", () => moveScheduleCalendarMonth(1));
 }
 
 function bindNotificationEvents() {
