@@ -367,10 +367,14 @@
       <div class="section-head">
         <div>
           <h2>운영 품질</h2>
-          <p>캐시가 잘 먹을수록 같은 법령에 대한 반복 비용이 줄어듭니다.</p>
+          <p>캐시 재사용은 같은 법령 요약을 다시 OpenAI로 만들지 않고 기존 요약을 사용했다는 뜻입니다.</p>
         </div>
       </div>
       <div class="grid">
+        <div class="metric">
+          <span>법령 데이터 마지막 갱신</span>
+          <strong id="lawDataUpdatedAt">-</strong>
+        </div>
         <div class="metric">
           <span>캐시 재사용</span>
           <strong id="cacheHitCount">-</strong>
@@ -420,6 +424,10 @@
       return text.replace("T", " ").replace(/\+09:00$/, "");
     }
 
+    function getLawDataUpdatedAt(data) {
+      return data?.metadata?.lastUpdated || data?.updated_at || data?.synced_at || "-";
+    }
+
     function money(value) {
       const number = Number(value || 0);
       return `$${number.toFixed(4)}`;
@@ -450,7 +458,9 @@
 
     function renderAnalytics(data) {
       const pending = data?.status !== "ready";
-      $("analyticsMessage").textContent = pending ? "분석 데이터 연동 대기" : safeText(data.message, "분석 데이터 연동 완료");
+      $("analyticsMessage").textContent = data?.reason === "missing_zone"
+        ? "커스텀 도메인 또는 Pages Analytics 연동 필요 · 현재 pages.dev 환경에서는 Zone 조회수 연동 대기"
+        : pending ? "분석 데이터 연동 대기" : safeText(data.message, "분석 데이터 연동 완료");
       setMetricValue("viewsToday", data?.views?.today);
       setMetricValue("viewsWeek", data?.views?.last_7_days);
       setMetricValue("viewsMonth", data?.views?.last_30_days);
@@ -533,8 +543,19 @@
       }
     }
 
+    async function loadLawDataStatus() {
+      try {
+        const res = await fetch("./data/law_updates.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("law data load failed");
+        $("lawDataUpdatedAt").textContent = formatRunTime(getLawDataUpdatedAt(await res.json()));
+      } catch {
+        $("lawDataUpdatedAt").textContent = "-";
+      }
+    }
+
     loadStatus();
     loadAnalytics();
+    loadLawDataStatus();
   </script>
 </body>
 </html>
