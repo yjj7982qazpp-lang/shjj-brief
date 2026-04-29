@@ -25,6 +25,8 @@ jobs:
           python-version: "3.12"
 
       - name: Collect law brief data and write automation status
+        id: collect
+        continue-on-error: true
         env:
           LAW_OC: ${{ secrets.LAW_OC }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -33,9 +35,11 @@ jobs:
         run: python -u .github/scripts/run_law_update_with_status.py
 
       - name: Inspect generated changes
+        if: always()
         run: git status --short
 
       - name: Commit and push changes
+        if: always()
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
@@ -46,3 +50,7 @@ jobs:
             git commit -m "Auto update law brief data"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
+
+      - name: Fail workflow if collection failed
+        if: always() && steps.collect.outcome == 'failure'
+        run: exit 1

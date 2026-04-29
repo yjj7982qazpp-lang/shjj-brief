@@ -1895,20 +1895,30 @@ function getAutomationStatusDate(value) {
   return `${match[1]}-${match[2]}-${match[3]}`;
 }
 
-function getTodayDateText() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+function getKstDateParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return {
+    dateText: `${values.year}-${values.month}-${values.day}`,
+    hour: Number(values.hour),
+    minute: Number(values.minute),
+  };
 }
 
 function isAutomationStatusDelayed(status) {
   if (status?.skipDelay) return false;
-  const now = new Date();
-  const afterCheckTime = now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() >= 40);
+  const kst = getKstDateParts();
+  const afterCheckTime = kst.hour > 9 || (kst.hour === 9 && kst.minute >= 40);
   if (!afterCheckTime) return false;
-  return getAutomationStatusDate(status?.last_run_kst) !== getTodayDateText();
+  return getAutomationStatusDate(status?.last_run_kst) !== kst.dateText;
 }
 
 function setAutomationStatusClass(statusKey) {
