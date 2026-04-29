@@ -1,0 +1,16 @@
+{
+  "last_run_kst": "-",
+  "status": "pending",
+  "message": "아직 자동 확인 결과가 없습니다. 다음 GitHub Actions 실행 후 갱신됩니다.",
+  "legal_change_count": 0,
+  "today_count": 0,
+  "last_7_days_count": 0,
+  "last_30_days_count": 0,
+  "new_summary_key_count": 0,
+  "cache_hit_count": 0,
+  "openai_call_count": 0,
+  "changed_files": [],
+  "workflow": "Auto Law Brief Update",
+  "branch": "main",
+  "source": "github_actions"
+}
