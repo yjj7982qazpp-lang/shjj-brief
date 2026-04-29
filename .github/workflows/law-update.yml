@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Collect today effective law brief data
+      - name: Collect law brief data with AI cost guard
         env:
           LAW_OC: ${{ secrets.LAW_OC }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -41,7 +41,7 @@ jobs:
           git config user.email "github-actions@github.com"
           git add data/law_updates.json data/law_summary_cache.json
           if git diff --cached --quiet; then
-            echo "No changes to commit"
+            echo "No legal data or summary cache changes to commit"
           else
             git commit -m "Auto update law brief data"
             git push origin HEAD:${GITHUB_REF_NAME}
