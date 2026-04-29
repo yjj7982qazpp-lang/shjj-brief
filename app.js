@@ -155,6 +155,7 @@ const state = {
   companyMembership: null,
   companyMembers: [],
   inactiveNoticeShown: false,
+  invitePanelOpen: false,
   notificationTime: DEFAULT_NOTIFICATION_TIME,
   weatherMode: "today",
 };
@@ -760,7 +761,13 @@ function joinCompanyRoom() {
   saveCompanyMembership(roleInfo);
   if (input) input.value = "";
   state.inactiveNoticeShown = false;
+  state.invitePanelOpen = false;
   renderSchedules();
+  if (isCompanyMembershipInactive()) {
+    showNotificationToast("접속 권한이 없습니다. 관리자에게 SHJJ 회사방 권한을 확인해 주세요.");
+    state.inactiveNoticeShown = true;
+    return;
+  }
   showNotificationToast("SHJJ 회사방에 참여했습니다.");
 }
 
@@ -972,6 +979,21 @@ function showScheduleFeedback(message) {
   }
 }
 
+function renderScheduleInviteToggle() {
+  const button = $("toggleScheduleInviteBtn");
+  if (!button) return;
+  const inactive = isCompanyMembershipInactive();
+  button.hidden = inactive;
+  button.textContent = state.invitePanelOpen ? "닫기" : "초대";
+  button.setAttribute("aria-expanded", String(state.invitePanelOpen));
+}
+
+function toggleScheduleInvitePanel() {
+  state.invitePanelOpen = !state.invitePanelOpen;
+  renderScheduleAccess();
+  if (state.invitePanelOpen) $("inviteCodeInput")?.focus();
+}
+
 function createScheduleRow(item) {
   const row = document.createElement("div");
   row.className = "item";
@@ -1177,12 +1199,13 @@ function renderScheduleAccess() {
   const roomContent = $("scheduleRoomContent");
   const adminPanel = $("scheduleAdminPanel");
 
-  if (invitePanel) invitePanel.hidden = joined || inactive;
+  renderScheduleInviteToggle();
+  if (invitePanel) invitePanel.hidden = !state.invitePanelOpen || inactive;
   if (roomContent) roomContent.hidden = !joined;
   if (adminPanel) adminPanel.hidden = !canManageCompany();
 
   if (inactive && !state.inactiveNoticeShown) {
-    showNotificationToast("접속 권한이 없습니다.");
+    showNotificationToast("접속 권한이 없습니다. 관리자에게 SHJJ 회사방 권한을 확인해 주세요.");
     state.inactiveNoticeShown = true;
   }
 
@@ -2650,6 +2673,11 @@ function bindWeatherEvents() {
 }
 
 function bindScheduleEvents() {
+  bindEvent($("toggleScheduleInviteBtn"), "click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleScheduleInvitePanel();
+  });
   bindEvent($("joinCompanyRoomBtn"), "click", joinCompanyRoom);
   bindEvent($("inviteCodeInput"), "keydown", (event) => {
     if (event.key === "Enter") joinCompanyRoom();

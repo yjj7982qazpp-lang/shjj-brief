@@ -648,6 +648,25 @@ textarea:focus {
   gap: 10px;
 }
 
+.schedule-summary-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+}
+
+.schedule-invite-toggle {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .schedule-invite-panel {
   display: grid;
   gap: 8px;
@@ -655,6 +674,7 @@ textarea:focus {
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--card-soft);
+  margin-bottom: 12px;
 }
 
 .schedule-invite-panel strong {
