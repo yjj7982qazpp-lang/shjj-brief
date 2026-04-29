@@ -1342,36 +1342,7 @@ function formatLawDateCompact(value) {
 function getLawDateLabelShort(label) {
   if (label === "시행일") return "시행";
   if (label === "공포일") return "공포";
-  if (label === "유예일") return "유예";
   return label;
-}
-
-function getLawDefermentDate(item) {
-  const candidates = [
-    item.grace_period,
-    item.gracePeriod,
-    item.deferment_date,
-    item.deferred_until,
-    item.grace_end_date,
-    item.postponed_until,
-    item.postponed_date,
-    item.suspension_until,
-    item["유예일"],
-    item["유예기간"],
-  ];
-  const value = candidates
-    .map((entry) => safeText(entry, "").trim())
-    .find((entry) => entry && entry !== "정보 없음");
-  return value || "";
-}
-
-function getLawDefermentDays(item) {
-  const effectiveDate = parseLawDateValue(item.effective_date);
-  const promulgationDate = parseLawDateValue(item.promulgation_date);
-  if (!effectiveDate || !promulgationDate) return null;
-
-  const diffDays = Math.round((effectiveDate.getTime() - promulgationDate.getTime()) / (1000 * 60 * 60 * 24));
-  return diffDays > 0 ? diffDays : null;
 }
 
 function getLawDateToneClass(item, label) {
@@ -1417,11 +1388,6 @@ function renderLawPreviewDates(item) {
   const chips = entries.map(([label, value]) => `
     <span class="law-date-chip ${getLawDateToneClass(item, label)}">${escapeHtml(getLawDateLabelShort(label))} ${escapeHtml(formatLawDateCompact(value))}</span>
   `);
-
-  const defermentValue = getLawDefermentDate(item);
-  if (defermentValue) {
-    chips.push(`<span class="law-date-chip law-date-chip-deferment">${escapeHtml(getLawDateLabelShort("유예일"))} ${escapeHtml(formatLawDateCompact(defermentValue))}</span>`);
-  }
 
   return chips.join("");
 }
