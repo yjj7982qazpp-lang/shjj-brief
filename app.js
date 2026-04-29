@@ -30,6 +30,12 @@ const STORAGE_KEYS = {
   notificationTime: "shjj_notification_time",
 };
 
+const SCHEDULE_STORAGE_VERSION = 1;
+
+// 일정 데이터는 운영 업데이트 후에도 같은 도메인/localStorage key에서 보존되어야 한다.
+// 이 key를 바꾸면 기존 일정이 사라진 것처럼 보일 수 있으므로 migration 없이 변경하지 않는다.
+// preview와 main은 도메인이 달라 localStorage가 자동 공유되지 않는다.
+// 여러 직원 기기 간 실제 일정 공유는 향후 서버/DB 연동이 필요하다.
 const DEFAULT_NOTIFICATION_TIME = "09:20";
 
 const DEFAULT_LOCATION = {
@@ -236,6 +242,68 @@ function saveJson(key, value) {
 function loadArray(key) {
   const value = loadJson(key, []);
   return Array.isArray(value) ? value : [];
+}
+
+function readScheduleStoragePayload() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.schedules);
+    if (!raw) return { version: SCHEDULE_STORAGE_VERSION, items: [] };
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return { version: 0, items: parsed };
+    }
+    if (parsed && typeof parsed === "object" && Array.isArray(parsed.items)) {
+      return {
+        version: Number.isFinite(Number(parsed.version)) ? Number(parsed.version) : 0,
+        items: parsed.items,
+      };
+    }
+  } catch (error) {
+    console.warn("Failed to read schedule storage. Falling back to empty list.", error);
+  }
+  return { version: SCHEDULE_STORAGE_VERSION, items: [] };
+}
+
+function saveSchedulesSafe(items) {
+  const normalized = Array.isArray(items) ? items.map(normalizeScheduleItem) : [];
+  saveJson(STORAGE_KEYS.schedules, {
+    version: SCHEDULE_STORAGE_VERSION,
+    items: normalized,
+  });
+  return normalized;
+}
+
+function migrateSchedulesIfNeeded() {
+  const payload = readScheduleStoragePayload();
+  const normalized = Array.isArray(payload.items) ? payload.items.map(normalizeScheduleItem) : [];
+  const shouldSave = payload.version !== SCHEDULE_STORAGE_VERSION ||
+    !Array.isArray(payload.items) ||
+    JSON.stringify(payload.items) !== JSON.stringify(normalized);
+
+  if (shouldSave) return saveSchedulesSafe(normalized);
+  return normalized;
+}
+
+function loadSchedulesSafe() {
+  return migrateSchedulesIfNeeded();
+}
+
+function exportSchedulesBackup() {
+  const items = state.schedules.length ? state.schedules : loadSchedulesSafe();
+  return JSON.stringify({
+    version: SCHEDULE_STORAGE_VERSION,
+    exportedAt: new Date().toISOString(),
+    items: items.map(normalizeScheduleItem),
+  }, null, 2);
+}
+
+function importSchedulesBackup(json) {
+  const parsed = typeof json === "string" ? JSON.parse(json) : json;
+  const items = Array.isArray(parsed) ? parsed : parsed?.items;
+  const normalized = saveSchedulesSafe(Array.isArray(items) ? items : []);
+  state.schedules = normalized;
+  renderSchedules();
+  return normalized;
 }
 
 function normalizeNotificationTime(value) {
@@ -858,12 +926,7 @@ function normalizeScheduleItem(item) {
 }
 
 function loadSchedules() {
-  const stored = loadArray(STORAGE_KEYS.schedules);
-  const normalized = stored.map(normalizeScheduleItem);
-  if (JSON.stringify(stored) !== JSON.stringify(normalized)) {
-    saveJson(STORAGE_KEYS.schedules, normalized);
-  }
-  return normalized;
+  return loadSchedulesSafe();
 }
 
 function getSelectedScheduleTime() {
@@ -1267,7 +1330,7 @@ function renderSchedules() {
 function removeSchedule(scheduleId) {
   if (!canWriteSchedule()) return;
   state.schedules = state.schedules.filter((schedule) => schedule.id !== scheduleId);
-  saveJson(STORAGE_KEYS.schedules, state.schedules);
+  state.schedules = saveSchedulesSafe(state.schedules);
   renderSchedules();
 }
 
@@ -1303,7 +1366,7 @@ function addSchedule() {
     updatedAt: new Date().toISOString(),
   }));
 
-  saveJson(STORAGE_KEYS.schedules, state.schedules);
+  state.schedules = saveSchedulesSafe(state.schedules);
   resetScheduleForm();
   setScheduleSheetOpen(false);
   showScheduleFeedback("일정이 등록되었습니다.");
