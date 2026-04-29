@@ -31,6 +31,7 @@ jobs:
           LAW_OC: ${{ secrets.LAW_OC }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_SUMMARY_MODEL: ${{ vars.OPENAI_SUMMARY_MODEL }}
+          OPENAI_ESTIMATED_COST_PER_CALL_USD: ${{ vars.OPENAI_ESTIMATED_COST_PER_CALL_USD }}
           PYTHONUNBUFFERED: "1"
         run: python -u .github/scripts/run_law_update_with_status.py
 
