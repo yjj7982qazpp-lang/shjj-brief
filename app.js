@@ -2535,7 +2535,7 @@ function bindAdminStatusReveal() {
 
   triggerTargets.forEach((target) => bindEvent(target, "click", handleTap));
   bindEvent(button, "click", () => {
-    window.location.href = "/admin-status.html";
+    window.location.href = "./admin-status.html";
   });
 }
 
