@@ -815,6 +815,11 @@ function saveCompanyMembership(roleInfo) {
   applyCompanyMembership(membership);
 }
 
+function clearCompanyMembership() {
+  localStorage.removeItem(STORAGE_KEYS.companyMembership);
+  applyCompanyMembership(null);
+}
+
 function joinCompanyRoom() {
   const input = $("inviteCodeInput");
   const code = (input?.value || "").trim().toUpperCase();
@@ -836,7 +841,18 @@ function joinCompanyRoom() {
     state.inactiveNoticeShown = true;
     return;
   }
-  showNotificationToast("SHJJ 회사방에 참여했습니다.");
+  showNotificationToast(`${DEFAULT_COMPANY.name}에 참여하였습니다.`);
+}
+
+function logoutCompanyRoom() {
+  clearCompanyMembership();
+  state.inactiveNoticeShown = false;
+  state.invitePanelOpen = false;
+  setText("scheduleInviteFeedback", "");
+  const input = $("inviteCodeInput");
+  if (input) input.value = "";
+  renderSchedules();
+  showNotificationToast("로그아웃되었습니다.");
 }
 
 function updateCompanyMemberAccess(memberId, accessValue) {
@@ -1045,10 +1061,10 @@ function showScheduleFeedback(message) {
 function renderScheduleInviteToggle() {
   const button = $("toggleScheduleInviteBtn");
   if (!button) return;
-  const inactive = isCompanyMembershipInactive();
-  button.hidden = inactive;
-  button.textContent = state.invitePanelOpen ? "닫기" : "초대";
-  button.setAttribute("aria-expanded", String(state.invitePanelOpen));
+  const joined = hasCompanyMembership();
+  button.hidden = false;
+  button.textContent = joined ? "로그아웃" : "참여";
+  button.setAttribute("aria-expanded", String(!joined && state.invitePanelOpen));
 }
 
 function setScheduleFoldOpen(open) {
@@ -1057,8 +1073,11 @@ function setScheduleFoldOpen(open) {
 }
 
 function toggleScheduleInvitePanel() {
+  if (hasCompanyMembership()) {
+    logoutCompanyRoom();
+    return;
+  }
   state.invitePanelOpen = !state.invitePanelOpen;
-  if (state.invitePanelOpen) setScheduleFoldOpen(true);
   renderScheduleAccess();
   if (state.invitePanelOpen) $("inviteCodeInput")?.focus();
 }
@@ -1264,12 +1283,14 @@ function renderScheduleAccess() {
   const joined = hasCompanyMembership();
   const inactive = isCompanyMembershipInactive();
   const writable = canWriteSchedule();
+  const inviteSection = $("scheduleJoinSection");
   const invitePanel = $("scheduleInvitePanel");
   const roomContent = $("scheduleRoomContent");
   const adminPanel = $("scheduleAdminPanel");
 
   renderScheduleInviteToggle();
-  if (invitePanel) invitePanel.hidden = !state.invitePanelOpen || inactive;
+  if (inviteSection) inviteSection.hidden = joined || !state.invitePanelOpen;
+  if (invitePanel) invitePanel.hidden = joined || !state.invitePanelOpen;
   if (roomContent) roomContent.hidden = !joined;
   if (adminPanel) adminPanel.hidden = !canManageCompany();
 

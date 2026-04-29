@@ -655,6 +655,10 @@ textarea:focus {
   margin-left: auto;
 }
 
+.schedule-join-card {
+  margin-bottom: 12px;
+}
+
 .schedule-invite-toggle {
   min-height: 28px;
   padding: 0 10px;
@@ -674,7 +678,12 @@ textarea:focus {
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--card-soft);
-  margin-bottom: 12px;
+}
+
+.schedule-join-card .schedule-invite-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .schedule-invite-panel strong {

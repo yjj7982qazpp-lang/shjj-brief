@@ -230,6 +230,18 @@
 
       <!-- 향후 광고 삽입 위치: 광고 정책과 스토어 심사 기준 확정 후 활성화 -->
 
+      <section id="scheduleJoinSection" class="card schedule-join-card" hidden>
+        <div id="scheduleInvitePanel" class="schedule-invite-panel">
+          <strong>공유 일정 참여</strong>
+          <p>초대코드를 입력하면 공유 일정에 참여할 수 있습니다.</p>
+          <div class="schedule-invite-form">
+            <input id="inviteCodeInput" type="text" autocomplete="off" placeholder="초대코드 입력" />
+            <button id="joinCompanyRoomBtn" type="button">참여하기</button>
+          </div>
+          <p id="scheduleInviteFeedback" class="schedule-feedback" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
       <!-- Schedule -->
       <section id="scheduleSection" class="card">
         <details class="fold-card">
@@ -240,22 +252,12 @@
               <p class="fold-summary-text">필요할 때 펼쳐서 일정 입력과 목록 확인</p>
             </div>
             <div class="schedule-summary-actions">
-              <button id="toggleScheduleInviteBtn" class="schedule-invite-toggle" type="button" aria-expanded="false">초대</button>
+              <button id="toggleScheduleInviteBtn" class="schedule-invite-toggle" type="button" aria-expanded="false">참여</button>
               <span id="scheduleCount" class="status-chip">0건</span>
             </div>
           </summary>
 
           <div class="fold-body">
-            <div id="scheduleInvitePanel" class="schedule-invite-panel" hidden>
-              <strong>공유 일정 참여</strong>
-              <p>초대코드를 입력하면 공유 일정이 표시됩니다.</p>
-              <div class="schedule-invite-form">
-                <input id="inviteCodeInput" type="text" autocomplete="off" placeholder="초대코드 입력" />
-                <button id="joinCompanyRoomBtn" type="button">참여하기</button>
-              </div>
-              <p id="scheduleInviteFeedback" class="schedule-feedback" role="status" aria-live="polite"></p>
-            </div>
-
             <div id="scheduleRoomContent" hidden>
               <div class="schedule-room-meta">
                 <span id="scheduleCompanyBadge" class="schedule-room-badge">SHJJ 회사방</span>
