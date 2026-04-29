@@ -2504,6 +2504,39 @@ function bindEvents() {
   bindWeatherEvents();
   bindScheduleEvents();
   bindNotificationEvents();
+  bindAdminStatusReveal();
+}
+
+function bindAdminStatusReveal() {
+  const triggerTargets = [
+    document.querySelector(".eyebrow"),
+    document.querySelector("[data-app-title]"),
+  ].filter(Boolean);
+  const button = $("adminStatusBtn");
+  if (!triggerTargets.length || !button) return;
+
+  let tapCount = 0;
+  let firstTapAt = 0;
+
+  const handleTap = () => {
+    const now = Date.now();
+    if (!firstTapAt || now - firstTapAt > 2500) {
+      firstTapAt = now;
+      tapCount = 0;
+    }
+
+    tapCount += 1;
+    if (tapCount >= 7) {
+      button.hidden = false;
+      tapCount = 0;
+      firstTapAt = 0;
+    }
+  };
+
+  triggerTargets.forEach((target) => bindEvent(target, "click", handleTap));
+  bindEvent(button, "click", () => {
+    window.location.href = "/admin-status.html";
+  });
 }
 
 function renderNotificationTime() {

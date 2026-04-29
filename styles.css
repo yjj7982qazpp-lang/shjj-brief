@@ -180,6 +180,15 @@ h3 {
   box-shadow: 0 10px 22px rgba(23, 32, 51, 0.14);
 }
 
+.admin-status-btn {
+  min-width: 48px;
+  height: 36px;
+  background: #eef2f7;
+  color: var(--navy);
+  font-size: 12px;
+  box-shadow: none;
+}
+
 .topbar-actions {
   display: flex;
   gap: 8px;
