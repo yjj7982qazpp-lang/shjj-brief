@@ -648,6 +648,44 @@ textarea:focus {
   gap: 12px;
 }
 
+.schedule-invite-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card-soft);
+}
+
+.schedule-invite-panel strong {
+  color: var(--navy);
+  font-size: 17px;
+}
+
+.schedule-invite-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.schedule-invite-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.schedule-invite-form button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .schedule-room-meta {
   display: flex;
   flex-wrap: wrap;
@@ -741,6 +779,10 @@ textarea:focus {
   font-weight: 900;
 }
 
+.schedule-invite-panel .schedule-feedback {
+  margin: 0;
+}
+
 .schedule-sheet[hidden] {
   display: none;
 }
@@ -815,6 +857,23 @@ textarea:focus {
 .schedule-confirm-btn {
   background: var(--blue);
   color: #fff;
+}
+
+.schedule-selected-day-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.schedule-selected-day-list strong {
+  color: var(--navy);
+  font-size: 13px;
 }
 
 .list {

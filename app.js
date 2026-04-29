@@ -25,6 +25,7 @@ const APP_NAME = "SHJJ Brief";
 
 const STORAGE_KEYS = {
   schedules: "shjj_brief_schedules_v4",
+  companyMembership: "shjj_company_membership_v1",
   notificationTime: "shjj_notification_time",
 };
 
@@ -45,6 +46,19 @@ const DEFAULT_MEMBER = {
   id: "local-admin",
   name: "관리자",
   role: "admin",
+};
+
+const INVITE_CODES = {
+  "SHJJ-ADMIN": {
+    memberId: "local-admin",
+    memberName: "관리자",
+    role: "admin",
+  },
+  "SHJJ-MEMBER": {
+    memberId: "local-member",
+    memberName: "구성원",
+    role: "member",
+  },
 };
 
 const WEATHER_COPY = {
@@ -115,7 +129,8 @@ const state = {
   schedules: [],
   scheduleCalendarMonth: null,
   company: DEFAULT_COMPANY,
-  member: DEFAULT_MEMBER,
+  member: null,
+  companyMembership: null,
   notificationTime: DEFAULT_NOTIFICATION_TIME,
   weatherMode: "today",
 };
@@ -580,18 +595,93 @@ function getWeekRange(dateString = getTodayDateString()) {
   };
 }
 
+function hasCompanyMembership() {
+  return state.companyMembership?.status === "active" && state.companyMembership?.companyRoomId === DEFAULT_COMPANY.id;
+}
+
 function canWriteSchedule(member = state.member) {
-  return member?.role === "admin" || member?.role === "editor";
+  return hasCompanyMembership() && member?.role === "admin";
 }
 
 function canManageCompany(member = state.member) {
-  return member?.role === "admin";
+  return hasCompanyMembership() && member?.role === "admin";
 }
 
 function getMemberRoleLabel(member = state.member) {
   if (member?.role === "admin") return "관리자";
-  if (member?.role === "editor") return "편집 가능";
-  return "읽기 전용";
+  if (member?.role === "member") return "구성원";
+  return "미참여";
+}
+
+function normalizeCompanyMembership(value) {
+  if (!value || typeof value !== "object") return null;
+  if (value.companyRoomId !== DEFAULT_COMPANY.id || value.status !== "active") return null;
+  const role = value.role === "admin" ? "admin" : value.role === "member" ? "member" : "";
+  if (!role) return null;
+
+  return {
+    companyRoomId: DEFAULT_COMPANY.id,
+    companyRoomName: DEFAULT_COMPANY.name,
+    memberId: safeText(value.memberId, role === "admin" ? "local-admin" : "local-member"),
+    memberName: safeText(value.memberName, role === "admin" ? "관리자" : "구성원"),
+    role,
+    status: "active",
+    joinedAt: safeText(value.joinedAt, new Date().toISOString()),
+  };
+}
+
+function applyCompanyMembership(membership) {
+  state.companyMembership = normalizeCompanyMembership(membership);
+  state.company = DEFAULT_COMPANY;
+  state.member = state.companyMembership
+    ? {
+      id: state.companyMembership.memberId,
+      name: state.companyMembership.memberName,
+      role: state.companyMembership.role,
+    }
+    : null;
+}
+
+function loadCompanyMembership() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.companyMembership);
+    applyCompanyMembership(raw ? JSON.parse(raw) : null);
+  } catch (error) {
+    console.warn("Failed to load company membership", error);
+    applyCompanyMembership(null);
+  }
+}
+
+function saveCompanyMembership(roleInfo) {
+  const membership = {
+    companyRoomId: DEFAULT_COMPANY.id,
+    companyRoomName: DEFAULT_COMPANY.name,
+    memberId: roleInfo.memberId,
+    memberName: roleInfo.memberName,
+    role: roleInfo.role,
+    status: "active",
+    joinedAt: new Date().toISOString(),
+  };
+
+  saveJson(STORAGE_KEYS.companyMembership, membership);
+  applyCompanyMembership(membership);
+}
+
+function joinCompanyRoom() {
+  const input = $("inviteCodeInput");
+  const code = (input?.value || "").trim().toUpperCase();
+  const roleInfo = INVITE_CODES[code];
+
+  if (!roleInfo) {
+    setText("scheduleInviteFeedback", "초대코드가 올바르지 않습니다.");
+    input?.focus();
+    return;
+  }
+
+  saveCompanyMembership(roleInfo);
+  if (input) input.value = "";
+  renderSchedules();
+  showScheduleFeedback("SHJJ 회사방에 참여했습니다.");
 }
 
 function normalizeScheduleItem(item) {
@@ -794,6 +884,10 @@ function getVisibleSchedules() {
 }
 
 function updateBrief() {
+  if (!hasCompanyMembership()) {
+    setText("scheduleCount", "0건");
+    return;
+  }
   const visibleCount = getVisibleSchedules().length;
   const totalCount = state.schedules.length;
   setText("scheduleCount", `${visibleCount}/${totalCount}건`);
@@ -852,6 +946,31 @@ function selectScheduleDate(dateString) {
   renderScheduleCalendar();
 }
 
+function renderScheduleSelectedDateList() {
+  const container = $("scheduleSelectedDayList");
+  if (!container) return;
+
+  clearChildren(container);
+  const selectedDate = getSelectedScheduleDate();
+  const items = sortSchedules(state.schedules.filter((item) => item.date === selectedDate));
+  const title = document.createElement("strong");
+  title.textContent = selectedDate;
+  container.appendChild(title);
+
+  if (items.length === 0) {
+    const empty = document.createElement("span");
+    empty.textContent = "등록된 일정이 없습니다.";
+    container.appendChild(empty);
+    return;
+  }
+
+  items.forEach((item) => {
+    const row = document.createElement("span");
+    row.textContent = `${safeText(item.time, "--:--")} ${safeText(item.title, "일정")}`;
+    container.appendChild(row);
+  });
+}
+
 function renderScheduleCalendar() {
   const container = $("scheduleCalendarGrid");
   const title = $("scheduleCalendarTitle");
@@ -901,13 +1020,29 @@ function renderScheduleCalendar() {
 
     container.appendChild(button);
   }
+
+  renderScheduleSelectedDateList();
 }
 
 function renderScheduleAccess() {
+  const joined = hasCompanyMembership();
   const writable = canWriteSchedule();
+  const invitePanel = $("scheduleInvitePanel");
+  const roomContent = $("scheduleRoomContent");
+
+  if (invitePanel) invitePanel.hidden = joined;
+  if (roomContent) roomContent.hidden = !joined;
+
+  if (!joined) {
+    setText("scheduleCount", "0건");
+    setText("scheduleInviteFeedback", "");
+    setScheduleSheetOpen(false);
+    return;
+  }
+
   setText("scheduleCompanyBadge", state.company.name);
   setText("scheduleRoleBadge", getMemberRoleLabel());
-  setText("scheduleReadonlyNotice", writable ? "" : "읽기 전용 권한입니다. 일정 추가와 삭제는 관리자 또는 편집자만 가능합니다.");
+  setText("scheduleReadonlyNotice", writable ? "" : "구성원은 오늘 배포용 테스트에서 읽기 전용입니다.");
 
   const input = $("scheduleTitleInput");
   const openButton = $("openScheduleSheetBtn");
@@ -915,7 +1050,10 @@ function renderScheduleAccess() {
   const locationInput = $("scheduleLocationInput");
   const memoInput = $("scheduleMemoInput");
   if (input) input.disabled = !writable;
-  if (openButton) openButton.disabled = !writable;
+  if (openButton) {
+    openButton.disabled = !writable;
+    openButton.hidden = !writable;
+  }
   if (confirmButton) confirmButton.disabled = !writable;
   if (locationInput) locationInput.disabled = !writable;
   if (memoInput) memoInput.disabled = !writable;
@@ -924,10 +1062,14 @@ function renderScheduleAccess() {
 
 function renderSchedules() {
   const list = $("scheduleList");
+  renderScheduleAccess();
+  if (!hasCompanyMembership()) {
+    updateBrief();
+    return;
+  }
   if (!list) return;
 
   clearChildren(list);
-  renderScheduleAccess();
   renderScheduleCalendar();
 
   const visibleSchedules = getVisibleSchedules();
@@ -2353,6 +2495,10 @@ function bindWeatherEvents() {
 }
 
 function bindScheduleEvents() {
+  bindEvent($("joinCompanyRoomBtn"), "click", joinCompanyRoom);
+  bindEvent($("inviteCodeInput"), "keydown", (event) => {
+    if (event.key === "Enter") joinCompanyRoom();
+  });
   bindEvent($("openScheduleSheetBtn"), "click", () => {
     showScheduleFeedback("");
     setScheduleSheetOpen(true);
@@ -2598,6 +2744,7 @@ async function init() {
   setupScheduleTimePicker();
   setupLawTabs();
 
+  loadCompanyMembership();
   state.schedules = loadSchedules();
   loadNotificationSettings();
   renderSchedules();
