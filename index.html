@@ -163,52 +163,6 @@
         </details>
       </section>
 
-      <!-- Schedule -->
-      <section id="scheduleSection" class="card">
-        <details class="fold-card">
-          <summary class="section-head fold-summary">
-            <div>
-              <p class="section-label">Calendar</p>
-              <h3>오늘 일정</h3>
-              <p class="fold-summary-text">필요할 때 펼쳐서 일정 입력과 목록 확인</p>
-            </div>
-            <span id="scheduleCount" class="status-chip">0건</span>
-          </summary>
-
-          <div class="fold-body">
-            <div class="schedule-composer">
-              <div class="selected-time-card">
-                <span>선택 시간</span>
-                <strong id="selectedScheduleTime">09:00</strong>
-              </div>
-
-              <div class="time-select-row">
-                <label>
-                  <span>시</span>
-                  <select id="scheduleHourSelect"></select>
-                </label>
-                <label>
-                  <span>분</span>
-                  <select id="scheduleMinuteSelect"></select>
-                </label>
-              </div>
-
-              <div class="quick-time-wrap">
-                <p>자주 쓰는 시간</p>
-                <div id="quickTimeGrid" class="quick-time-grid"></div>
-              </div>
-
-              <div class="title-row">
-                <input id="scheduleTitleInput" placeholder="일정명 예: 건축주 미팅, 현장 확인" />
-                <button id="addScheduleBtn">추가</button>
-              </div>
-            </div>
-
-            <div id="scheduleList" class="list"></div>
-          </div>
-        </details>
-      </section>
-
       <!-- Law Brief -->
       <section id="workSection" class="card law-card">
         <div class="section-head">
@@ -274,6 +228,54 @@
         </div>
       </section>
 
+      <!-- 향후 광고 삽입 위치: 광고 정책과 스토어 심사 기준 확정 후 활성화 -->
+
+      <!-- Schedule -->
+      <section id="scheduleSection" class="card">
+        <details class="fold-card">
+          <summary class="section-head fold-summary">
+            <div>
+              <p class="section-label">Calendar</p>
+              <h3>오늘 일정</h3>
+              <p class="fold-summary-text">필요할 때 펼쳐서 일정 입력과 목록 확인</p>
+            </div>
+            <span id="scheduleCount" class="status-chip">0건</span>
+          </summary>
+
+          <div class="fold-body">
+            <div class="schedule-composer">
+              <div class="selected-time-card">
+                <span>선택 시간</span>
+                <strong id="selectedScheduleTime">09:00</strong>
+              </div>
+
+              <div class="time-select-row">
+                <label>
+                  <span>시</span>
+                  <select id="scheduleHourSelect"></select>
+                </label>
+                <label>
+                  <span>분</span>
+                  <select id="scheduleMinuteSelect"></select>
+                </label>
+              </div>
+
+              <div class="quick-time-wrap">
+                <p>자주 쓰는 시간</p>
+                <div id="quickTimeGrid" class="quick-time-grid"></div>
+              </div>
+
+              <div class="title-row">
+                <input id="scheduleTitleInput" placeholder="일정명 예: 건축주 미팅, 현장 확인" />
+                <button id="addScheduleBtn">추가</button>
+              </div>
+            </div>
+
+            <div id="scheduleList" class="list"></div>
+          </div>
+        </details>
+      </section>
+
       <!-- Settings -->
       <section id="settingsSection" class="card settings-card">
         <div class="section-head">
@@ -332,13 +334,13 @@
       <span>☂</span>
       <strong>가이드</strong>
     </button>
-    <button class="bottom-nav-btn" data-target="scheduleSection">
-      <span>◷</span>
-      <strong>일정</strong>
-    </button>
     <button class="bottom-nav-btn" data-target="workSection">
       <span>▣</span>
       <strong>업무</strong>
+    </button>
+    <button class="bottom-nav-btn" data-target="scheduleSection">
+      <span>◷</span>
+      <strong>일정</strong>
     </button>
   </nav>
   <div id="notificationToast" class="notification-toast" role="status" aria-live="polite"></div>

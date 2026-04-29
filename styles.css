@@ -747,19 +747,26 @@ textarea:focus {
 
 .item-main {
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .item-time {
   display: inline-flex;
-  margin-right: 8px;
+  flex: 0 0 auto;
   color: var(--gold);
   font-weight: 900;
+  white-space: nowrap;
 }
 
 .item-title {
+  min-width: 0;
   color: var(--text);
   font-weight: 800;
   word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .item.done .item-title {
@@ -1559,13 +1566,21 @@ footer {
 
 .law-date-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 7px;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.law-date-row::-webkit-scrollbar {
+  display: none;
 }
 
 .law-date-chip {
   display: inline-flex;
   align-items: center;
+  flex: 0 0 auto;
   min-height: 32px;
   padding: 0 11px;
   border-radius: 999px;
@@ -1573,6 +1588,7 @@ footer {
   color: var(--navy);
   font-size: 12px;
   font-weight: 900;
+  white-space: nowrap;
 }
 
 .law-date-chip-shared {
