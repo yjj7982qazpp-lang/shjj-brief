@@ -16,6 +16,39 @@ SCRIPTS_DIR = Path(__file__).resolve().parent
 WATCHED_PATH = SCRIPTS_DIR / "watched_laws.json"
 OUTPUT_PATH = ROOT / "data" / "law_updates.json"
 SUMMARY_CACHE_PATH = ROOT / "data" / "law_summary_cache.json"
+VOLATILE_COMPARE_KEYS = {
+    "metadata",
+    "checked_at",
+    "updated_at",
+    "synced_at",
+    "lastUpdated",
+    "ai_summary",
+    "summary_key",
+    "openaiCallCount",
+    "cacheHitCount",
+    "fallbackCount",
+}
+LEGAL_CHANGE_COMPARE_KEYS = {
+    "items",
+    "today_count",
+    "last_7_days_count",
+    "last_30_days_count",
+    "today_items",
+    "last_7_days_items",
+    "last_30_days_items",
+    "today_effective_items",
+    "today_promulgated_or_revised_items",
+    "today",
+    "last_7_days",
+    "last_30_days",
+    "changed_laws",
+    "other_changes",
+    "tracked_laws",
+    "total_checked_laws",
+    "failed_laws",
+    "partial_failed_laws",
+    "summary",
+}
 
 API_ENDPOINTS = [
     "https://www.law.go.kr/DRF/lawSearch.do",
@@ -178,6 +211,74 @@ def build_summary_key(item):
     payload = normalize_summary_value(summary_key_payload(item))
     raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def normalize_for_change_compare(value):
+    if isinstance(value, dict):
+        return {
+            str(key): normalize_for_change_compare(value[key])
+            for key in sorted(value.keys(), key=lambda key: str(key))
+            if str(key) not in VOLATILE_COMPARE_KEYS
+        }
+    if isinstance(value, list):
+        return [normalize_for_change_compare(item) for item in value]
+    return value
+
+
+def legal_change_snapshot(payload):
+    if not isinstance(payload, dict):
+        return {}
+
+    return {
+        key: normalize_for_change_compare(payload.get(key))
+        for key in sorted(LEGAL_CHANGE_COMPARE_KEYS)
+    }
+
+
+def has_legal_changes(previous_payload, candidate_payload):
+    if not OUTPUT_PATH.exists() or not isinstance(previous_payload, dict):
+        return True
+    return legal_change_snapshot(previous_payload) != legal_change_snapshot(candidate_payload)
+
+
+def count_summary_key_stats(items, summary_cache):
+    cache_items = safe_dict(safe_dict(summary_cache).get("items"))
+    cache_hit_count = 0
+    missing_keys = set()
+
+    for item in items:
+        summary_key = build_summary_key(item)
+        cached_summary = safe_dict(cache_items.get(summary_key))
+        cached_source = clean_text(cached_summary.get("source")).lower()
+        if cached_summary and cached_source in {"openai", "cache"}:
+            cache_hit_count += 1
+        else:
+            missing_keys.add(summary_key)
+
+    return {
+        "new_summary_key_count": len(missing_keys),
+        "cache_hit_count": cache_hit_count,
+        "openai_call_count": 0,
+        "fallback_count": 0,
+    }
+
+
+def summary_cache_items_snapshot(cache):
+    return normalize_for_change_compare(safe_dict(safe_dict(cache).get("items")))
+
+
+def has_summary_cache_item_changes(previous_cache, next_cache):
+    return summary_cache_items_snapshot(previous_cache) != summary_cache_items_snapshot(next_cache)
+
+
+def print_ai_cost_guard_log(total_collected_count, summary_stats, skipped):
+    print(f"Legal collection count: {total_collected_count}")
+    print(f"New or changed summary_key count: {summary_stats.get('new_summary_key_count', 0)}")
+    print(f"Cache hit count: {summary_stats.get('cache_hit_count', 0)}")
+    print(f"OpenAI call count: {summary_stats.get('openai_call_count', 0)}")
+    print(f"Skipped because no legal changes: {str(bool(skipped)).lower()}")
+    if skipped:
+        print("No legal changes. Skipped OpenAI summary.")
 
 
 def load_summary_cache():
@@ -446,6 +547,7 @@ def enrich_items_with_ai_summaries(items, summary_cache, api_key, model):
     openai_call_count = 0
     cache_hit_count = 0
     fallback_count = 0
+    missing_summary_keys = set()
 
     for item in items:
         enriched = dict(item)
@@ -458,6 +560,7 @@ def enrich_items_with_ai_summaries(items, summary_cache, api_key, model):
             enriched["ai_summary"] = normalize_ai_summary(cached_summary, "cache")
             cache_hit_count += 1
         elif api_key and openai_call_count < MAX_AI_SUMMARIES_PER_RUN:
+            missing_summary_keys.add(summary_key)
             openai_call_count += 1
             try:
                 summary = call_openai_summary(api_key, model, enriched)
@@ -471,6 +574,7 @@ def enrich_items_with_ai_summaries(items, summary_cache, api_key, model):
                 enriched["ai_summary"] = build_fallback_ai_summary(enriched)
                 fallback_count += 1
         else:
+            missing_summary_keys.add(summary_key)
             enriched["ai_summary"] = build_fallback_ai_summary(enriched)
             fallback_count += 1
 
@@ -486,7 +590,12 @@ def enrich_items_with_ai_summaries(items, summary_cache, api_key, model):
     }
     cache["items"] = cache_items
 
-    return enriched_items, cache, openai_call_count
+    return enriched_items, cache, {
+        "new_summary_key_count": len(missing_summary_keys),
+        "cache_hit_count": cache_hit_count,
+        "openai_call_count": openai_call_count,
+        "fallback_count": fallback_count,
+    }
 
 
 def extract_items(data):
@@ -1707,7 +1816,6 @@ def main():
     today = today_kst()
     start_30 = today - timedelta(days=29)
     oc = os.environ.get("LAW_OC", "").strip()
-    openai_api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     summary_model = os.environ.get("OPENAI_SUMMARY_MODEL", DEFAULT_OPENAI_SUMMARY_MODEL).strip() or DEFAULT_OPENAI_SUMMARY_MODEL
     summary_cache = load_summary_cache()
     watched_map = {
@@ -1785,12 +1893,6 @@ def main():
 
     all_items = [item for item in dedupe(all_items) if item.get("law_name")]
     tracked_laws = build_tracked_laws(today, watched_laws, all_items, previous_data, failed_laws)
-    all_items, summary_cache, openai_call_count = enrich_items_with_ai_summaries(
-        all_items,
-        summary_cache,
-        openai_api_key,
-        summary_model,
-    )
 
     today_items = filter_window(all_items, today, today)
     last_7_days_items = filter_window(all_items, today - timedelta(days=6), today)
@@ -1813,6 +1915,51 @@ def main():
         notice = "관심 법령 기준 변경 결과를 반영했습니다."
         error_text = ""
 
+    candidate_payload = build_payload(
+        today=today,
+        watched_laws=watched_laws,
+        all_items=all_items,
+        tracked_laws=tracked_laws,
+        api_status=api_status,
+        notice=notice,
+        total_checked_laws=len(watched_laws),
+        failed_laws=failed_laws,
+        partial_failed_laws=partial_failed_laws,
+        error_text=error_text,
+        errors=error_details,
+    )
+
+    if not has_legal_changes(previous_data, candidate_payload):
+        summary_stats = count_summary_key_stats(all_items, summary_cache)
+        summary_stats["new_summary_key_count"] = 0
+        print_collection_log(
+            watched_laws,
+            per_law_logs,
+            total_effective_count,
+            total_promulgated_count,
+            candidate_payload.get("metadata", {}).get("totalSavedCount", len(candidate_payload.get("items", []))),
+        )
+        print_ai_cost_guard_log(len(candidate_payload.get("items", [])), summary_stats, skipped=True)
+        return
+
+    summary_stats = count_summary_key_stats(all_items, summary_cache)
+    if summary_stats.get("new_summary_key_count", 0) > 0:
+        openai_api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+        print("New summary_key exists. OPENAI_API_KEY was read for final OpenAI gate.")
+    else:
+        openai_api_key = ""
+        print("No new summary_key. OPENAI_API_KEY was not read.")
+
+    previous_summary_cache = {
+        "items": dict(safe_dict(summary_cache).get("items", {})),
+    }
+    all_items, summary_cache, summary_stats = enrich_items_with_ai_summaries(
+        all_items,
+        summary_cache,
+        openai_api_key,
+        summary_model,
+    )
+
     payload = build_payload(
         today=today,
         watched_laws=watched_laws,
@@ -1828,7 +1975,10 @@ def main():
     )
 
     write_json(payload)
-    save_summary_cache(summary_cache, summary_model, openai_call_count)
+    if has_summary_cache_item_changes(previous_summary_cache, summary_cache):
+        save_summary_cache(summary_cache, summary_model, summary_stats.get("openai_call_count", 0))
+    else:
+        print("No summary cache item changes. Skipped law_summary_cache.json write.")
     print_collection_log(
         watched_laws,
         per_law_logs,
@@ -1836,7 +1986,8 @@ def main():
         total_promulgated_count,
         payload.get("metadata", {}).get("totalSavedCount", len(payload.get("items", []))),
     )
-    print(f"AI 요약 OpenAI 호출 횟수: {openai_call_count}")
+    print_ai_cost_guard_log(len(payload.get("items", [])), summary_stats, skipped=False)
+    print(f"AI 요약 OpenAI 호출 횟수: {summary_stats.get('openai_call_count', 0)}")
     print(
         "Watched laws collected: "
         f"today {payload['today_count']} / "
