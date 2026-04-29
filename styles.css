@@ -646,7 +646,6 @@ textarea:focus {
 .schedule-composer {
   display: grid;
   gap: 12px;
-  margin-bottom: 14px;
 }
 
 .schedule-room-meta {
@@ -709,6 +708,113 @@ textarea:focus {
 
 .schedule-location-input {
   width: 100%;
+}
+
+.schedule-memo-input {
+  width: 100%;
+  min-height: 86px;
+  resize: vertical;
+}
+
+.schedule-open-btn {
+  width: 100%;
+  min-height: 46px;
+  margin: 12px 0 8px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.schedule-open-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.schedule-feedback {
+  min-height: 18px;
+  margin: 0 0 10px;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.schedule-sheet[hidden] {
+  display: none;
+}
+
+.schedule-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(7, 17, 35, 0.38);
+}
+
+.schedule-sheet-panel {
+  width: min(100%, 520px);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 22px 22px 18px 18px;
+  background: var(--card);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+}
+
+.schedule-sheet-head,
+.schedule-sheet-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.schedule-sheet-head {
+  margin-bottom: 14px;
+}
+
+.schedule-sheet-head strong {
+  color: var(--navy);
+  font-size: 18px;
+}
+
+.schedule-sheet-close {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.07);
+  color: var(--navy);
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.schedule-sheet-actions {
+  margin-top: 16px;
+}
+
+.schedule-sheet-actions button {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: 14px;
+  font-weight: 900;
+}
+
+.schedule-cancel-btn {
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--muted);
+}
+
+.schedule-confirm-btn {
+  background: var(--blue);
+  color: #fff;
 }
 
 .list {

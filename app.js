@@ -712,6 +712,34 @@ function setupScheduleTimePicker() {
   state.scheduleCalendarMonth = `${today.slice(0, 7)}-01`;
 }
 
+function resetScheduleForm() {
+  const dateInput = $("scheduleDateInput");
+  const timeInput = $("scheduleTimeInput");
+  const titleInput = $("scheduleTitleInput");
+  const locationInput = $("scheduleLocationInput");
+  const memoInput = $("scheduleMemoInput");
+
+  if (dateInput) dateInput.value = getTodayDateString();
+  if (timeInput) timeInput.value = "09:00";
+  if (titleInput) titleInput.value = "";
+  if (locationInput) locationInput.value = "";
+  if (memoInput) memoInput.value = "";
+}
+
+function setScheduleSheetOpen(open) {
+  const sheet = $("scheduleSheet");
+  if (!sheet) return;
+  sheet.hidden = !open;
+  if (open) {
+    setupScheduleTimePicker();
+    $("scheduleTitleInput")?.focus();
+  }
+}
+
+function showScheduleFeedback(message) {
+  setText("scheduleFeedback", message);
+}
+
 function createScheduleRow(item) {
   const row = document.createElement("div");
   row.className = "item";
@@ -882,11 +910,16 @@ function renderScheduleAccess() {
   setText("scheduleReadonlyNotice", writable ? "" : "읽기 전용 권한입니다. 일정 추가와 삭제는 관리자 또는 편집자만 가능합니다.");
 
   const input = $("scheduleTitleInput");
-  const addButton = $("addScheduleBtn");
+  const openButton = $("openScheduleSheetBtn");
+  const confirmButton = $("confirmScheduleBtn");
   const locationInput = $("scheduleLocationInput");
+  const memoInput = $("scheduleMemoInput");
   if (input) input.disabled = !writable;
-  if (addButton) addButton.disabled = !writable;
+  if (openButton) openButton.disabled = !writable;
+  if (confirmButton) confirmButton.disabled = !writable;
   if (locationInput) locationInput.disabled = !writable;
+  if (memoInput) memoInput.disabled = !writable;
+  if (!writable) setScheduleSheetOpen(false);
 }
 
 function renderSchedules() {
@@ -923,6 +956,7 @@ function addSchedule() {
 
   const input = $("scheduleTitleInput");
   const locationInput = $("scheduleLocationInput");
+  const memoInput = $("scheduleMemoInput");
   const title = input?.value.trim() || "";
 
   if (!title) {
@@ -943,18 +977,16 @@ function addSchedule() {
     location: locationInput?.value.trim() || "",
     estimatedTravelMinutes: null,
     bufferMinutes: 15,
-    detailMemo: "",
+    detailMemo: memoInput?.value.trim() || "",
     createdBy: state.member.id,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }));
 
   saveJson(STORAGE_KEYS.schedules, state.schedules);
-  if (input) {
-    input.value = "";
-    input.focus();
-  }
-  if (locationInput) locationInput.value = "";
+  resetScheduleForm();
+  setScheduleSheetOpen(false);
+  showScheduleFeedback("일정이 등록되었습니다.");
   renderSchedules();
 }
 
@@ -2321,9 +2353,33 @@ function bindWeatherEvents() {
 }
 
 function bindScheduleEvents() {
-  bindEvent($("addScheduleBtn"), "click", addSchedule);
+  bindEvent($("openScheduleSheetBtn"), "click", () => {
+    showScheduleFeedback("");
+    setScheduleSheetOpen(true);
+  });
+  bindEvent($("closeScheduleSheetBtn"), "click", () => {
+    resetScheduleForm();
+    setScheduleSheetOpen(false);
+  });
+  bindEvent($("cancelScheduleBtn"), "click", () => {
+    resetScheduleForm();
+    setScheduleSheetOpen(false);
+  });
+  bindEvent($("confirmScheduleBtn"), "click", addSchedule);
   bindEvent($("scheduleTitleInput"), "keydown", (event) => {
     if (event.key === "Enter") addSchedule();
+  });
+  bindEvent($("scheduleSheet"), "click", (event) => {
+    if (event.target === $("scheduleSheet")) {
+      resetScheduleForm();
+      setScheduleSheetOpen(false);
+    }
+  });
+  bindEvent(document, "keydown", (event) => {
+    if (event.key === "Escape" && !$("scheduleSheet")?.hidden) {
+      resetScheduleForm();
+      setScheduleSheetOpen(false);
+    }
   });
   bindEvent($("scheduleDateInput"), "change", () => {
     const selected = getSelectedScheduleDate();
