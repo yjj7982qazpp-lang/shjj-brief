@@ -2024,8 +2024,8 @@ function renderLawHeader(data, monthCount) {
   setText("lawBasisChip", basisText);
   setText("lawNotice", `${data.notice}${data.apiStatus && data.apiStatus !== "success" ? errorSuffix : ""} · ${diagnosticText}`);
   setText("lawCheckedAt", `확인일: ${safeText(data.checkedAt)}${data.updatedAt ? ` · 갱신: ${safeText(data.updatedAt)}` : ""}`);
-  setText("lawMetaSummary", `마지막 갱신 ${formatLawUpdatedAt(updatedAt)} · 총 저장 ${savedCount}건`);
-  setText("trackedLawUpdatedAt", `마지막 갱신 ${formatLawUpdatedAt(updatedAt)}`);
+  setText("lawMetaSummary", `법령 데이터 마지막 갱신 ${formatLawUpdatedAt(updatedAt)} · 총 저장 ${savedCount}건`);
+  setText("trackedLawUpdatedAt", `법령 데이터 마지막 갱신 ${formatLawUpdatedAt(updatedAt)}`);
 }
 
 function renderLawSections(data, todayItems, weekItems, monthItems) {
@@ -2037,8 +2037,8 @@ function renderLawSections(data, todayItems, weekItems, monthItems) {
 function renderLawLoadFailure() {
   setText("lawNotice", LAW_MESSAGES.loadFailed);
   setText("lawCheckedAt", "확인일: -");
-  setText("lawMetaSummary", "마지막 갱신 - · 총 저장 0건");
-  setText("trackedLawUpdatedAt", "마지막 갱신 -");
+  setText("lawMetaSummary", "법령 데이터 마지막 갱신 - · 총 저장 0건");
+  setText("trackedLawUpdatedAt", "법령 데이터 마지막 갱신 -");
   setText("lawActionTitle", "확인 필요");
   setText("lawActionText", "자동 브리프를 표시하지 못했습니다. 오늘 업무 전 수동으로 주요 법령 변경 여부를 확인하세요.");
 
@@ -2081,7 +2081,7 @@ function renderLawSummaryCard(data, todayCount, weekCount, monthCount) {
   const extra = data.apiStatus && data.apiStatus !== "success" ? ` · ${apiStatusLabel}` : "";
 
   setText("lawBasisChip", todayCount > 0 ? "변경 있음" : "법령 브리프");
-  setText("lawMetaSummary", updatedAt ? `마지막 갱신 ${formatLawUpdatedAt(updatedAt)}` : "마지막 갱신 -");
+  setText("lawMetaSummary", updatedAt ? `법령 데이터 마지막 갱신 ${formatLawUpdatedAt(updatedAt)}` : "법령 데이터 마지막 갱신 -");
   setText("lawNotice", `${getLawSummaryStatus(todayCount, weekCount, monthCount)}${extra}`);
   setText("lawCheckedAt", "");
   updateLawSummaryCounts(todayCount, weekCount, monthCount);
@@ -2089,7 +2089,7 @@ function renderLawSummaryCard(data, todayCount, weekCount, monthCount) {
 
 function renderLawLoadFailure() {
   setText("lawBasisChip", "법령 브리프");
-  setText("lawMetaSummary", "마지막 갱신 -");
+  setText("lawMetaSummary", "법령 데이터 마지막 갱신 -");
   setText("lawNotice", LAW_MESSAGES.loadFailed);
   setText("lawCheckedAt", "");
   updateLawSummaryCounts(0, 0, 0);
