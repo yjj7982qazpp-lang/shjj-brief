@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHJJ Brief Admin Status</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #64748b;
+      --line: rgba(15, 23, 42, 0.1);
+      --green-bg: #dcfce7;
+      --green: #166534;
+      --blue-bg: #dbeafe;
+      --blue: #1d4ed8;
+      --yellow-bg: #fef3c7;
+      --yellow: #92400e;
+      --red-bg: #fee2e2;
+      --red: #991b1b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #ffffff 0, var(--bg) 48%, #e8eef7 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(920px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      color: #c7983d;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 5vw, 42px);
+      letter-spacing: -0.04em;
+    }
+
+    .home-link {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: #111827;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+      padding: 22px;
+    }
+
+    .status-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .status-head h2 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+
+    .status-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      padding: 9px 12px;
+      background: #e5e7eb;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .badge.no_change { background: var(--green-bg); color: var(--green); }
+    .badge.changed { background: var(--blue-bg); color: var(--blue); }
+    .badge.partial_failed,
+    .badge.delayed { background: var(--yellow-bg); color: var(--yellow); }
+    .badge.failed { background: var(--red-bg); color: var(--red); }
+
+    .message {
+      margin: 18px 0 0;
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1.45;
+      word-break: keep-all;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .metric {
+      border-radius: 18px;
+      background: #f8fafc;
+      padding: 14px;
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.07);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 22px;
+      font-weight: 950;
+      letter-spacing: -0.03em;
+    }
+
+    .details {
+      margin-top: 18px;
+      border-radius: 18px;
+      background: #0f172a;
+      color: #e5e7eb;
+      padding: 16px;
+      overflow-x: auto;
+    }
+
+    .details pre {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .note {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 680px) {
+      main { width: min(100% - 24px, 920px); padding: 22px 0; }
+      header { align-items: flex-start; flex-direction: column; }
+      .card { padding: 18px; border-radius: 22px; }
+      .status-head { align-items: flex-start; flex-direction: column; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Admin Status</p>
+        <h1>자동확인 운영 상태</h1>
+      </div>
+      <a class="home-link" href="./index.html">앱으로 돌아가기</a>
+    </header>
+
+    <section class="card">
+      <div class="status-head">
+        <div>
+          <h2>법령 자동확인 결과</h2>
+          <p id="lastRun">마지막 실행: 확인 중</p>
+        </div>
+        <span id="statusBadge" class="badge">확인 중</span>
+      </div>
+
+      <p id="message" class="message">자동확인 결과를 불러오는 중입니다.</p>
+
+      <div class="grid">
+        <div class="metric">
+          <span>오늘</span>
+          <strong id="todayCount">-</strong>
+        </div>
+        <div class="metric">
+          <span>최근 7일</span>
+          <strong id="weekCount">-</strong>
+        </div>
+        <div class="metric">
+          <span>최근 30일</span>
+          <strong id="monthCount">-</strong>
+        </div>
+        <div class="metric">
+          <span>OpenAI 호출</span>
+          <strong id="openaiCount">-</strong>
+        </div>
+        <div class="metric">
+          <span>캐시 재사용</span>
+          <strong id="cacheHitCount">-</strong>
+        </div>
+        <div class="metric">
+          <span>신규 summary_key</span>
+          <strong id="summaryKeyCount">-</strong>
+        </div>
+      </div>
+
+      <p class="note">
+        이 페이지는 운영자 확인용입니다. 일반 앱 화면에는 OpenAI 호출 횟수, 실패 상세, 변경 파일 목록을 표시하지 않습니다.
+      </p>
+
+      <div class="details">
+        <pre id="rawJson">불러오는 중</pre>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const LABELS = {
+      no_change: "변경 없음",
+      changed: "변경 있음",
+      partial_failed: "일부 실패",
+      failed: "실패",
+      pending: "확인 대기",
+      delayed: "자동 확인 지연 또는 미실행",
+    };
+
+    function safeText(value, fallback = "-") {
+      return value === null || value === undefined || value === "" ? fallback : value;
+    }
+
+    function formatRunTime(value) {
+      const text = safeText(value, "-");
+      if (text === "-") return text;
+      return text.replace("T", " ").replace(/\+09:00$/, "");
+    }
+
+    function setBadge(status) {
+      const badge = $("statusBadge");
+      const key = LABELS[status] ? status : "pending";
+      badge.className = `badge ${key}`;
+      badge.textContent = LABELS[key];
+    }
+
+    async function loadStatus() {
+      try {
+        const res = await fetch("./data/automation_status.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("status load failed");
+        const data = await res.json();
+        const status = data.status || "pending";
+
+        setBadge(status);
+        $("lastRun").textContent = `마지막 실행: ${formatRunTime(data.last_run_kst)}`;
+        $("message").textContent = safeText(data.message, "자동확인 결과가 없습니다.");
+        $("todayCount").textContent = `${Number(data.today_count || 0)}건`;
+        $("weekCount").textContent = `${Number(data.last_7_days_count || 0)}건`;
+        $("monthCount").textContent = `${Number(data.last_30_days_count || 0)}건`;
+        $("openaiCount").textContent = `${Number(data.openai_call_count || 0)}회`;
+        $("cacheHitCount").textContent = `${Number(data.cache_hit_count || 0)}개`;
+        $("summaryKeyCount").textContent = `${Number(data.new_summary_key_count || 0)}개`;
+        $("rawJson").textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        setBadge("failed");
+        $("lastRun").textContent = "마지막 실행: 확인 실패";
+        $("message").textContent = "automation_status.json을 불러오지 못했습니다.";
+        $("rawJson").textContent = String(error);
+      }
+    }
+
+    loadStatus();
+  </script>
+</body>
+</html>
