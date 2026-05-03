@@ -33,39 +33,6 @@
     </header>
 
     <main>
-      <section id="notificationSection" class="notification-top-wrap">
-        <details id="notificationFold" class="notification-fold">
-          <summary class="notification-pill">
-            <span class="notification-pill-label">알림</span>
-            <strong id="notificationTimePill">09:20</strong>
-          </summary>
-
-          <div class="card notification-top-card">
-            <div class="section-head notification-top-head">
-              <div>
-                <p class="section-label">Notification</p>
-                <h3>매일 알림 시간</h3>
-              </div>
-              <span id="notificationTimeSummary" class="notification-time-badge">매일 09:20 알림 예정</span>
-            </div>
-
-            <div class="notification-settings-body notification-settings-body-top">
-              <label class="notification-time-field" for="notificationTimeInput">
-                <span>알림 희망 시간</span>
-                <input id="notificationTimeInput" type="time" value="09:20" />
-              </label>
-              <p id="notificationTimeCurrent" class="notification-settings-note">현재 저장된 알림 예정 시간: 매일 09:20</p>
-              <div class="notification-save-row">
-                <p id="notificationTimeHelper" class="notification-settings-note">
-                  실제 푸시 발송 연동 전까지는 앱에서 희망 시간만 저장합니다.
-                </p>
-                <button id="notificationTimeSaveBtn" type="button" class="notification-save-btn">저장</button>
-              </div>
-            </div>
-          </div>
-        </details>
-      </section>
-
       <!-- Weather -->
       <section id="weatherSection" class="card weather-card">
         <details class="weather-fold">
@@ -158,6 +125,39 @@
                   <p id="clothesGuideText">기온 기준 옷차림을 확인하고 있습니다.</p>
                 </div>
               </article>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section id="notificationSection" class="notification-top-wrap">
+        <details id="notificationFold" class="notification-fold">
+          <summary class="notification-pill">
+            <span class="notification-pill-label">알림</span>
+            <strong id="notificationTimePill">09:20</strong>
+          </summary>
+
+          <div class="card notification-top-card">
+            <div class="section-head notification-top-head">
+              <div>
+                <p class="section-label">Notification</p>
+                <h3>매일 알림 시간</h3>
+              </div>
+              <span id="notificationTimeSummary" class="notification-time-badge">매일 09:20 알림 예정</span>
+            </div>
+
+            <div class="notification-settings-body notification-settings-body-top">
+              <label class="notification-time-field" for="notificationTimeInput">
+                <span>알림 희망 시간</span>
+                <input id="notificationTimeInput" type="time" value="09:20" />
+              </label>
+              <p id="notificationTimeCurrent" class="notification-settings-note">현재 저장된 알림 예정 시간: 매일 09:20</p>
+              <div class="notification-save-row">
+                <p id="notificationTimeHelper" class="notification-settings-note">
+                  실제 푸시 발송 연동 전까지는 앱에서 희망 시간만 저장합니다.
+                </p>
+                <button id="notificationTimeSaveBtn" type="button" class="notification-save-btn">저장</button>
+              </div>
             </div>
           </div>
         </details>
