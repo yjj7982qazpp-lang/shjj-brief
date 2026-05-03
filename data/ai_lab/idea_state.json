@@ -1,6 +1,6 @@
 {
   "date": "2026-05-04",
-  "slot": "morning",
+  "slot": "manual",
   "project_goal_summary": "# SHJJ Brief 프로젝트 목표",
   "new_ideas": [
     {
@@ -28,7 +28,8 @@
   "next_best_action": "다음 실행 전까지 기존 아이디어의 우선순위 점검 기준을 1페이지로 정리",
   "why_this_gets_us_to_goal_faster": "고비용 개발 전에 검증 단위를 작게 쪼개어 시행착오 비용을 줄인다.",
   "risks": [
-    "AI API 미사용 상태에서 판단 고도화 한계"
+    "AI API 미사용 상태에서 판단 고도화 한계",
+    "API 실패 fallback 적용: TypeError"
   ],
-  "cost_control_note": "OPENAI_API_KEY 미설정으로 dry-run 수행, 외부 API 비용 0원"
+  "cost_control_note": "API 실패로 fallback 사용, 저장소 안전 상태 유지"
 }
