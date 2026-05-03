@@ -32,9 +32,9 @@ class RunContext:
 
 def detect_slot(now_kst: datetime) -> str:
     hour = now_kst.hour
-    if hour < 10:
+    if hour < 14:
         return "morning"
-    if hour < 18:
+    if hour < 22:
         return "afternoon"
     return "manual"
 
@@ -67,30 +67,31 @@ def dry_run_result(ctx: RunContext, goal_summary: str) -> dict[str, Any]:
     return {
         "date": ctx.now_kst.strftime("%Y-%m-%d"),
         "slot": ctx.slot,
-        "project_goal_summary": goal_summary,
+        "focus_area": "API/운영비 절감",
+        "goal_link": "앱 안정성을 해치지 않으면서 운영 고정비를 최소화해야 장기적인 사용자 확보와 수익화 실험을 지속할 수 있다.",
+        "existing_ideas_review": [
+            {
+                "title": "브리핑 안정화 체크리스트 고도화",
+                "decision": "발전",
+                "reason": "안정성 1순위 목표를 직접 지원하고 저비용으로 즉시 개선 가능하다.",
+            },
+            {
+                "title": "광고 수익화 즉시 적용",
+                "decision": "보류",
+                "reason": "사용자 기반과 체류 지표가 먼저 확보되어야 광고 단가와 UX 저하 리스크를 관리할 수 있다.",
+            },
+        ],
         "new_ideas": [
             {
-                "title": "회사 공유 일정 베타 검증 질문지 설계",
-                "type": "product",
-                "summary": "기존 일정 기능 확장을 위한 사용자 인터뷰 질문지 초안을 정의한다.",
-                "expected_value": "2순위 목표(회사 공유 일정)의 요구사항 불확실성 감소",
-                "implementation_cost": "low",
-                "risk": "실사용자 피드백이 부족하면 판단 편향 가능",
-                "confidence": "medium",
-                "recommendation": "candidate_for_codex",
+                "title": "외부 API 호출 캐시 TTL 재설계",
+                "summary": "날씨·법령 브리핑 갱신 주기를 분리해 불필요한 호출을 줄인다.",
+                "expected_value": "API 비용과 실패율을 함께 낮추고 앱 안정성 유지에 기여한다.",
+                "implementation_cost": "중",
+                "recommendation": "유지",
             }
         ],
-        "developed_existing_ideas": [
-            "기존 브리핑 안정화 우선 원칙 유지 및 기능 추가 속도 조절",
-        ],
-        "paused_ideas": ["광고/수익화 실구현은 사용자 기반 확보 전까지 보류"],
-        "killed_ideas": [],
-        "codex_candidates": [
-            "공유 일정 요구사항 정리 템플릿(data/ai_lab/) 초안 작성",
-            "법령 AI 요약 품질 점검 체크리스트 문서화",
-        ],
-        "next_best_action": "다음 실행 전까지 기존 아이디어의 우선순위 점검 기준을 1페이지로 정리",
-        "why_this_gets_us_to_goal_faster": "고비용 개발 전에 검증 단위를 작게 쪼개어 시행착오 비용을 줄인다.",
+        "next_best_action": "다음 실행에서 캐시 TTL 분리 기준(데이터 신선도/비용)을 수치로 비교한다.",
+        "codex_candidate": "없음",
         "risks": ["AI API 미사용 상태에서 판단 고도화 한계"],
         "cost_control_note": "OPENAI_API_KEY 미설정으로 dry-run 수행, 외부 API 비용 0원",
     }
@@ -144,6 +145,25 @@ def normalize_result(
 
     if _is_blank(normalized.get("project_goal_summary")):
         normalized["project_goal_summary"] = goal_summary or "SHJJ Brief 목표 달성 속도를 높이는 방향으로 아이디어를 재정렬한다."
+    if _is_blank(normalized.get("focus_area")):
+        normalized["focus_area"] = "앱 안정성"
+    if _is_blank(normalized.get("goal_link")):
+        normalized["goal_link"] = "공동 목표와 우선순위를 기준으로 오늘의 집중 분야를 실행 가능한 단위로 정리한다."
+
+    existing_reviews = []
+    for item in _as_list(normalized.get("existing_ideas_review")):
+        if isinstance(item, dict):
+            title = _clean_text(item.get("title")) or "기존 아이디어 재검토"
+            decision = _clean_text(item.get("decision")) or "유지"
+            reason = _clean_text(item.get("reason")) or "우선순위 기준 충족 여부를 다시 확인한다."
+        else:
+            title = _clean_text(item) or "기존 아이디어 재검토"
+            decision = "유지"
+            reason = "우선순위 기준 충족 여부를 다시 확인한다."
+        existing_reviews.append({"title": title, "decision": decision, "reason": reason})
+    if not existing_reviews:
+        existing_reviews = [{"title": "기존 아이디어 재검토", "decision": "유지", "reason": "핵심 목표와 직접 연결되는 항목부터 유지한다."}]
+    normalized["existing_ideas_review"] = existing_reviews
 
     ideas = []
     for raw_idea in _as_list(normalized.get("new_ideas"))[:2]:
@@ -191,14 +211,17 @@ def normalize_result(
     normalized["paused_ideas"] = _clean_string_list(normalized.get("paused_ideas"))
     normalized["killed_ideas"] = _clean_string_list(normalized.get("killed_ideas"))
 
-    codex_candidates = _clean_string_list(normalized.get("codex_candidates"))
-    if not codex_candidates:
-        for item in _as_list(normalized.get("low_cost_candidates")):
-            if isinstance(item, dict):
-                title = _clean_text(item.get("title"))
-                if title:
-                    codex_candidates.append(title)
-    normalized["codex_candidates"] = codex_candidates
+    codex_candidate = _clean_text(normalized.get("codex_candidate"))
+    if _is_blank(codex_candidate):
+        codex_candidates = _clean_string_list(normalized.get("codex_candidates"))
+        if not codex_candidates:
+            for item in _as_list(normalized.get("low_cost_candidates")):
+                if isinstance(item, dict):
+                    title = _clean_text(item.get("title"))
+                    if title:
+                        codex_candidates.append(title)
+        codex_candidate = codex_candidates[0] if codex_candidates else "없음"
+    normalized["codex_candidate"] = codex_candidate
 
     if _is_blank(normalized.get("next_best_action")):
         immediate_action = normalized.get("immediate_action")
@@ -302,41 +325,34 @@ def call_openai(api_key: str, payload: dict[str, Any]) -> dict[str, Any]:
 def render_report(result: dict[str, Any], ctx: RunContext) -> str:
     slot_kor = {"morning": "오전", "afternoon": "오후", "manual": "수동"}.get(ctx.slot, "수동")
     lines = [
-        f"# AI Development Loop - {result['date']} {slot_kor}",
+        f"# AI 아이디어 디벨롭 리포트 - {result['date']} {slot_kor}",
         "",
-        "## 1. 오늘의 판단",
-        f"- {result.get('project_goal_summary', '')}",
+        "## 오늘 집중 분야",
+        f"{result.get('focus_area', '앱 안정성')}",
         "",
-        "## 2. 발전시킨 기존 아이디어",
+        "## 목표와의 연결",
+        f"{result.get('goal_link', '')}",
+        "",
+        "## 기존 아이디어 재검토",
     ]
-    for item in result.get("developed_existing_ideas", []):
-        lines.append(f"- {item}")
-    lines += ["", "## 3. 새 아이디어 최대 2개"]
+    for item in result.get("existing_ideas_review", []):
+        lines.append(f"- {item.get('title','기존 아이디어')} → {item.get('decision','유지')}")
+        lines.append(f"  - 이유: {item.get('reason','')}")
+    lines += ["", "## 새 아이디어"]
     for idea in result.get("new_ideas", []):
-        lines.append(f"- **{idea.get('title','')}** ({idea.get('recommendation','')})")
+        lines.append(f"- {idea.get('title','새 아이디어')}")
         lines.append(f"  - 요약: {idea.get('summary','')}")
-        lines.append(f"  - 기대가치: {idea.get('expected_value','')}")
-    lines += ["", "## 4. 보류/철회한 아이디어"]
-    for item in result.get("paused_ideas", []):
-        lines.append(f"- 보류: {item}")
-    for item in result.get("killed_ideas", []):
-        lines.append(f"- 철회: {item}")
-    lines += ["", "## 5. Codex 작업 후보"]
-    for item in result.get("codex_candidates", []):
-        lines.append(f"- {item}")
+        lines.append(f"  - 예상 가치: {idea.get('expected_value','')}")
+        lines.append(f"  - 구현 난이도: {idea.get('implementation_cost','')}")
+        lines.append(f"  - 판단: {idea.get('recommendation','유지')}")
     lines += [
         "",
-        "## 6. 목표에 더 빨리 도달하는 이유",
-        f"- {result.get('why_this_gets_us_to_goal_faster', '')}",
+        "## 다음 실행 때 볼 것",
+        f"{result.get('next_best_action', '')}",
         "",
-        "## 7. 다음 최적 행동",
-        f"- {result.get('next_best_action', '')}",
-        "",
-        "## 8. 비용/리스크 메모",
-        f"- 비용 통제: {result.get('cost_control_note', '')}",
+        "## Codex 작업 후보",
+        f"{result.get('codex_candidate', '없음')}",
     ]
-    for risk in result.get("risks", []):
-        lines.append(f"- 리스크: {risk}")
     return "\n".join(lines).strip() + "\n"
 
 
