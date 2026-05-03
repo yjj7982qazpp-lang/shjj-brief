@@ -1,35 +1,50 @@
 {
   "date": "2026-05-04",
   "slot": "manual",
-  "project_goal_summary": "# SHJJ Brief 프로젝트 목표",
+  "decision_summary": "브리핑 안정화와 일정 기능 검증을 우선하고, 고비용 구현은 보류한다.",
+  "immediate_action": {
+    "title": "기존 아이디어 우선순위 점검 기준 1페이지 정리",
+    "why": "이후 모든 기능 판단의 기준점을 고정해 재작업을 줄인다."
+  },
   "new_ideas": [
     {
       "title": "회사 공유 일정 베타 검증 질문지 설계",
       "type": "product",
-      "summary": "기존 일정 기능 확장을 위한 사용자 인터뷰 질문지 초안을 정의한다.",
-      "expected_value": "2순위 목표(회사 공유 일정)의 요구사항 불확실성 감소",
       "implementation_cost": "low",
-      "risk": "실사용자 피드백이 부족하면 판단 편향 가능",
-      "confidence": "medium",
-      "recommendation": "candidate_for_codex"
+      "expected_value": "2순위 목표(회사 공유 일정)의 요구사항 불확실성 감소",
+      "decision": "candidate_for_codex"
     }
   ],
-  "developed_existing_ideas": [
-    "기존 브리핑 안정화 우선 원칙 유지 및 기능 추가 속도 조절"
+  "low_cost_candidates": [
+    {
+      "title": "공유 일정 요구사항 정리 템플릿(data/ai_lab/) 초안 작성",
+      "decision": "candidate_for_codex",
+      "implementation_cost": "low",
+      "expected_value": "인터뷰 결과를 빠르게 구조화해 반복 검토 시간을 줄임"
+    },
+    {
+      "title": "법령 AI 요약 품질 점검 체크리스트 문서화",
+      "decision": "candidate_for_codex",
+      "implementation_cost": "low",
+      "expected_value": "1순위/3순위 품질 기준을 빠르게 고정"
+    }
   ],
-  "paused_ideas": [
-    "광고/수익화 실구현은 사용자 기반 확보 전까지 보류"
+  "deferred": [
+    "광고/수익화 실구현",
+    "모바일 앱화",
+    "관리자 대시보드",
+    "커뮤니티 기능",
+    "AI 자동 코드 수정"
   ],
-  "killed_ideas": [],
-  "codex_candidates": [
-    "공유 일정 요구사항 정리 템플릿(data/ai_lab/) 초안 작성",
-    "법령 AI 요약 품질 점검 체크리스트 문서화"
+  "why_faster": [
+    "고비용 개발 전에 검증 단위를 작게 쪼갠다.",
+    "우선순위 기준을 먼저 고정해 판단 속도를 높인다.",
+    "저비용 문서화만 선행해 시행착오 비용을 줄인다."
   ],
-  "next_best_action": "다음 실행 전까지 기존 아이디어의 우선순위 점검 기준을 1페이지로 정리",
-  "why_this_gets_us_to_goal_faster": "고비용 개발 전에 검증 단위를 작게 쪼개어 시행착오 비용을 줄인다.",
   "risks": [
-    "AI API 미사용 상태에서 판단 고도화 한계",
-    "API 실패 fallback 적용: TypeError"
+    "실사용자 피드백 부족 시 판단 편향 가능",
+    "AI API 미사용 상태에서는 고도화 한계",
+    "fallback(TypeError) 상태에서는 자동화 확대를 보류해야 함"
   ],
-  "cost_control_note": "API 실패로 fallback 사용, 저장소 안전 상태 유지"
+  "cost_control": "저비용 문서화와 검증만 진행하고, 구현·배포는 후보로 올리지 않는다."
 }
