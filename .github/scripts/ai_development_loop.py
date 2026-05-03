@@ -88,6 +88,39 @@ def dry_run_result(ctx: RunContext, goal_summary: str) -> dict[str, Any]:
     }
 
 
+def _extract_json_text_from_response(response: Any) -> str:
+    output_text = getattr(response, "output_text", None)
+    if isinstance(output_text, str) and output_text.strip():
+        return output_text.strip()
+
+    output = getattr(response, "output", None)
+    if isinstance(output, list):
+        for item in output:
+            content = getattr(item, "content", None)
+            if isinstance(content, list):
+                for part in content:
+                    for attr in ("text", "output_text"):
+                        value = getattr(part, attr, None)
+                        if isinstance(value, str) and value.strip():
+                            return value.strip()
+                    if isinstance(part, dict):
+                        for key in ("text", "output_text"):
+                            value = part.get(key)
+                            if isinstance(value, str) and value.strip():
+                                return value.strip()
+            elif isinstance(content, str) and content.strip():
+                return content.strip()
+            if isinstance(item, dict):
+                for part in item.get("content", []) or []:
+                    if isinstance(part, dict):
+                        for key in ("text", "output_text"):
+                            value = part.get(key)
+                            if isinstance(value, str) and value.strip():
+                                return value.strip()
+
+    raise ValueError("OpenAI 응답에서 JSON 텍스트를 찾지 못했습니다.")
+
+
 def call_openai(api_key: str, payload: dict[str, Any]) -> dict[str, Any]:
     from openai import OpenAI
 
@@ -110,10 +143,9 @@ def call_openai(api_key: str, payload: dict[str, Any]) -> dict[str, Any]:
             },
         ],
         reasoning={"effort": "medium"},
-        text={"verbosity": "low"},
-        response_format={"type": "json_object"},
+        text={"format": {"type": "json_object"}, "verbosity": "low"},
     )
-    text = response.output_text
+    text = _extract_json_text_from_response(response)
     return json.loads(text)
 
 
@@ -193,9 +225,9 @@ def main() -> int:
         try:
             result = call_openai(api_key, input_payload)
         except Exception as exc:
-            print(f"[ai-dev-loop] OpenAI 호출 실패: {exc}")
+            print(f"[ai-dev-loop] OpenAI 호출 실패: {type(exc).__name__}: {exc}")
             result = dry_run_result(ctx, goal_summary)
-            result["risks"].append(f"API 실패 fallback 적용: {type(exc).__name__}")
+            result["risks"].append(f"API 실패 fallback 적용: {type(exc).__name__}: {exc}")
             result["cost_control_note"] = "API 실패로 fallback 사용, 저장소 안전 상태 유지"
 
     result["date"] = ctx.now_kst.strftime("%Y-%m-%d")
