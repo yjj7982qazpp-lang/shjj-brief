@@ -1,0 +1,34 @@
+{
+  "date": "2026-05-04",
+  "slot": "morning",
+  "project_goal_summary": "# SHJJ Brief 프로젝트 목표",
+  "new_ideas": [
+    {
+      "title": "회사 공유 일정 베타 검증 질문지 설계",
+      "type": "product",
+      "summary": "기존 일정 기능 확장을 위한 사용자 인터뷰 질문지 초안을 정의한다.",
+      "expected_value": "2순위 목표(회사 공유 일정)의 요구사항 불확실성 감소",
+      "implementation_cost": "low",
+      "risk": "실사용자 피드백이 부족하면 판단 편향 가능",
+      "confidence": "medium",
+      "recommendation": "candidate_for_codex"
+    }
+  ],
+  "developed_existing_ideas": [
+    "기존 브리핑 안정화 우선 원칙 유지 및 기능 추가 속도 조절"
+  ],
+  "paused_ideas": [
+    "광고/수익화 실구현은 사용자 기반 확보 전까지 보류"
+  ],
+  "killed_ideas": [],
+  "codex_candidates": [
+    "공유 일정 요구사항 정리 템플릿(data/ai_lab/) 초안 작성",
+    "법령 AI 요약 품질 점검 체크리스트 문서화"
+  ],
+  "next_best_action": "다음 실행 전까지 기존 아이디어의 우선순위 점검 기준을 1페이지로 정리",
+  "why_this_gets_us_to_goal_faster": "고비용 개발 전에 검증 단위를 작게 쪼개어 시행착오 비용을 줄인다.",
+  "risks": [
+    "AI API 미사용 상태에서 판단 고도화 한계"
+  ],
+  "cost_control_note": "OPENAI_API_KEY 미설정으로 dry-run 수행, 외부 API 비용 0원"
+}
