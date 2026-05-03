@@ -1,43 +1,68 @@
 {
   "date": "2026-05-04",
-  "slot": "morning",
+  "slot": "manual",
   "focus_area": "API/운영비 절감",
-  "goal_link": "앱 안정성을 해치지 않으면서 운영 고정비를 최소화해야 장기적인 사용자 확보와 수익화 실험을 지속할 수 있다.",
-  "existing_ideas_review": [
+  "decision_summary": "저비용 기준 정리와 호출 우선순위 표준화로 안정성과 비용 효율을 먼저 높인다.",
+  "existing_ideas": [
     {
       "title": "브리핑 안정화 체크리스트 고도화",
       "decision": "발전",
-      "reason": "안정성 1순위 목표를 직접 지원하고 저비용으로 즉시 개선 가능하다."
+      "reason": "1순위 앱 안정성을 직접 지원하고 즉시 저비용으로 실행 가능하다."
     },
     {
       "title": "광고 수익화 즉시 적용",
       "decision": "보류",
-      "reason": "사용자 기반과 체류 지표가 먼저 확보되어야 광고 단가와 UX 저하 리스크를 관리할 수 있다."
+      "reason": "사용자 기반과 체류 지표가 먼저 확보되어야 수익화 판단이 빨라진다."
+    },
+    {
+      "title": "외부 API 호출 캐시 TTL 재설계",
+      "decision": "유지",
+      "reason": "날씨·법령 갱신 주기를 분리하면 불필요한 호출을 줄이는 데 도움이 된다."
     }
   ],
   "new_ideas": [
     {
-      "title": "외부 API 호출 캐시 TTL 재설계",
-      "summary": "날씨·법령 브리핑 갱신 주기를 분리해 불필요한 호출을 줄인다.",
-      "expected_value": "API 비용과 실패율을 함께 낮추고 앱 안정성 유지에 기여한다.",
-      "implementation_cost": "중",
-      "recommendation": "유지",
+      "title": "브리핑 항목별 갱신 우선순위 표",
+      "summary": "날씨·법령·일정 항목을 신선도와 비용 기준으로 분류해 호출 순서를 정한다.",
+      "expected_value": "불필요한 API 호출을 줄이고 브리핑 안정성을 높인다.",
+      "implementation_cost": "low",
+      "recommendation": "candidate_for_codex",
       "type": "product",
-      "risk": "실사용자 피드백 부족 시 판단 편향 가능",
+      "risk": "기준이 과도하게 세분화되면 운영 복잡도가 늘 수 있다.",
+      "confidence": "high"
+    },
+    {
+      "title": "API 비용·신선도 비교표",
+      "summary": "각 데이터 소스의 갱신 주기와 예상 비용을 한 장으로 정리한다.",
+      "expected_value": "다음 의사결정을 빠르게 하고 TTL 조정 우선순위를 선명하게 만든다.",
+      "implementation_cost": "low",
+      "recommendation": "candidate_for_codex",
+      "type": "ops",
+      "risk": "실측 데이터가 부족하면 수치 정밀도가 낮을 수 있다.",
       "confidence": "medium"
     }
   ],
-  "next_best_action": "다음 실행에서 캐시 TTL 분리 기준(데이터 신선도/비용)을 수치로 비교한다.",
-  "codex_candidate": "없음",
+  "codex_candidate": "브리핑 항목별 갱신 우선순위 표 초안(data/ai_lab/) 작성",
+  "next_best_action": "날씨·법령·일정 항목별 신선도 기준과 호출 비용을 1페이지 표로 정리한다.",
+  "why_this_gets_us_to_goal_faster": "고비용 구현 전에 호출 기준을 먼저 고정해 시행착오를 줄이고 안정성과 비용 효율을 함께 개선한다.",
+  "cost_control": "고비용 구현은 이번 실행에서 제외하고 문서화와 기준 정리만 진행한다.",
   "risks": [
-    "AI API 미사용 상태에서 판단 고도화 한계"
+    "실사용 데이터가 부족하면 기준이 보수적으로 기울 수 있다.",
+    "기준이 불명확하면 호출 절감 효과가 제한될 수 있다."
   ],
-  "cost_control_note": "OPENAI_API_KEY 미설정으로 dry-run 수행, 외부 API 비용 0원",
   "project_goal_summary": "# SHJJ Brief 공동 목표",
+  "goal_link": "공동 목표와 우선순위를 기준으로 오늘의 집중 분야를 실행 가능한 단위로 정리한다.",
+  "existing_ideas_review": [
+    {
+      "title": "기존 아이디어 재검토",
+      "decision": "유지",
+      "reason": "핵심 목표와 직접 연결되는 항목부터 유지한다."
+    }
+  ],
   "developed_existing_ideas": [
     "기존 아이디어를 목표 우선순위 기준으로 재검토한다."
   ],
   "paused_ideas": [],
   "killed_ideas": [],
-  "why_this_gets_us_to_goal_faster": "고비용 개발 전에 검증 단위를 작게 쪼개어 시행착오 비용을 줄인다."
+  "cost_control_note": "고비용 구현은 이번 실행에서 제외하고 문서화와 기준 정리만 진행한다."
 }
