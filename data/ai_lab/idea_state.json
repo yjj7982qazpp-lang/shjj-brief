@@ -1,18 +1,33 @@
 {
   "date": "2026-05-04",
   "slot": "manual",
-  "decision_summary": "브리핑 안정화와 일정 기능 검증을 우선하고, 고비용 구현은 보류한다.",
+  "decision_summary": "1순위 브리핑 안정화와 2순위 공유 일정 검증을 저비용 문서화로 먼저 고정하고, 구현은 보류한다.",
   "immediate_action": {
-    "title": "기존 아이디어 우선순위 점검 기준 1페이지 정리",
-    "why": "이후 모든 기능 판단의 기준점을 고정해 재작업을 줄인다."
+    "title": "브리핑 안정화·공유 일정 검증 기준 1페이지 정리",
+    "why": "기준을 먼저 고정해 이후 기능 판단과 우선순위 조정 속도를 높인다."
   },
   "new_ideas": [
     {
       "title": "회사 공유 일정 베타 검증 질문지 설계",
       "type": "product",
       "implementation_cost": "low",
-      "expected_value": "2순위 목표(회사 공유 일정)의 요구사항 불확실성 감소",
-      "decision": "candidate_for_codex"
+      "expected_value": "2순위 목표의 요구사항 불확실성을 줄여 빠른 검증이 가능하다.",
+      "decision": "candidate_for_codex",
+      "summary": "목표 달성 속도를 높이기 위해 작고 검증 가능한 단위로 정리한다.",
+      "risk": "실사용자 피드백 부족 시 판단 편향 가능",
+      "confidence": "medium",
+      "recommendation": "candidate_for_codex"
+    },
+    {
+      "title": "날씨·법령·일정 브리핑 안정화 체크리스트 작성",
+      "type": "product",
+      "implementation_cost": "low",
+      "expected_value": "1순위 브리핑 품질 기준을 고정해 반복 수정 시간을 줄인다.",
+      "decision": "candidate_for_codex",
+      "summary": "목표 달성 속도를 높이기 위해 작고 검증 가능한 단위로 정리한다.",
+      "risk": "실사용자 피드백 부족 시 판단 편향 가능",
+      "confidence": "medium",
+      "recommendation": "candidate_for_codex"
     }
   ],
   "low_cost_candidates": [
@@ -20,13 +35,13 @@
       "title": "공유 일정 요구사항 정리 템플릿(data/ai_lab/) 초안 작성",
       "decision": "candidate_for_codex",
       "implementation_cost": "low",
-      "expected_value": "인터뷰 결과를 빠르게 구조화해 반복 검토 시간을 줄임"
+      "expected_value": "인터뷰 결과를 빠르게 구조화해 재검토 비용을 줄인다."
     },
     {
       "title": "법령 AI 요약 품질 점검 체크리스트 문서화",
       "decision": "candidate_for_codex",
       "implementation_cost": "low",
-      "expected_value": "1순위/3순위 품질 기준을 빠르게 고정"
+      "expected_value": "브리핑 품질 판단 기준을 빨리 고정할 수 있다."
     }
   ],
   "deferred": [
@@ -37,14 +52,26 @@
     "AI 자동 코드 수정"
   ],
   "why_faster": [
-    "고비용 개발 전에 검증 단위를 작게 쪼갠다.",
-    "우선순위 기준을 먼저 고정해 판단 속도를 높인다.",
-    "저비용 문서화만 선행해 시행착오 비용을 줄인다."
+    "고비용 구현 전에 검증 단위를 문서로 먼저 고정한다.",
+    "1순위와 2순위의 판단 기준을 분리해 의사결정 시간을 줄인다.",
+    "저비용 후보만 유지해 시행착오를 최소화한다."
   ],
   "risks": [
-    "실사용자 피드백 부족 시 판단 편향 가능",
-    "AI API 미사용 상태에서는 고도화 한계",
-    "fallback(TypeError) 상태에서는 자동화 확대를 보류해야 함"
+    "실사용자 입력이 적으면 요구사항 우선순위가 흔들릴 수 있다.",
+    "문서화만으로는 제품 완성도가 오르지 않으므로 다음 단계 전환 기준이 필요하다."
   ],
-  "cost_control": "저비용 문서화와 검증만 진행하고, 구현·배포는 후보로 올리지 않는다."
+  "cost_control": "저비용 문서화와 검증만 진행하고, 구현·배포·대규모 기능 추가는 즉시 실행 후보로 올리지 않는다.",
+  "project_goal_summary": "# SHJJ Brief 프로젝트 목표",
+  "developed_existing_ideas": [
+    "기존 아이디어를 목표 우선순위 기준으로 재검토한다."
+  ],
+  "paused_ideas": [],
+  "killed_ideas": [],
+  "codex_candidates": [
+    "공유 일정 요구사항 정리 템플릿(data/ai_lab/) 초안 작성",
+    "법령 AI 요약 품질 점검 체크리스트 문서화"
+  ],
+  "next_best_action": "브리핑 안정화·공유 일정 검증 기준 1페이지 정리",
+  "why_this_gets_us_to_goal_faster": "고비용 구현 전에 검증 단위를 문서로 먼저 고정한다. 1순위와 2순위의 판단 기준을 분리해 의사결정 시간을 줄인다. 저비용 후보만 유지해 시행착오를 최소화한다.",
+  "cost_control_note": "저비용 문서화와 검증만 진행하고, 구현·배포·대규모 기능 추가는 즉시 실행 후보로 올리지 않는다."
 }
