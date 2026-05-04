@@ -23,6 +23,7 @@ async function openScheduleAndJoinAsAdmin(page) {
 
   await page.locator('#toggleScheduleInviteBtn').click();
   await page.locator('#inviteCodeInput').fill('SHJJ-ADMIN');
+  await page.locator('#invitePinInput').fill('0920');
   await page.locator('#joinCompanyRoomBtn').click();
 
   await expect(page.locator('#scheduleRoomContent')).toBeVisible();
@@ -71,6 +72,7 @@ test('member is read-only', async ({ page }) => {
 
   await page.locator('#toggleScheduleInviteBtn').click();
   await page.locator('#inviteCodeInput').fill('SHJJ-MEMBER');
+  await page.locator('#invitePinInput').fill('0000');
   await page.locator('#joinCompanyRoomBtn').click();
 
   await expect(page.locator('#schedulePermissionBadge')).toContainText('읽기');
