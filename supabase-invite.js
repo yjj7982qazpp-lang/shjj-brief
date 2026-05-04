@@ -5,6 +5,11 @@
     timeoutMs: 2500,
   };
 
+  window.SHJJ_SUPABASE_CONFIG = {
+    url: SUPABASE_INVITE_CONFIG.url,
+    publishableKey: SUPABASE_INVITE_CONFIG.publishableKey,
+  };
+
   const STORAGE_KEYS = {
     companyMembership: "shjj_company_membership_v1",
   };
