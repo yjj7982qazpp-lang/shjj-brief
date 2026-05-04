@@ -95,10 +95,7 @@
         signal: controller.signal,
       });
 
-      if (!response.ok) {
-        throw new Error(`Supabase invite RPC failed: ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`Supabase invite RPC failed: ${response.status}`);
       const payload = await response.json();
       return Array.isArray(payload) ? payload[0] : payload;
     } finally {
@@ -108,7 +105,8 @@
 
   function normalizeRoleInfo(result) {
     return {
-      companyRoomId: String(result?.company_id || result?.company_room_id || DEFAULT_COMPANY_ROOM_ID),
+      companyRoomId: DEFAULT_COMPANY_ROOM_ID,
+      serverCompanyId: String(result?.company_id || result?.company_room_id || ""),
       memberId: String(result?.member_id || ""),
       memberName: String(result?.member_name || "구성원"),
       role: result?.role === "admin" ? "admin" : "member",
@@ -125,7 +123,8 @@
     }
 
     const payload = {
-      companyRoomId: roleInfo.companyRoomId || DEFAULT_COMPANY_ROOM_ID,
+      companyRoomId: DEFAULT_COMPANY_ROOM_ID,
+      serverCompanyId: roleInfo.serverCompanyId || "",
       memberId: roleInfo.memberId,
       memberName: roleInfo.memberName,
       role: roleInfo.role,
@@ -159,8 +158,7 @@
   function syncSchedulesAfterLogin() {
     setFeedback("일정을 동기화하는 중입니다.");
     if (typeof window.SHJJ_SYNC_SCHEDULES === "function") {
-      window.SHJJ_SYNC_SCHEDULES({ reload: false })
-        .finally(() => refreshScheduleView());
+      window.SHJJ_SYNC_SCHEDULES({ reload: false }).finally(() => refreshScheduleView());
       return;
     }
     refreshScheduleView();
@@ -178,27 +176,14 @@
 
   function getLocalFallbackResult(inviteCode, pinCode) {
     const fallback = LOCAL_INVITE_FALLBACKS[inviteCode];
-    if (!fallback) {
-      return {
-        ok: false,
-        message: "초대코드가 틀렸습니다.",
-        focus: "invite",
-      };
-    }
-
-    if (fallback.pinCode !== pinCode) {
-      return {
-        ok: false,
-        message: "PIN이 틀렸습니다.",
-        focus: "pin",
-      };
-    }
-
+    if (!fallback) return { ok: false, message: "초대코드가 틀렸습니다.", focus: "invite" };
+    if (fallback.pinCode !== pinCode) return { ok: false, message: "PIN이 틀렸습니다.", focus: "pin" };
     return {
       ok: true,
       roleInfo: {
         ...fallback.roleInfo,
         companyRoomId: DEFAULT_COMPANY_ROOM_ID,
+        serverCompanyId: "",
       },
     };
   }
@@ -219,7 +204,6 @@
       showInviteMessage("초대코드를 입력해주세요.", { focusTarget: inviteInput });
       return;
     }
-
     if (!pinCode) {
       showInviteMessage("PIN을 입력해주세요.", { focusTarget: pinInput });
       return;
@@ -244,18 +228,14 @@
       try {
         const result = await verifyInviteCode(inviteCode, pinCode);
         if (!result?.ok) {
-          showInviteMessage(result?.message || localResult.message || "초대코드 또는 PIN을 확인해주세요.", {
-            focusTarget: inviteInput,
-          });
+          showInviteMessage(result?.message || localResult.message || "초대코드 또는 PIN을 확인해주세요.", { focusTarget: inviteInput });
           return;
         }
-
         const roleInfo = normalizeRoleInfo(result);
         if (!roleInfo.memberId) {
           showInviteMessage("구성원 정보를 확인할 수 없습니다.");
           return;
         }
-
         joinWithRoleInfo(roleInfo, inviteInput, pinInput);
         return;
       } catch (error) {
@@ -269,10 +249,8 @@
   function handleInviteKeydown(event) {
     if (event.key !== "Enter") return;
     if (!["inviteCodeInput", "invitePinInput"].includes(event.target?.id)) return;
-
     const button = $("joinCompanyRoomBtn");
     if (!button) return;
-
     event.preventDefault();
     event.stopImmediatePropagation();
     button.click();

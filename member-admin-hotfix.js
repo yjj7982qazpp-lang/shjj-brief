@@ -203,10 +203,41 @@
     }
   }
 
+  function forceCalendarRender() {
+    const fold = document.querySelector(".schedule-calendar-fold");
+    const grid = document.getElementById("scheduleCalendarGrid");
+    const prev = document.getElementById("schedulePrevMonthBtn");
+    const next = document.getElementById("scheduleNextMonthBtn");
+    if (!fold || !grid || !prev || !next) return;
+    if (!fold.open) return;
+    if (grid.children.length > 0 && text(grid)) return;
+    next.click();
+    window.setTimeout(() => prev.click(), 40);
+  }
+
+  function bindCalendarFix() {
+    const fold = document.querySelector(".schedule-calendar-fold");
+    if (!fold || fold.dataset.hotfixBound === "1") return;
+    fold.dataset.hotfixBound = "1";
+    fold.addEventListener("toggle", () => {
+      if (!fold.open) return;
+      window.setTimeout(forceCalendarRender, 30);
+      window.setTimeout(forceCalendarRender, 180);
+    });
+  }
+
   normalizeMembershipAndReloadIfNeeded();
-  const observer = new MutationObserver(() => normalizeLabels());
+  const observer = new MutationObserver(() => {
+    normalizeLabels();
+    bindCalendarFix();
+  });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   document.addEventListener("click", interceptCopy, true);
-  window.setInterval(normalizeLabels, 1200);
+  window.setInterval(() => {
+    normalizeLabels();
+    bindCalendarFix();
+    forceCalendarRender();
+  }, 1200);
   normalizeLabels();
+  bindCalendarFix();
 })();
