@@ -1,5 +1,6 @@
 (() => {
   const STORAGE_KEY = "shjj_company_membership_v1";
+  const MEMBERS_KEY = "shjj_company_members_v1";
   const DEFAULT_ROOM_ID = "shjj-default";
   const ORIGINAL_ADMIN_ID = "ca482e0e-07b9-4341-8f16-cbf28e445db6";
   const CONFIG = {
@@ -23,28 +24,52 @@
     }
   }
 
+  function writeJson(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
   function text(el) {
     return String(el?.textContent || "").trim();
+  }
+
+  function getMembership() {
+    const membership = readJson(STORAGE_KEY, null);
+    if (!membership || membership.status !== "active") return null;
+    return membership;
   }
 
   function normalizeMembershipAndReloadIfNeeded() {
     const membership = readJson(STORAGE_KEY, null);
     if (!membership || typeof membership !== "object") return;
     const roomId = String(membership.companyRoomId || "");
-    if (!UUID_RE.test(roomId)) return;
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    const normalized = {
       ...membership,
-      serverCompanyId: membership.serverCompanyId || roomId,
+      serverCompanyId: UUID_RE.test(roomId) ? (membership.serverCompanyId || roomId) : (membership.serverCompanyId || ""),
       companyRoomId: DEFAULT_ROOM_ID,
-    }));
+      role: membership.role === "admin" ? "admin" : "member",
+      schedulePermission: membership.role === "admin" || membership.schedulePermission === "write" ? "write" : "read",
+      status: membership.status === "inactive" ? "inactive" : "active",
+    };
+    if (!normalized.memberId) return;
+    writeJson(STORAGE_KEY, normalized);
+    upsertCurrentMember(normalized);
+  }
 
-    const flagKey = "shjj_membership_normalized_reload_v1";
-    if (sessionStorage.getItem(flagKey) === "1") return;
-    sessionStorage.setItem(flagKey, "1");
-    const url = new URL(window.location.href);
-    url.searchParams.set("v", `member-normalized-${Date.now()}`);
-    window.location.replace(url.toString());
+  function upsertCurrentMember(membership) {
+    if (!membership || membership.status !== "active") return;
+    const list = Array.isArray(readJson(MEMBERS_KEY, [])) ? readJson(MEMBERS_KEY, []) : [];
+    const current = {
+      memberId: membership.memberId,
+      memberName: membership.memberName || "구성원",
+      role: membership.role === "admin" ? "admin" : "member",
+      schedulePermission: membership.role === "admin" || membership.schedulePermission === "write" ? "write" : "read",
+      status: "active",
+      inviteCode: membership.inviteCode || "SERVER-MEMBER",
+    };
+    const index = list.findIndex((item) => item?.memberId === current.memberId);
+    if (index >= 0) list[index] = { ...list[index], ...current };
+    else list.push(current);
+    writeJson(MEMBERS_KEY, list);
   }
 
   function injectStyles() {
@@ -66,6 +91,34 @@
       #scheduleAdminMemberList .member-delete-btn{color:#9a3412!important;background:#ffedd5!important;border-color:rgba(154,52,18,.18)!important;}
     `;
     document.head.appendChild(style);
+  }
+
+  function isReadOnlyMember() {
+    const membership = getMembership();
+    return membership?.role === "member" && membership?.schedulePermission !== "write";
+  }
+
+  function hideWriteControlsForReadOnly() {
+    if (!isReadOnlyMember()) return;
+    const openBtn = document.getElementById("openScheduleSheetBtn");
+    if (openBtn) {
+      openBtn.hidden = true;
+      openBtn.disabled = true;
+      openBtn.style.display = "none";
+    }
+    const sheet = document.getElementById("scheduleSheet");
+    if (sheet) sheet.hidden = true;
+    const notice = document.getElementById("scheduleReadonlyNotice");
+    if (notice) notice.textContent = "읽기 권한입니다. 일정 확인만 가능합니다.";
+  }
+
+  function blockReadOnlyScheduleCreate(event) {
+    if (!event.target?.closest?.("#openScheduleSheetBtn, #confirmScheduleBtn")) return;
+    if (!isReadOnlyMember()) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    window.alert("읽기 권한입니다. 일정 등록은 관리자 또는 쓰기 권한 구성원만 가능합니다.");
+    hideWriteControlsForReadOnly();
   }
 
   function getPreviousPill(button) {
@@ -223,21 +276,22 @@
       if (!fold.open) return;
       window.setTimeout(forceCalendarRender, 30);
       window.setTimeout(forceCalendarRender, 180);
+      window.setTimeout(forceCalendarRender, 400);
     });
   }
 
-  normalizeMembershipAndReloadIfNeeded();
-  const observer = new MutationObserver(() => {
-    normalizeLabels();
-    bindCalendarFix();
-  });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-  document.addEventListener("click", interceptCopy, true);
-  window.setInterval(() => {
+  function stabilize() {
+    normalizeMembershipAndReloadIfNeeded();
+    hideWriteControlsForReadOnly();
     normalizeLabels();
     bindCalendarFix();
     forceCalendarRender();
-  }, 1200);
-  normalizeLabels();
-  bindCalendarFix();
+  }
+
+  stabilize();
+  const observer = new MutationObserver(stabilize);
+  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
+  document.addEventListener("click", interceptCopy, true);
+  document.addEventListener("click", blockReadOnlyScheduleCreate, true);
+  window.setInterval(stabilize, 700);
 })();
