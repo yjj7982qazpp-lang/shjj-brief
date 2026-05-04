@@ -97,6 +97,16 @@ async function cleanupShjjMemberTestRows(request) {
   }
 }
 
+async function cleanupTestCompanyRooms(request) {
+  const result = await callSupabaseRpc(request, 'cleanup_test_company_room_rpc', {
+    p_admin_member_id: SUPABASE_ADMIN_MEMBER_ID,
+    p_company_name_prefix: COMPANY_TEST_PREFIX,
+  });
+  const row = Array.isArray(result) ? result[0] : result;
+  expect(row.ok).toBeTruthy();
+  return row;
+}
+
 async function createScheduleViaRpc(request, companyId, memberId, title) {
   const rows = await callSupabaseRpc(request, 'create_company_schedule', {
     p_company_id: companyId,
@@ -258,6 +268,8 @@ test('server member lifecycle works and keeps schedules shared', async ({ reques
 });
 
 test('separate company room keeps schedules isolated', async ({ request }) => {
+  await cleanupTestCompanyRooms(request);
+
   const companyName = `${COMPANY_TEST_PREFIX}${Date.now()}`;
   const room = await callSupabaseRpc(request, 'create_company_room', {
     p_company_name: companyName,
@@ -274,7 +286,7 @@ test('separate company room keeps schedules isolated', async ({ request }) => {
   const shjjTitle = `${SYNC_TEST_PREFIX}SHJJ분리-${Date.now()}`;
   const otherTitle = `${SYNC_TEST_PREFIX}타회사분리-${Date.now()}`;
   const shjjSchedule = await createScheduleViaRpc(request, SUPABASE_COMPANY_ID, SUPABASE_ADMIN_MEMBER_ID, shjjTitle);
-  const otherSchedule = await createScheduleViaRpc(request, createdRoom.company_id, createdRoom.admin_member_id, otherTitle);
+  await createScheduleViaRpc(request, createdRoom.company_id, createdRoom.admin_member_id, otherTitle);
 
   const shjjRows = await listSchedulesViaRpc(request, SUPABASE_COMPANY_ID, SUPABASE_ADMIN_MEMBER_ID);
   const otherRows = await listSchedulesViaRpc(request, createdRoom.company_id, createdRoom.admin_member_id);
@@ -289,11 +301,9 @@ test('separate company room keeps schedules isolated', async ({ request }) => {
     p_member_id: SUPABASE_ADMIN_MEMBER_ID,
     p_schedule_id: shjjSchedule.id,
   });
-  await callSupabaseRpc(request, 'delete_company_schedule', {
-    p_company_id: createdRoom.company_id,
-    p_member_id: createdRoom.admin_member_id,
-    p_schedule_id: otherSchedule.id,
-  });
+
+  const cleanup = await cleanupTestCompanyRooms(request);
+  expect(Number(cleanup.deleted_companies || 0)).toBeGreaterThanOrEqual(1);
 });
 
 test('notification save persists', async ({ page }) => {
