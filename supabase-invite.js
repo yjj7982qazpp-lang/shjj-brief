@@ -2,6 +2,7 @@
   const SUPABASE_INVITE_CONFIG = {
     url: "https://pfpcifidfrnsubhxvgzw.supabase.co",
     publishableKey: "sb_publishable_VtMrmN53iH599XMJQbxVhA_BUN1BFuW",
+    timeoutMs: 2500,
   };
 
   const STORAGE_KEYS = {
@@ -70,25 +71,33 @@
   }
 
   async function verifyInviteCode(inviteCode, pinCode) {
-    const response = await fetch(`${SUPABASE_INVITE_CONFIG.url}/rest/v1/rpc/verify_invite_code`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: SUPABASE_INVITE_CONFIG.publishableKey,
-        Authorization: `Bearer ${SUPABASE_INVITE_CONFIG.publishableKey}`,
-      },
-      body: JSON.stringify({
-        p_invite_code: inviteCode,
-        p_pin_code: pinCode,
-      }),
-    });
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), SUPABASE_INVITE_CONFIG.timeoutMs);
 
-    if (!response.ok) {
-      throw new Error(`Supabase invite RPC failed: ${response.status}`);
+    try {
+      const response = await fetch(`${SUPABASE_INVITE_CONFIG.url}/rest/v1/rpc/verify_invite_code`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_INVITE_CONFIG.publishableKey,
+          Authorization: `Bearer ${SUPABASE_INVITE_CONFIG.publishableKey}`,
+        },
+        body: JSON.stringify({
+          p_invite_code: inviteCode,
+          p_pin_code: pinCode,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Supabase invite RPC failed: ${response.status}`);
+      }
+
+      const payload = await response.json();
+      return Array.isArray(payload) ? payload[0] : payload;
+    } finally {
+      window.clearTimeout(timer);
     }
-
-    const payload = await response.json();
-    return Array.isArray(payload) ? payload[0] : payload;
   }
 
   function normalizeRoleInfo(result) {
@@ -130,6 +139,7 @@
     if (inviteInput) inviteInput.value = "";
     if (pinInput) pinInput.value = "";
     setFeedback("");
+    window.alert("로그인되었습니다.");
     refreshScheduleView();
   }
 
@@ -179,15 +189,28 @@
       return;
     }
 
+    const localResult = getLocalFallbackResult(inviteCode, pinCode);
+    if (localResult.ok) {
+      joinWithRoleInfo(localResult.roleInfo, inviteInput, pinInput);
+      return;
+    }
+
+    if (LOCAL_INVITE_FALLBACKS[inviteCode]) {
+      showInviteMessage(localResult.message, {
+        focusTarget: localResult.focus === "pin" ? pinInput : inviteInput,
+      });
+      return;
+    }
+
     setFeedback("서버에서 초대코드를 확인하는 중입니다.");
 
     if (canUseSupabaseInviteAuth()) {
       try {
         const result = await verifyInviteCode(inviteCode, pinCode);
         if (!result?.ok) {
-          const fallbackResult = getLocalFallbackResult(inviteCode, pinCode);
-          const message = result?.message || fallbackResult.message || "초대코드 또는 PIN을 확인해주세요.";
-          showInviteMessage(message, { focusTarget: fallbackResult.focus === "pin" ? pinInput : inviteInput });
+          showInviteMessage(result?.message || localResult.message || "초대코드 또는 PIN을 확인해주세요.", {
+            focusTarget: inviteInput,
+          });
           return;
         }
 
@@ -204,15 +227,7 @@
       }
     }
 
-    const fallbackResult = getLocalFallbackResult(inviteCode, pinCode);
-    if (!fallbackResult.ok) {
-      showInviteMessage(fallbackResult.message, {
-        focusTarget: fallbackResult.focus === "pin" ? pinInput : inviteInput,
-      });
-      return;
-    }
-
-    joinWithRoleInfo(fallbackResult.roleInfo, inviteInput, pinInput);
+    showInviteMessage(localResult.message, { focusTarget: inviteInput });
   }
 
   function handleInviteKeydown(event) {
