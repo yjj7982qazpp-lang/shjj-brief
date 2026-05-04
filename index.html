@@ -68,7 +68,6 @@
         </details>
       </section>
 
-      <!-- Weather -->
       <section id="weatherSection" class="card weather-card">
         <details class="weather-fold">
           <summary class="section-head weather-summary">
@@ -94,32 +93,16 @@
             </div>
 
             <div class="weather-metrics">
-              <div>
-                <span>최고/최저</span>
-                <strong id="highLow">--° / --°</strong>
-              </div>
-              <div>
-                <span>강수확률</span>
-                <strong id="rainProb">--%</strong>
-              </div>
-              <div class="rain-time-metric">
-                <span>강수 예상 시간</span>
-                <strong id="rainTime">확인 중</strong>
-              </div>
-              <div>
-                <span>습도</span>
-                <strong id="humidity">--%</strong>
-              </div>
-              <div>
-                <span>바람</span>
-                <strong id="wind">-- km/h</strong>
-              </div>
+              <div><span>최고/최저</span><strong id="highLow">--° / --°</strong></div>
+              <div><span>강수확률</span><strong id="rainProb">--%</strong></div>
+              <div class="rain-time-metric"><span>강수 예상 시간</span><strong id="rainTime">확인 중</strong></div>
+              <div><span>습도</span><strong id="humidity">--%</strong></div>
+              <div><span>바람</span><strong id="wind">-- km/h</strong></div>
             </div>
           </div>
         </details>
       </section>
 
-      <!-- Daily Guide -->
       <section id="guideSection" class="card guide-card">
         <details class="fold-card" open>
           <summary class="section-head fold-summary">
@@ -137,271 +120,94 @@
 
           <div class="fold-body">
             <div class="guide-grid">
-              <article class="guide-item">
-                <div class="guide-icon">☂</div>
-                <div>
-                  <strong id="rainGuideTitle">강수 확인 중</strong>
-                  <p id="rainGuideText">오늘 비 가능성을 확인하고 있습니다.</p>
-                </div>
-              </article>
-
-              <article class="guide-item">
-                <div class="guide-icon">外</div>
-                <div>
-                  <strong id="outsideGuideTitle">외근 판단</strong>
-                  <p id="outsideGuideText">외근 가능 여부를 확인하고 있습니다.</p>
-                </div>
-              </article>
-
-              <article class="guide-item">
-                <div class="guide-icon">服</div>
-                <div>
-                  <strong id="clothesGuideTitle">옷차림</strong>
-                  <p id="clothesGuideText">기온 기준 옷차림을 확인하고 있습니다.</p>
-                </div>
-              </article>
+              <article class="guide-item"><div class="guide-icon">☂</div><div><strong id="rainGuideTitle">강수 확인 중</strong><p id="rainGuideText">오늘 비 가능성을 확인하고 있습니다.</p></div></article>
+              <article class="guide-item"><div class="guide-icon">外</div><div><strong id="outsideGuideTitle">외근 판단</strong><p id="outsideGuideText">외근 가능 여부를 확인하고 있습니다.</p></div></article>
+              <article class="guide-item"><div class="guide-icon">服</div><div><strong id="clothesGuideTitle">옷차림</strong><p id="clothesGuideText">기온 기준 옷차림을 확인하고 있습니다.</p></div></article>
             </div>
           </div>
         </details>
       </section>
 
-      <!-- Law Brief -->
       <section id="workSection" class="card law-card">
-        <div class="section-head">
-          <div>
-            <p class="section-label">Law Brief</p>
-            <h3>오늘 시행 법령 변경</h3>
-          </div>
-          <span id="lawBasisChip" class="status-chip">시행일 기준</span>
-        </div>
-
+        <div class="section-head"><div><p class="section-label">Law Brief</p><h3>오늘 시행 법령 변경</h3></div><span id="lawBasisChip" class="status-chip">시행일 기준</span></div>
         <div class="law-brief-summary-card">
-          <div class="law-intro">
-            <span id="lawMetaSummary">갱신 정보 -</span>
-            <p id="lawNotice">법령 변경 정보를 불러오는 중입니다.</p>
-            <span id="lawCheckedAt">확인일: -</span>
-          </div>
-
-          <div class="law-action-box">
-            <strong id="lawActionTitle">오늘 확인 포인트</strong>
-            <p id="lawActionText">변경 여부를 확인한 뒤 필요한 법령 항목을 먼저 검토하세요.</p>
-          </div>
-
-          <div class="tracked-law-box compact">
-            <div class="tracked-law-head">
-              <strong>관심 법령 최신 업데이트 현황</strong>
-              <span id="trackedLawCount">전체 0건</span>
-            </div>
-            <p id="trackedLawUpdatedAt" class="tracked-law-meta">마지막 갱신 -</p>
-          </div>
-
-          <div class="law-summary-grid">
-            <div>
-              <span>오늘</span>
-              <strong id="lawTodayCount">0건</strong>
-            </div>
-            <div>
-              <span>최근 7일</span>
-              <strong id="lawWeekCount">0건</strong>
-            </div>
-            <div>
-              <span>최근 30일</span>
-              <strong id="lawMonthCount">0건</strong>
-            </div>
-          </div>
+          <div class="law-intro"><span id="lawMetaSummary">갱신 정보 -</span><p id="lawNotice">법령 변경 정보를 불러오는 중입니다.</p><span id="lawCheckedAt">확인일: -</span></div>
+          <div class="law-action-box"><strong id="lawActionTitle">오늘 확인 포인트</strong><p id="lawActionText">변경 여부를 확인한 뒤 필요한 법령 항목을 먼저 검토하세요.</p></div>
+          <div class="tracked-law-box compact"><div class="tracked-law-head"><strong>관심 법령 최신 업데이트 현황</strong><span id="trackedLawCount">전체 0건</span></div><p id="trackedLawUpdatedAt" class="tracked-law-meta">마지막 갱신 -</p></div>
+          <div class="law-summary-grid"><div><span>오늘</span><strong id="lawTodayCount">0건</strong></div><div><span>최근 7일</span><strong id="lawWeekCount">0건</strong></div><div><span>최근 30일</span><strong id="lawMonthCount">0건</strong></div></div>
         </div>
-
-        <div class="law-tabs">
-          <button class="law-tab-btn active" data-law-tab="today">오늘</button>
-          <button class="law-tab-btn" data-law-tab="week">7일</button>
-          <button class="law-tab-btn" data-law-tab="month">30일</button>
-        </div>
-
-        <div id="lawPanelToday" class="law-panel active">
-          <div id="lawTodayList" class="law-list"></div>
-        </div>
-
-        <div id="lawPanelWeek" class="law-panel">
-          <div id="lawWeekList" class="law-list"></div>
-        </div>
-
-        <div id="lawPanelMonth" class="law-panel">
-          <div id="lawMonthList" class="law-list"></div>
-        </div>
+        <div class="law-tabs"><button class="law-tab-btn active" data-law-tab="today">오늘</button><button class="law-tab-btn" data-law-tab="week">7일</button><button class="law-tab-btn" data-law-tab="month">30일</button></div>
+        <div id="lawPanelToday" class="law-panel active"><div id="lawTodayList" class="law-list"></div></div>
+        <div id="lawPanelWeek" class="law-panel"><div id="lawWeekList" class="law-list"></div></div>
+        <div id="lawPanelMonth" class="law-panel"><div id="lawMonthList" class="law-list"></div></div>
       </section>
-
-      <!-- 향후 광고 삽입 위치: 광고 정책과 스토어 심사 기준 확정 후 활성화 -->
 
       <section id="scheduleJoinSection" class="card schedule-join-card" hidden>
         <div id="scheduleInvitePanel" class="schedule-invite-panel">
           <strong>공유 일정 참여</strong>
           <p>초대코드를 입력하면 공유 일정에 참여할 수 있습니다.</p>
-          <div class="schedule-invite-form">
-            <input id="inviteCodeInput" type="text" autocomplete="off" placeholder="초대코드 입력" />
-            <button id="joinCompanyRoomBtn" type="button">참여하기</button>
-          </div>
+          <div class="schedule-invite-form"><input id="inviteCodeInput" type="text" autocomplete="off" placeholder="초대코드 입력" /><button id="joinCompanyRoomBtn" type="button">참여하기</button></div>
           <p id="scheduleInviteFeedback" class="schedule-feedback" role="status" aria-live="polite"></p>
         </div>
       </section>
 
-      <!-- Schedule -->
       <section id="scheduleSection" class="card">
         <details class="fold-card">
           <summary class="section-head fold-summary">
-            <div>
-              <p class="section-label">Calendar</p>
-              <h3>오늘 일정</h3>
-              <p class="fold-summary-text">필요할 때 펼쳐서 일정 입력과 목록 확인</p>
-            </div>
-            <div class="schedule-summary-actions">
-              <button id="toggleScheduleInviteBtn" class="schedule-invite-toggle" type="button" aria-expanded="false">참여</button>
-              <span id="scheduleCount" class="status-chip">0건</span>
-            </div>
+            <div><p class="section-label">Calendar</p><h3>오늘 일정</h3><p class="fold-summary-text">필요할 때 펼쳐서 일정 입력과 목록 확인</p></div>
+            <div class="schedule-summary-actions"><button id="toggleScheduleInviteBtn" class="schedule-invite-toggle" type="button" aria-expanded="false">참여</button><span id="scheduleCount" class="status-chip">0건</span></div>
           </summary>
 
           <div class="fold-body">
             <div id="scheduleRoomContent" hidden>
-              <div class="schedule-room-meta">
-                <span id="scheduleCompanyBadge" class="schedule-room-badge">SHJJ 회사방</span>
-                <span id="scheduleRoleBadge" class="schedule-role-badge">관리자</span>
-                <span id="schedulePermissionBadge" class="schedule-role-badge">읽기/쓰기</span>
-              </div>
-
+              <div class="schedule-room-meta"><span id="scheduleCompanyBadge" class="schedule-room-badge">SHJJ 회사방</span><span id="scheduleRoleBadge" class="schedule-role-badge">관리자</span><span id="schedulePermissionBadge" class="schedule-role-badge">읽기/쓰기</span></div>
               <p id="scheduleReadonlyNotice" class="schedule-readonly-notice"></p>
-
-              <div class="schedule-today-head">
-                <strong>오늘 일정</strong>
-                <span>오늘 날짜 일정만 표시</span>
-              </div>
+              <div class="schedule-today-head"><strong>오늘 일정</strong><span>오늘 날짜 일정만 표시</span></div>
               <div id="scheduleList" class="list"></div>
-
               <button id="openScheduleSheetBtn" class="schedule-open-btn" type="button">+ 일정 등록하기</button>
               <p id="scheduleFeedback" class="schedule-feedback" role="status" aria-live="polite"></p>
 
               <div id="scheduleSheet" class="schedule-sheet" hidden>
                 <div class="schedule-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="scheduleSheetTitle">
-                  <div class="schedule-sheet-head">
-                    <strong id="scheduleSheetTitle">일정 등록</strong>
-                    <button id="closeScheduleSheetBtn" class="schedule-sheet-close" type="button" aria-label="닫기">×</button>
-                  </div>
-
+                  <div class="schedule-sheet-head"><strong id="scheduleSheetTitle">일정 등록</strong><button id="closeScheduleSheetBtn" class="schedule-sheet-close" type="button" aria-label="닫기">×</button></div>
                   <div class="schedule-composer">
-                    <div class="schedule-input-grid">
-                      <label>
-                        <span>날짜</span>
-                        <input id="scheduleDateInput" type="date" />
-                      </label>
-                      <label>
-                        <span>시간</span>
-                        <input id="scheduleTimeInput" type="time" value="09:00" />
-                      </label>
-                    </div>
-
+                    <div class="schedule-input-grid"><label><span>날짜</span><input id="scheduleDateInput" type="date" /></label><label><span>시간</span><input id="scheduleTimeInput" type="time" value="09:00" /></label></div>
                     <input id="scheduleTitleInput" placeholder="일정명 예: 안전점검, 현장 확인" />
                     <input id="scheduleLocationInput" class="schedule-location-input" placeholder="도착지 선택사항 예: 서울 송파구 ○○로" />
                     <textarea id="scheduleMemoInput" class="schedule-memo-input" rows="3" placeholder="메모 선택사항"></textarea>
                   </div>
-
-                  <div class="schedule-sheet-actions">
-                    <button id="cancelScheduleBtn" class="schedule-cancel-btn" type="button">취소</button>
-                    <button id="confirmScheduleBtn" class="schedule-confirm-btn" type="button">확인</button>
-                  </div>
+                  <div class="schedule-sheet-actions"><button id="cancelScheduleBtn" class="schedule-cancel-btn" type="button">취소</button><button id="confirmScheduleBtn" class="schedule-confirm-btn" type="button">확인</button></div>
                 </div>
               </div>
 
-              <details class="schedule-calendar-fold">
-                <summary>월별 미리보기</summary>
-                <div class="schedule-calendar-panel">
-                  <div class="schedule-calendar-head">
-                    <button id="schedulePrevMonthBtn" type="button" aria-label="이전 달">‹</button>
-                    <strong id="scheduleCalendarTitle">이번 달</strong>
-                    <button id="scheduleNextMonthBtn" type="button" aria-label="다음 달">›</button>
-                  </div>
-                  <div id="scheduleCalendarGrid" class="schedule-calendar-grid"></div>
-                  <div id="scheduleSelectedDayList" class="schedule-selected-day-list"></div>
-                </div>
-              </details>
-
-              <details id="scheduleAdminPanel" class="schedule-admin-panel" hidden>
-                <summary>구성원 관리</summary>
-                <div class="schedule-admin-body">
-                  <div class="schedule-admin-head">
-                    <p>구성원 일정 권한</p>
-                    <button id="addScheduleMemberBtn" class="schedule-admin-add-btn" type="button" aria-label="구성원 추가">+</button>
-                  </div>
-                  <div id="scheduleAdminMemberList" class="schedule-admin-member-list"></div>
-                </div>
-              </details>
+              <details class="schedule-calendar-fold"><summary>월별 미리보기</summary><div class="schedule-calendar-panel"><div class="schedule-calendar-head"><button id="schedulePrevMonthBtn" type="button" aria-label="이전 달">‹</button><strong id="scheduleCalendarTitle">이번 달</strong><button id="scheduleNextMonthBtn" type="button" aria-label="다음 달">›</button></div><div id="scheduleCalendarGrid" class="schedule-calendar-grid"></div><div id="scheduleSelectedDayList" class="schedule-selected-day-list"></div></div></details>
+              <details id="scheduleAdminPanel" class="schedule-admin-panel" hidden><summary>구성원 관리</summary><div class="schedule-admin-body"><div class="schedule-admin-head"><p>구성원 일정 권한</p><button id="addScheduleMemberBtn" class="schedule-admin-add-btn" type="button" aria-label="구성원 추가">+</button></div><div id="scheduleAdminMemberList" class="schedule-admin-member-list"></div></div></details>
             </div>
           </div>
         </details>
       </section>
 
-      <!-- Settings -->
       <section id="settingsSection" class="card settings-card">
-        <div class="section-head">
-          <div>
-            <p class="section-label">Settings</p>
-            <h3>앱 설정</h3>
-          </div>
-        </div>
-
-        <div class="settings-list">
-          <div class="settings-row">
-            <span>기본 지역</span>
-            <strong id="settingCityName">서울</strong>
-          </div>
-          <details class="notification-settings-card" hidden>
-            <summary class="notification-settings-summary">
-              <div>
-                <span class="notification-settings-label">알림 설정</span>
-                <strong>매일 알림 시간</strong>
-              </div>
-              <span id="notificationTimeSummary" class="notification-time-badge">매일 09:20 알림 예정</span>
-            </summary>
-            <div class="notification-settings-body">
-              <label class="notification-time-field" for="notificationTimeInput">
-                <span>알림 희망 시간</span>
-                <input id="notificationTimeInput" type="time" value="09:20" />
-              </label>
-              <p id="notificationTimeHelper" class="notification-settings-note">
-                실제 푸시 발송 연동 전까지는 앱에서 희망 시간만 저장합니다.
-              </p>
-            </div>
-          </details>
-        </div>
+        <div class="section-head"><div><p class="section-label">Settings</p><h3>앱 설정</h3></div></div>
+        <div class="settings-list"><div class="settings-row"><span>기본 지역</span><strong id="settingCityName">서울</strong></div><details class="notification-settings-card" hidden><summary class="notification-settings-summary"><div><span class="notification-settings-label">알림 설정</span><strong>매일 알림 시간</strong></div><span id="notificationTimeSummary" class="notification-time-badge">매일 09:20 알림 예정</span></summary><div class="notification-settings-body"><label class="notification-time-field" for="notificationTimeInput"><span>알림 희망 시간</span><input id="notificationTimeInput" type="time" value="09:20" /></label><p id="notificationTimeHelper" class="notification-settings-note">실제 푸시 발송 연동 전까지는 앱에서 희망 시간만 저장합니다.</p></div></details></div>
       </section>
 
-      <footer>
-        <p>SHJJ Brief v0.7 · iOS Home App</p>
-      </footer>
+      <footer><p>SHJJ Brief v0.7 · iOS Home App</p></footer>
     </main>
   </div>
 
-  <!-- Navigation -->
   <nav class="bottom-nav">
-    <button class="bottom-nav-btn active" data-target="weatherSection">
-      <span>⌂</span>
-      <strong>홈</strong>
-    </button>
-    <button class="bottom-nav-btn" data-target="guideSection">
-      <span>☂</span>
-      <strong>가이드</strong>
-    </button>
-    <button class="bottom-nav-btn" data-target="workSection">
-      <span>▣</span>
-      <strong>업무</strong>
-    </button>
-    <button class="bottom-nav-btn" data-target="scheduleSection">
-      <span>◷</span>
-      <strong>일정</strong>
-    </button>
+    <button class="bottom-nav-btn active" data-target="weatherSection"><span>⌂</span><strong>홈</strong></button>
+    <button class="bottom-nav-btn" data-target="guideSection"><span>☂</span><strong>가이드</strong></button>
+    <button class="bottom-nav-btn" data-target="workSection"><span>▣</span><strong>업무</strong></button>
+    <button class="bottom-nav-btn" data-target="scheduleSection"><span>◷</span><strong>일정</strong></button>
   </nav>
   <div id="notificationToast" class="notification-toast" role="status" aria-live="polite"></div>
-  <script src="./app.js"></script>
-  <script src="./supabase-invite.js"></script>
-  <script src="./supabase-schedule-sync.js"></script>
-  <script src="./supabase-member-admin.js"></script>
-  <script src="./member-admin-hotfix.js"></script>
+  <script src="./membership-normalizer.js?v=core-stable2"></script>
+  <script src="./app.js?v=core-stable2"></script>
+  <script src="./supabase-invite.js?v=core-stable2"></script>
+  <script src="./supabase-schedule-sync.js?v=core-stable2"></script>
+  <script src="./supabase-member-admin.js?v=core-stable2"></script>
+  <script src="./member-admin-hotfix.js?v=core-stable2"></script>
 </body>
 </html>
