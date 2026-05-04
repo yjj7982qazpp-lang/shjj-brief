@@ -19,6 +19,67 @@
   const $ = (id) => document.getElementById(id);
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+  function injectPolishStyles() {
+    if (document.getElementById("memberAdminPolishStyle")) return;
+    const style = document.createElement("style");
+    style.id = "memberAdminPolishStyle";
+    style.textContent = `
+      .schedule-admin-member-head,
+      .schedule-admin-invite-row,
+      .schedule-admin-actions-row,
+      .schedule-admin-badges {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .schedule-admin-member-head {
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      .schedule-admin-invite-row,
+      .schedule-admin-actions-row {
+        margin-top: 7px;
+      }
+      .schedule-admin-member.is-inactive {
+        opacity: 0.72;
+        background: rgba(255, 247, 237, 0.92);
+      }
+      .schedule-admin-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: rgba(70, 105, 141, 0.08);
+        color: var(--blue);
+        font-size: 11px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+      .schedule-admin-pill.ok {
+        background: rgba(34, 197, 94, 0.1);
+        color: #15803d;
+      }
+      .schedule-admin-pill.warn {
+        background: rgba(245, 158, 11, 0.13);
+        color: #9a5b00;
+      }
+      .schedule-admin-copy-btn.danger {
+        color: #9a4d4d;
+        background: rgba(185, 28, 28, 0.06);
+        border-color: rgba(185, 28, 28, 0.12);
+      }
+      .schedule-admin-invite-row .schedule-admin-copy-btn,
+      .schedule-admin-actions-row .schedule-admin-copy-btn {
+        width: auto;
+        min-width: auto;
+        padding: 0 9px;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function readJson(key, fallback) {
     try {
       const raw = localStorage.getItem(key);
@@ -332,6 +393,7 @@
     window.setTimeout(() => loadMembersFromServer(), 3000);
   }
 
+  injectPolishStyles();
   document.addEventListener("click", interceptAddButton, true);
   document.addEventListener("click", (event) => {
     if (event.target?.closest?.("#toggleScheduleInviteBtn, #joinCompanyRoomBtn, #scheduleAdminPanel")) {
