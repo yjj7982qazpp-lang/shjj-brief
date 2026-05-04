@@ -139,13 +139,30 @@
     window.location.reload();
   }
 
+  function syncSchedulesAfterLogin() {
+    if (typeof window.SHJJ_SYNC_SCHEDULES !== "function") {
+      refreshScheduleView();
+      return;
+    }
+
+    setFeedback("일정을 동기화하는 중입니다.");
+    window.SHJJ_SYNC_SCHEDULES({ reload: true })
+      .then((synced) => {
+        if (!synced) refreshScheduleView();
+      })
+      .catch((error) => {
+        console.warn("Schedule sync after login failed", error);
+        refreshScheduleView();
+      });
+  }
+
   function joinWithRoleInfo(roleInfo, inviteInput, pinInput) {
     saveMembership(roleInfo);
     if (inviteInput) inviteInput.value = "";
     if (pinInput) pinInput.value = "";
     setFeedback("");
     window.alert("로그인되었습니다.");
-    refreshScheduleView();
+    syncSchedulesAfterLogin();
   }
 
   function getLocalFallbackResult(inviteCode, pinCode) {
