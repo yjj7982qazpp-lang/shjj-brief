@@ -6,6 +6,8 @@ const SUPABASE_KEY = 'sb_publishable_VtMrmN53iH599XMJQbxVhA_BUN1BFuW';
 const SUPABASE_COMPANY_ID = 'e978f664-848e-4609-a56a-820d11ef55e6';
 const SUPABASE_ADMIN_MEMBER_ID = 'ca482e0e-07b9-4341-8f16-cbf28e445db6';
 const SYNC_TEST_PREFIX = '자동동기화검증-';
+const MEMBER_TEST_PREFIX = '자동구성원검증-';
+const COMPANY_TEST_PREFIX = '자동회사방검증-';
 
 async function clearStorageAndOpen(page) {
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
@@ -79,6 +81,46 @@ async function cleanupSyncTestSchedules(request) {
   }
 }
 
+async function cleanupShjjMemberTestRows(request) {
+  const members = await callSupabaseRpc(request, 'list_company_members_rpc', {
+    p_company_id: SUPABASE_COMPANY_ID,
+    p_request_member_id: SUPABASE_ADMIN_MEMBER_ID,
+  });
+
+  for (const member of members.filter((item) => String(item.display_name || '').startsWith(MEMBER_TEST_PREFIX))) {
+    await callSupabaseRpc(request, 'set_company_member_status_rpc', {
+      p_company_id: SUPABASE_COMPANY_ID,
+      p_admin_member_id: SUPABASE_ADMIN_MEMBER_ID,
+      p_target_member_id: member.member_id,
+      p_status: 'inactive',
+    });
+  }
+}
+
+async function createScheduleViaRpc(request, companyId, memberId, title) {
+  const rows = await callSupabaseRpc(request, 'create_company_schedule', {
+    p_company_id: companyId,
+    p_member_id: memberId,
+    p_schedule_date: new Date().toISOString().slice(0, 10),
+    p_schedule_time: '10:10',
+    p_title: title,
+    p_location: '자동검증',
+    p_memo: '자동 테스트 일정',
+  });
+  const row = Array.isArray(rows) ? rows[0] : rows;
+  expect(row.ok).toBeTruthy();
+  return row;
+}
+
+async function listSchedulesViaRpc(request, companyId, memberId) {
+  return callSupabaseRpc(request, 'list_company_schedules', {
+    p_company_id: companyId,
+    p_member_id: memberId,
+    p_date_from: null,
+    p_date_to: null,
+  });
+}
+
 test('law_updates.json fetch', async ({ request }) => {
   const res = await request.get(`${BASE_URL}/data/law_updates.json`);
   expect(res.ok()).toBeTruthy();
@@ -119,7 +161,7 @@ test('server schedule sync works across member sessions', async ({ page, request
   });
   await page.locator('#confirmScheduleBtn').click();
 
-  const rows = await expect.poll(async () => {
+  await expect.poll(async () => {
     const payload = await callSupabaseRpc(request, 'list_company_schedules', {
       p_company_id: SUPABASE_COMPANY_ID,
       p_member_id: SUPABASE_ADMIN_MEMBER_ID,
@@ -148,6 +190,110 @@ test('server schedule sync works across member sessions', async ({ page, request
       p_schedule_id: created.id,
     });
   }
+});
+
+test('server member lifecycle works and keeps schedules shared', async ({ request }) => {
+  await cleanupShjjMemberTestRows(request);
+
+  const displayName = `${MEMBER_TEST_PREFIX}${Date.now()}`;
+  const created = await callSupabaseRpc(request, 'create_company_member_rpc', {
+    p_company_id: SUPABASE_COMPANY_ID,
+    p_admin_member_id: SUPABASE_ADMIN_MEMBER_ID,
+    p_display_name: displayName,
+    p_role: 'member',
+    p_schedule_permission: 'read',
+    p_invite_prefix: 'SHJJT',
+    p_pin_code: '1357',
+  });
+  const createdMember = Array.isArray(created) ? created[0] : created;
+  expect(createdMember.ok).toBeTruthy();
+  expect(createdMember.invite_code).toBeTruthy();
+
+  const membersAfterCreate = await callSupabaseRpc(request, 'list_company_members_rpc', {
+    p_company_id: SUPABASE_COMPANY_ID,
+    p_request_member_id: SUPABASE_ADMIN_MEMBER_ID,
+  });
+  expect(membersAfterCreate.some((member) => member.member_id === createdMember.member_id && member.status === 'active')).toBeTruthy();
+
+  const title = `${SYNC_TEST_PREFIX}구성원유지-${Date.now()}`;
+  const schedule = await createScheduleViaRpc(request, SUPABASE_COMPANY_ID, SUPABASE_ADMIN_MEMBER_ID, title);
+
+  const schedulesForNewMember = await listSchedulesViaRpc(request, SUPABASE_COMPANY_ID, createdMember.member_id);
+  expect(schedulesForNewMember.some((item) => item.title === title)).toBeTruthy();
+
+  const inactive = await callSupabaseRpc(request, 'set_company_member_status_rpc', {
+    p_company_id: SUPABASE_COMPANY_ID,
+    p_admin_member_id: SUPABASE_ADMIN_MEMBER_ID,
+    p_target_member_id: createdMember.member_id,
+    p_status: 'inactive',
+  });
+  expect((Array.isArray(inactive) ? inactive[0] : inactive).ok).toBeTruthy();
+
+  const schedulesWhileInactive = await listSchedulesViaRpc(request, SUPABASE_COMPANY_ID, createdMember.member_id);
+  expect(schedulesWhileInactive).toHaveLength(0);
+
+  const reactivated = await callSupabaseRpc(request, 'set_company_member_status_rpc', {
+    p_company_id: SUPABASE_COMPANY_ID,
+    p_admin_member_id: SUPABASE_ADMIN_MEMBER_ID,
+    p_target_member_id: createdMember.member_id,
+    p_status: 'active',
+  });
+  expect((Array.isArray(reactivated) ? reactivated[0] : reactivated).ok).toBeTruthy();
+
+  const schedulesAfterReactivate = await listSchedulesViaRpc(request, SUPABASE_COMPANY_ID, createdMember.member_id);
+  expect(schedulesAfterReactivate.some((item) => item.title === title)).toBeTruthy();
+
+  await callSupabaseRpc(request, 'delete_company_schedule', {
+    p_company_id: SUPABASE_COMPANY_ID,
+    p_member_id: SUPABASE_ADMIN_MEMBER_ID,
+    p_schedule_id: schedule.id,
+  });
+
+  await callSupabaseRpc(request, 'set_company_member_status_rpc', {
+    p_company_id: SUPABASE_COMPANY_ID,
+    p_admin_member_id: SUPABASE_ADMIN_MEMBER_ID,
+    p_target_member_id: createdMember.member_id,
+    p_status: 'inactive',
+  });
+});
+
+test('separate company room keeps schedules isolated', async ({ request }) => {
+  const companyName = `${COMPANY_TEST_PREFIX}${Date.now()}`;
+  const room = await callSupabaseRpc(request, 'create_company_room', {
+    p_company_name: companyName,
+    p_admin_name: '자동검증관리자',
+    p_invite_prefix: 'AUTO',
+    p_admin_pin_code: '2468',
+  });
+  const createdRoom = Array.isArray(room) ? room[0] : room;
+  expect(createdRoom.ok).toBeTruthy();
+  expect(createdRoom.company_id).toBeTruthy();
+  expect(createdRoom.admin_member_id).toBeTruthy();
+  expect(createdRoom.admin_invite_code).toBeTruthy();
+
+  const shjjTitle = `${SYNC_TEST_PREFIX}SHJJ분리-${Date.now()}`;
+  const otherTitle = `${SYNC_TEST_PREFIX}타회사분리-${Date.now()}`;
+  const shjjSchedule = await createScheduleViaRpc(request, SUPABASE_COMPANY_ID, SUPABASE_ADMIN_MEMBER_ID, shjjTitle);
+  const otherSchedule = await createScheduleViaRpc(request, createdRoom.company_id, createdRoom.admin_member_id, otherTitle);
+
+  const shjjRows = await listSchedulesViaRpc(request, SUPABASE_COMPANY_ID, SUPABASE_ADMIN_MEMBER_ID);
+  const otherRows = await listSchedulesViaRpc(request, createdRoom.company_id, createdRoom.admin_member_id);
+
+  expect(shjjRows.some((item) => item.title === shjjTitle)).toBeTruthy();
+  expect(shjjRows.some((item) => item.title === otherTitle)).toBeFalsy();
+  expect(otherRows.some((item) => item.title === otherTitle)).toBeTruthy();
+  expect(otherRows.some((item) => item.title === shjjTitle)).toBeFalsy();
+
+  await callSupabaseRpc(request, 'delete_company_schedule', {
+    p_company_id: SUPABASE_COMPANY_ID,
+    p_member_id: SUPABASE_ADMIN_MEMBER_ID,
+    p_schedule_id: shjjSchedule.id,
+  });
+  await callSupabaseRpc(request, 'delete_company_schedule', {
+    p_company_id: createdRoom.company_id,
+    p_member_id: createdRoom.admin_member_id,
+    p_schedule_id: otherSchedule.id,
+  });
 });
 
 test('notification save persists', async ({ page }) => {
