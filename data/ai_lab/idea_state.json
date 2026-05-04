@@ -1,68 +1,75 @@
 {
   "date": "2026-05-04",
-  "slot": "morning",
+  "slot": "afternoon",
   "focus_area": "API/운영비 절감",
-  "decision_summary": "브리핑 데이터의 최소 갱신 기준과 호출 예산을 먼저 고정해 불필요한 API 사용을 줄이고 안정화 속도를 높인다.",
-  "existing_ideas": [
+  "decision_summary": "날씨·법령·일정의 최소 갱신 기준과 일일 호출 상한을 문서로 먼저 고정해 불필요한 호출을 줄인다.",
+  "today_scan": {
+    "code_optimization": "현재는 구현보다 기준 정리가 우선이다.",
+    "api_ops_cost": "호출 범위와 빈도를 먼저 줄이는 방향이 가장 빠르다.",
+    "advertising_monetization": "사용자 확보 이후 판단하는 편이 우선순위에 맞다.",
+    "user_acquisition": "브리핑 안정성 확보 후 확장하는 순서가 적절하다.",
+    "ui_design": "이번 실행에서는 보류한다.",
+    "additional_features": "고비용 기능 확장은 제외한다.",
+    "content": "날씨·일정·법령 브리핑의 핵심 항목만 유지한다.",
+    "data_quality": "최소 필드 정의가 품질과 비용의 균형점이다.",
+    "automation": "문서화 중심으로만 진행한다.",
+    "ios_android": "출시 기반을 위한 안정화 단계다."
+  },
+  "existing_ideas_review": [
     {
       "title": "브리핑 안정화 체크리스트 고도화",
       "decision": "발전",
-      "reason": "1순위 안정성을 직접 강화하면서 문서화 중심으로 빠르게 실행할 수 있다."
-    },
-    {
-      "title": "광고 수익화 즉시 적용",
-      "decision": "보류",
-      "reason": "사용자 확보와 체류 지표를 먼저 확인한 뒤 판단하는 편이 목표 달성 속도가 빠르다."
+      "reason": "1순위 안정성을 직접 강화하면서 저비용으로 빠르게 진행할 수 있다."
     },
     {
       "title": "외부 API 호출 캐시 TTL 재설계",
       "decision": "발전",
-      "reason": "날씨·법령·일정의 갱신 주기를 분리해 호출 비용을 줄이는 데 직접적이다."
+      "reason": "호출 빈도와 비용을 직접 낮춰 2순위 목표에 즉시 기여한다."
+    },
+    {
+      "title": "광고 수익화 즉시 적용",
+      "decision": "보류",
+      "reason": "사용자 확보와 체류 지표를 먼저 확인한 뒤 판단하는 편이 더 빠르다."
     }
   ],
   "new_ideas": [
     {
-      "title": "항목별 최소 갱신 필드 정의서",
-      "summary": "날씨·법령·일정 각각에서 꼭 필요한 필드만 정해 갱신 범위를 줄인다.",
-      "expected_value": "불필요한 호출과 데이터 처리량을 줄여 운영비를 즉시 낮춘다.",
+      "title": "소스별 일일 호출 중단선 표준표",
+      "summary": "각 데이터 소스가 하루 예산을 넘기기 직전 멈추는 기준을 한 페이지로 고정한다.",
+      "expected_value": "비용 초과를 예방하고 운영 판단을 빠르게 만든다.",
       "implementation_cost": "low",
-      "recommendation": "candidate_for_codex",
+      "decision": "candidate_for_codex",
       "type": "ops",
-      "risk": "필드 정의가 과도하게 좁으면 브리핑 품질이 떨어질 수 있다.",
-      "confidence": "high"
+      "risk": "실사용 패턴과 차이가 크면 기준 조정이 필요하다.",
+      "confidence": "medium",
+      "recommendation": "candidate_for_codex"
     },
     {
-      "title": "소스별 일일 호출 예산표",
-      "summary": "각 데이터 소스의 하루 허용 호출 수와 우선 중단 기준을 정리한다.",
-      "expected_value": "비용 초과를 예방하고 TTL 조정 여부를 빠르게 판단할 수 있다.",
+      "title": "브리핑 필수 필드 최소집합 정의",
+      "summary": "날씨·법령·일정에서 브리핑에 꼭 필요한 필드만 추려 갱신 범위를 줄인다.",
+      "expected_value": "불필요한 호출과 처리량을 줄여 안정성과 비용 효율을 동시에 높인다.",
       "implementation_cost": "low",
-      "recommendation": "review",
+      "decision": "review",
       "type": "ops",
-      "risk": "예산 기준이 실사용 패턴과 맞지 않으면 조정이 필요하다.",
-      "confidence": "medium"
+      "risk": "너무 좁으면 브리핑 품질이 떨어질 수 있다.",
+      "confidence": "medium",
+      "recommendation": "review"
     }
   ],
-  "codex_candidate": "항목별 최소 갱신 필드 정의서 초안(data/ai_lab/) 작성",
+  "codex_candidate": "{'title': '항목별 최소 갱신 필드 정의서 초안(data/ai_lab/) 작성', 'why': '저비용 문서화로 바로 실행 가능하고, 이후 TTL과 예산 설정의 기준점이 된다.'}",
   "next_best_action": "날씨·법령·일정별 최소 갱신 필드와 일일 호출 예산을 1페이지 표로 정리한다.",
-  "why_this_gets_us_to_goal_faster": "호출 기준을 먼저 고정하면 시행착오를 줄이고, 안정성과 비용 효율을 동시에 빠르게 개선할 수 있다.",
-  "cost_control": "고비용 구현, 자동 배포, 기능 확장은 제외하고 문서화와 기준 정리만 진행한다.",
+  "why_this_gets_us_to_goal_faster": "기준을 먼저 고정하면 시행착오를 줄여 안정성 개선과 비용 절감을 동시에 빠르게 진행할 수 있다.",
+  "cost_control": "고비용 구현, 자동 배포, 대규모 기능 확장은 제외하고 문서화와 기준 정리만 진행한다.",
   "risks": [
-    "기준이 지나치게 보수적이면 브리핑 신선도가 낮아질 수 있다.",
-    "실사용 패턴과 다르면 호출 예산표의 조정이 필요할 수 있다."
+    "필수 필드 범위가 과도하게 좁으면 브리핑 품질이 약해질 수 있다.",
+    "호출 예산이 실제 사용 패턴과 다르면 조정이 필요하다."
   ],
-  "project_goal_summary": "SHJJ Brief를 날씨·일정·법령 브리핑 기반의 개인/소기업용 모바일 앱으로 발전시킨다.",
-  "goal_link": "1순위 안정성과 2순위 비용 효율을 먼저 개선해 iOS/Android 출시와 사용자 확대를 위한 기반을 빠르게 만든다.",
-  "existing_ideas_review": [
-    {
-      "title": "기존 아이디어 재검토",
-      "decision": "유지",
-      "reason": "핵심 목표와 직접 연결되는 항목부터 유지한다."
-    }
-  ],
+  "project_goal_summary": "# SHJJ Brief 공동 목표",
+  "goal_link": "공동 목표와 우선순위를 기준으로 오늘의 집중 분야를 실행 가능한 단위로 정리한다.",
   "developed_existing_ideas": [
     "기존 아이디어를 목표 우선순위 기준으로 재검토한다."
   ],
   "paused_ideas": [],
   "killed_ideas": [],
-  "cost_control_note": "고비용 구현, 자동 배포, 기능 확장은 제외하고 문서화와 기준 정리만 진행한다."
+  "cost_control_note": "고비용 구현, 자동 배포, 대규모 기능 확장은 제외하고 문서화와 기준 정리만 진행한다."
 }
