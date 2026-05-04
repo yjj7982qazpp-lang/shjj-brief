@@ -17,12 +17,20 @@ async function expandWeatherCard(page) {
   await page.locator('#weatherSection details.weather-fold').evaluate((d) => d.open = true);
 }
 
+async function fillInvitePinIfPresent(page, pin) {
+  const pinInput = page.locator('#invitePinInput');
+  if (await pinInput.count()) {
+    await pinInput.fill(pin);
+  }
+}
+
 async function openScheduleAndJoinAsAdmin(page) {
   await clearStorageAndOpen(page);
   await expandScheduleCard(page);
 
   await page.locator('#toggleScheduleInviteBtn').click();
   await page.locator('#inviteCodeInput').fill('SHJJ-ADMIN');
+  await fillInvitePinIfPresent(page, '0920');
   await page.locator('#joinCompanyRoomBtn').click();
 
   await expect(page.locator('#scheduleRoomContent')).toBeVisible();
@@ -71,6 +79,7 @@ test('member is read-only', async ({ page }) => {
 
   await page.locator('#toggleScheduleInviteBtn').click();
   await page.locator('#inviteCodeInput').fill('SHJJ-MEMBER');
+  await fillInvitePinIfPresent(page, '0000');
   await page.locator('#joinCompanyRoomBtn').click();
 
   await expect(page.locator('#schedulePermissionBadge')).toContainText('읽기');
