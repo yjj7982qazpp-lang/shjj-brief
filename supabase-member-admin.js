@@ -172,7 +172,7 @@
       const row = Array.isArray(result) ? result[0] : result;
       if (!row?.ok) throw new Error(row?.message || "member status failed");
       await loadMembersFromServer();
-      showFeedback(status === "inactive" ? "구성원을 차단했습니다." : "구성원을 복구했습니다.");
+      showFeedback(status === "inactive" ? "구성원을 비활성화했습니다." : "구성원을 복구했습니다.", true);
     } catch (error) {
       console.warn("Update server member status failed", error);
       showFeedback("서버 구성원 상태 변경에 실패했습니다.", true);
@@ -194,7 +194,7 @@
       const row = Array.isArray(result) ? result[0] : result;
       if (!row?.ok) throw new Error(row?.message || "member profile update failed");
       await loadMembersFromServer();
-      showFeedback(row.message || "구성원 정보를 수정했습니다.");
+      showFeedback(row.message || "구성원 정보를 수정했습니다.", true);
     } catch (error) {
       console.warn("Update server member profile failed", error);
       showFeedback("구성원 정보 수정에 실패했습니다.", true);
@@ -237,22 +237,25 @@
     }
     try {
       await navigator.clipboard.writeText(text);
-      showFeedback(`${label}을 복사했습니다.`);
     } catch {
       window.prompt(`${label} 복사`, text);
+      return;
     }
+    window.alert(`${label}이 복사되었습니다.`);
+    showFeedback(`${label}이 복사되었습니다.`);
   }
 
-  function makeMeta(text) {
+  function makePill(text, variant = "") {
     const span = document.createElement("span");
+    span.className = `schedule-admin-pill ${variant}`.trim();
     span.textContent = text;
     return span;
   }
 
-  function makeButton(label, onClick) {
+  function makeButton(label, onClick, variant = "") {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "schedule-admin-copy-btn";
+    button.className = `schedule-admin-copy-btn ${variant}`.trim();
     button.textContent = label;
     button.addEventListener("click", onClick);
     return button;
@@ -269,54 +272,48 @@
 
     members.forEach((member) => {
       const row = document.createElement("div");
-      row.className = "schedule-admin-member schedule-admin-row";
+      row.className = `schedule-admin-member schedule-admin-row ${member.status === "inactive" ? "is-inactive" : ""}`.trim();
       row.dataset.memberId = member.memberId;
 
-      const info = document.createElement("div");
-      info.className = "schedule-admin-member-info";
-
+      const head = document.createElement("div");
+      head.className = "schedule-admin-member-head";
       const name = document.createElement("strong");
       name.textContent = member.memberName;
+      const badges = document.createElement("div");
+      badges.className = "schedule-admin-badges";
+      badges.append(
+        makePill(member.role === "admin" ? "관리자" : "구성원"),
+        makePill(member.role === "admin" || member.schedulePermission === "write" ? "읽기/쓰기" : "읽기"),
+        makePill(member.status === "inactive" ? "비활성" : "활성", member.status === "inactive" ? "warn" : "ok"),
+      );
+      head.append(name, badges);
 
-      const invite = document.createElement("div");
-      invite.className = "schedule-admin-code-row";
-      invite.textContent = `초대코드: ${member.inviteCode || "-"}`;
-
-      const pin = document.createElement("div");
-      pin.className = "schedule-admin-code-row";
-      pin.textContent = `PIN: ${member.pinCode || "-"}`;
-
-      const copyRow = document.createElement("div");
-      copyRow.className = "schedule-admin-controls";
-      copyRow.append(
-        makeButton("초대코드 복사", () => copyText(member.inviteCode, "초대코드")),
-        makeButton("PIN 복사", () => copyText(member.pinCode, "PIN")),
+      const inviteRow = document.createElement("div");
+      inviteRow.className = "schedule-admin-invite-row";
+      inviteRow.append(
+        makePill(`초대코드 ${member.inviteCode || "-"}`),
+        makeButton("복사", () => copyText(member.inviteCode, "초대코드")),
+        makePill(`PIN ${member.pinCode || "-"}`),
+        makeButton("복사", () => copyText(member.pinCode, "PIN")),
       );
 
-      info.append(name, invite, pin, copyRow);
-
-      const controls = document.createElement("div");
-      controls.className = "schedule-admin-controls";
-      controls.append(
-        makeMeta(`역할: ${member.role === "admin" ? "관리자" : "구성원"}`),
-        makeMeta(`권한: ${member.role === "admin" || member.schedulePermission === "write" ? "읽기/쓰기" : "읽기"}`),
-        makeMeta(`상태: ${member.status === "inactive" ? "비활성" : "활성"}`),
-        makeButton("이름수정", () => renameMember(member)),
-      );
+      const actions = document.createElement("div");
+      actions.className = "schedule-admin-actions-row";
+      actions.append(makeButton("이름", () => renameMember(member)));
 
       if (member.role !== "admin") {
-        controls.append(makeButton(member.schedulePermission === "write" ? "읽기로 변경" : "읽기/쓰기 변경", () => togglePermission(member)));
+        actions.append(makeButton(member.schedulePermission === "write" ? "읽기" : "읽기/쓰기", () => togglePermission(member)));
       }
 
       if (member.memberId !== currentMemberId) {
-        controls.append(makeButton(member.role === "admin" ? "구성원으로 변경" : "관리자로 변경", () => toggleRole(member)));
+        actions.append(makeButton(member.role === "admin" ? "구성원화" : "관리자화", () => toggleRole(member)));
         const inactive = member.status === "inactive";
-        controls.append(makeButton(inactive ? "복구" : "차단", () => setMemberStatus(member.memberId, inactive ? "active" : "inactive")));
+        actions.append(makeButton(inactive ? "복구" : "비활성화", () => setMemberStatus(member.memberId, inactive ? "active" : "inactive"), inactive ? "" : "danger"));
       } else {
-        controls.append(makeMeta("본인 관리자 보호"));
+        actions.append(makePill("본인 보호"));
       }
 
-      row.append(info, controls);
+      row.append(head, inviteRow, actions);
       list.appendChild(row);
     });
   }
