@@ -256,12 +256,6 @@
     }
   }
 
-  function openScheduleCard() {
-    const section = document.getElementById("scheduleSection");
-    const details = section?.querySelector?.("details.fold-card");
-    if (details && !details.open) details.open = true;
-  }
-
   function forceCalendarRender() {
     const fold = document.querySelector(".schedule-calendar-fold");
     const grid = document.getElementById("scheduleCalendarGrid");
@@ -288,7 +282,6 @@
 
   function stabilize() {
     normalizeMembershipAndReloadIfNeeded();
-    openScheduleCard();
     hideWriteControlsForReadOnly();
     normalizeLabels();
     bindCalendarFix();
