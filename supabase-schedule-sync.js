@@ -2,7 +2,7 @@
   const CONFIG = {
     url: window.SHJJ_SUPABASE_CONFIG?.url || "https://pfpcifidfrnsubhxvgzw.supabase.co",
     publishableKey: window.SHJJ_SUPABASE_CONFIG?.publishableKey || "sb_publishable_VtMrmN53iH599XMJQbxVhA_BUN1BFuW",
-    timeoutMs: 3500,
+    timeoutMs: 5000,
     companyId: "e978f664-848e-4609-a56a-820d11ef55e6",
   };
 
@@ -48,7 +48,16 @@
   }
 
   function getMembership() {
-    return readJson(STORAGE_KEYS.companyMembership, null);
+    const stored = readJson(STORAGE_KEYS.companyMembership, null);
+    if (stored) return stored;
+
+    try {
+      if (typeof state !== "undefined" && state.companyMembership) return state.companyMembership;
+    } catch {
+      return null;
+    }
+
+    return null;
   }
 
   function getRpcIds() {
@@ -83,8 +92,9 @@
         signal: controller.signal,
       });
 
-      if (!response.ok) throw new Error(`${functionName} failed: ${response.status}`);
-      return response.json();
+      const text = await response.text();
+      if (!response.ok) throw new Error(`${functionName} failed: ${response.status} ${text}`);
+      return text ? JSON.parse(text) : null;
     } finally {
       window.clearTimeout(timer);
     }
@@ -108,16 +118,25 @@
     };
   }
 
-  function showFeedback(message) {
+  function showFeedback(message, { alert = false } = {}) {
     const el = $("scheduleFeedback") || $("scheduleInviteFeedback");
     if (el) el.textContent = message;
+    if (alert && message) window.alert(message);
   }
 
-  function reloadAfterSync() {
-    window.setTimeout(() => window.location.reload(), 120);
+  function applyScheduleItems(items) {
+    const normalized = Array.isArray(items) ? items : [];
+    writeScheduleItems(normalized);
+
+    try {
+      if (typeof state !== "undefined") state.schedules = normalized;
+      if (typeof renderSchedules === "function") renderSchedules();
+    } catch {
+      // 앱 본문 state 접근이 막히면 localStorage 저장만 유지한다.
+    }
   }
 
-  async function syncSchedulesFromServer({ reload = false } = {}) {
+  async function syncSchedulesFromServer() {
     const ids = getRpcIds();
     if (!canUseRpc() || !ids) return false;
 
@@ -129,8 +148,7 @@
         p_date_to: null,
       });
       const items = (Array.isArray(rows) ? rows : []).map((row) => normalizeFromServer(row, ids));
-      writeScheduleItems(items);
-      if (reload) reloadAfterSync();
+      applyScheduleItems(items);
       return true;
     } catch (error) {
       console.warn("Schedule server sync failed", error);
@@ -178,20 +196,32 @@
     const button = event.target?.closest?.("#confirmScheduleBtn");
     if (!button) return;
 
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    if (!canWriteSchedule()) {
+      showFeedback("일정 작성 권한이 없습니다.", { alert: true });
+      return;
+    }
+
+    if (!canUseRpc()) {
+      showFeedback("서버 일정 연동 설정을 찾을 수 없습니다.", { alert: true });
+      return;
+    }
+
     const ids = getRpcIds();
-    if (!canUseRpc() || !ids || !canWriteSchedule()) return;
+    if (!ids) {
+      showFeedback("서버 일정 연동 계정 정보를 찾을 수 없습니다. 로그아웃 후 다시 로그인해주세요.", { alert: true });
+      return;
+    }
 
     const draft = buildDraftSchedule(ids);
     if (draft.error) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      showFeedback(draft.error);
+      showFeedback(draft.error, { alert: true });
       draft.focus?.focus?.();
       return;
     }
 
-    event.preventDefault();
-    event.stopImmediatePropagation();
     showFeedback("서버에 일정을 저장하는 중입니다.");
 
     try {
@@ -208,15 +238,20 @@
       if (!row?.ok) throw new Error(row?.message || "create schedule failed");
 
       await syncSchedulesFromServer();
-      showFeedback("일정 저장이 완료되었습니다.");
-      reloadAfterSync();
+      showFeedback("서버 일정 저장 완료", { alert: true });
+
+      try {
+        if (typeof resetScheduleForm === "function") resetScheduleForm();
+        if (typeof setScheduleSheetOpen === "function") setScheduleSheetOpen(false);
+      } catch {
+        // 기존 앱 함수 접근이 실패하면 화면 갱신만 유지한다.
+      }
     } catch (error) {
       console.warn("Create schedule RPC failed. Falling back to local storage.", error);
       const items = getStoredScheduleItems();
       items.push(draft.item);
-      writeScheduleItems(items);
-      showFeedback("서버 저장 실패로 기기 저장소에 저장했습니다.");
-      reloadAfterSync();
+      applyScheduleItems(items);
+      showFeedback("서버 저장 실패: 기기 저장소에만 저장했습니다.", { alert: true });
     }
   }
 
@@ -245,18 +280,16 @@
         p_schedule_id: scheduleId,
       });
       await syncSchedulesFromServer();
-      showFeedback("일정 삭제가 완료되었습니다.");
-      reloadAfterSync();
+      showFeedback("일정 삭제가 완료되었습니다.", { alert: true });
     } catch (error) {
       console.warn("Delete schedule RPC failed. Falling back to local storage.", error);
-      writeScheduleItems(getStoredScheduleItems().filter((item) => item.id !== scheduleId));
-      showFeedback("서버 삭제 실패로 기기 저장소에서만 삭제했습니다.");
-      reloadAfterSync();
+      applyScheduleItems(getStoredScheduleItems().filter((item) => item.id !== scheduleId));
+      showFeedback("서버 삭제 실패: 기기 저장소에서만 삭제했습니다.", { alert: true });
     }
   }
 
   function scheduleInitialSync() {
-    window.setTimeout(() => syncSchedulesFromServer({ reload: false }), 800);
+    window.setTimeout(() => syncSchedulesFromServer(), 900);
   }
 
   document.addEventListener("click", handleCreateSchedule, true);
