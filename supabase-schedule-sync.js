@@ -9,6 +9,7 @@
   const STORAGE_KEYS = {
     schedules: "shjj_brief_schedules_v4",
     companyMembership: "shjj_company_membership_v1",
+    postLoginAction: "shjj_post_login_action_v1",
   };
 
   const MEMBER_UUID_MAP = {
@@ -136,8 +137,24 @@
     }
   }
 
-  function reloadAfterSync() {
-    window.setTimeout(() => window.location.reload(), 150);
+  function openScheduleUi() {
+    const scheduleDetails = document.querySelector("#scheduleSection details.fold-card");
+    if (scheduleDetails) scheduleDetails.open = true;
+    const roomContent = $("scheduleRoomContent");
+    if (roomContent) roomContent.hidden = false;
+    const invitePanel = $("scheduleJoinSection");
+    if (invitePanel) invitePanel.hidden = true;
+    const scheduleSection = $("scheduleSection");
+    scheduleSection?.scrollIntoView?.({ block: "start" });
+  }
+
+  function consumePostLoginAction() {
+    const action = readJson(STORAGE_KEYS.postLoginAction, null);
+    if (!action || action.action !== "open-schedule") return;
+    localStorage.removeItem(STORAGE_KEYS.postLoginAction);
+    window.setTimeout(openScheduleUi, 200);
+    window.setTimeout(openScheduleUi, 900);
+    window.setTimeout(openScheduleUi, 1800);
   }
 
   async function syncSchedulesFromServer(options = {}) {
@@ -153,11 +170,11 @@
       });
       const items = (Array.isArray(rows) ? rows : []).map((row) => normalizeFromServer(row, ids));
       applyScheduleItems(items);
-      if (options.reload) reloadAfterSync();
+      if (options.openSchedule) openScheduleUi();
       return true;
     } catch (error) {
       console.warn("Schedule server sync failed", error);
-      if (options.reload) reloadAfterSync();
+      if (options.openSchedule) openScheduleUi();
       return false;
     }
   }
@@ -295,6 +312,7 @@
   }
 
   function scheduleInitialSync() {
+    consumePostLoginAction();
     window.setTimeout(() => syncSchedulesFromServer(), 900);
   }
 
@@ -302,4 +320,5 @@
   document.addEventListener("click", handleDeleteSchedule, true);
   scheduleInitialSync();
   window.SHJJ_SYNC_SCHEDULES = syncSchedulesFromServer;
+  window.SHJJ_OPEN_SCHEDULE_UI = openScheduleUi;
 })();
