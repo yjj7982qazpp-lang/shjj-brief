@@ -116,9 +116,15 @@
   }
 
   function saveMembership(roleInfo) {
+    if (roleInfo?.status === "inactive") {
+      localStorage.removeItem(STORAGE_KEYS.companyMembership);
+      showInviteMessage("접근이 제한됩니다. 관리자에게 문의하세요.");
+      return false;
+    }
+
     if (typeof window.saveCompanyMembership === "function") {
       window.saveCompanyMembership(roleInfo);
-      return;
+      return true;
     }
 
     localStorage.setItem(STORAGE_KEYS.companyMembership, JSON.stringify({
@@ -129,13 +135,10 @@
       schedulePermission: roleInfo.schedulePermission,
       status: roleInfo.status,
     }));
+    return true;
   }
 
   function refreshScheduleView() {
-    if (typeof window.renderSchedules === "function") {
-      window.renderSchedules();
-      return;
-    }
     window.location.reload();
   }
 
@@ -157,7 +160,8 @@
   }
 
   function joinWithRoleInfo(roleInfo, inviteInput, pinInput) {
-    saveMembership(roleInfo);
+    const saved = saveMembership(roleInfo);
+    if (!saved) return;
     if (inviteInput) inviteInput.value = "";
     if (pinInput) pinInput.value = "";
     setFeedback("");
