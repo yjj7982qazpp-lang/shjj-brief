@@ -89,6 +89,7 @@
       schedulePermission: row.role === "admin" || row.schedule_permission === "write" ? "write" : "read",
       status: row.status === "inactive" ? "inactive" : "active",
       inviteCode: row.invite_code || "",
+      pinCode: row.pin_code || "",
     };
   }
 
@@ -178,10 +179,83 @@
     }
   }
 
+  async function updateMemberProfile(member, patch) {
+    if (!isAdmin()) return;
+    const adminId = getCurrentMemberId();
+    try {
+      const result = await callRpc("update_company_member_profile_rpc", {
+        p_company_id: CONFIG.companyId,
+        p_admin_member_id: adminId,
+        p_target_member_id: member.memberId,
+        p_display_name: patch.memberName ?? member.memberName,
+        p_role: patch.role ?? member.role,
+        p_schedule_permission: patch.schedulePermission ?? member.schedulePermission,
+      });
+      const row = Array.isArray(result) ? result[0] : result;
+      if (!row?.ok) throw new Error(row?.message || "member profile update failed");
+      await loadMembersFromServer();
+      showFeedback(row.message || "구성원 정보를 수정했습니다.");
+    } catch (error) {
+      console.warn("Update server member profile failed", error);
+      showFeedback("구성원 정보 수정에 실패했습니다.", true);
+    }
+  }
+
+  async function renameMember(member) {
+    const nextName = window.prompt("변경할 이름을 입력하세요.", member.memberName);
+    if (nextName === null) return;
+    const trimmed = nextName.trim();
+    if (!trimmed) {
+      showFeedback("이름을 입력해주세요.", true);
+      return;
+    }
+    await updateMemberProfile(member, { memberName: trimmed });
+  }
+
+  async function togglePermission(member) {
+    const nextPermission = member.schedulePermission === "write" ? "read" : "write";
+    await updateMemberProfile(member, { schedulePermission: nextPermission });
+  }
+
+  async function toggleRole(member) {
+    const currentMemberId = getCurrentMemberId();
+    if (member.memberId === currentMemberId) {
+      showFeedback("본인 관리자 계정의 역할은 변경할 수 없습니다.", true);
+      return;
+    }
+    const nextRole = member.role === "admin" ? "member" : "admin";
+    const nextPermission = nextRole === "admin" ? "write" : member.schedulePermission;
+    const ok = window.confirm(`${member.memberName} 님을 ${nextRole === "admin" ? "관리자" : "구성원"}으로 변경할까요?`);
+    if (!ok) return;
+    await updateMemberProfile(member, { role: nextRole, schedulePermission: nextPermission });
+  }
+
+  async function copyText(text, label) {
+    if (!text) {
+      showFeedback(`${label} 정보가 없습니다.`, true);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      showFeedback(`${label}을 복사했습니다.`);
+    } catch {
+      window.prompt(`${label} 복사`, text);
+    }
+  }
+
   function makeMeta(text) {
     const span = document.createElement("span");
     span.textContent = text;
     return span;
+  }
+
+  function makeButton(label, onClick) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "schedule-admin-copy-btn";
+    button.textContent = label;
+    button.addEventListener("click", onClick);
+    return button;
   }
 
   function renderMemberList(members) {
@@ -204,11 +278,22 @@
       const name = document.createElement("strong");
       name.textContent = member.memberName;
 
-      const code = document.createElement("div");
-      code.className = "schedule-admin-code-row";
-      code.textContent = `초대코드: ${member.inviteCode || "-"}`;
+      const invite = document.createElement("div");
+      invite.className = "schedule-admin-code-row";
+      invite.textContent = `초대코드: ${member.inviteCode || "-"}`;
 
-      info.append(name, code);
+      const pin = document.createElement("div");
+      pin.className = "schedule-admin-code-row";
+      pin.textContent = `PIN: ${member.pinCode || "-"}`;
+
+      const copyRow = document.createElement("div");
+      copyRow.className = "schedule-admin-controls";
+      copyRow.append(
+        makeButton("초대코드 복사", () => copyText(member.inviteCode, "초대코드")),
+        makeButton("PIN 복사", () => copyText(member.pinCode, "PIN")),
+      );
+
+      info.append(name, invite, pin, copyRow);
 
       const controls = document.createElement("div");
       controls.className = "schedule-admin-controls";
@@ -216,16 +301,19 @@
         makeMeta(`역할: ${member.role === "admin" ? "관리자" : "구성원"}`),
         makeMeta(`권한: ${member.role === "admin" || member.schedulePermission === "write" ? "읽기/쓰기" : "읽기"}`),
         makeMeta(`상태: ${member.status === "inactive" ? "비활성" : "활성"}`),
+        makeButton("이름수정", () => renameMember(member)),
       );
 
-      if (member.role !== "admin" && member.memberId !== currentMemberId) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "schedule-admin-copy-btn";
+      if (member.role !== "admin") {
+        controls.append(makeButton(member.schedulePermission === "write" ? "읽기로 변경" : "읽기/쓰기 변경", () => togglePermission(member)));
+      }
+
+      if (member.memberId !== currentMemberId) {
+        controls.append(makeButton(member.role === "admin" ? "구성원으로 변경" : "관리자로 변경", () => toggleRole(member)));
         const inactive = member.status === "inactive";
-        button.textContent = inactive ? "복구" : "차단";
-        button.addEventListener("click", () => setMemberStatus(member.memberId, inactive ? "active" : "inactive"));
-        controls.appendChild(button);
+        controls.append(makeButton(inactive ? "복구" : "차단", () => setMemberStatus(member.memberId, inactive ? "active" : "inactive")));
+      } else {
+        controls.append(makeMeta("본인 관리자 보호"));
       }
 
       row.append(info, controls);
