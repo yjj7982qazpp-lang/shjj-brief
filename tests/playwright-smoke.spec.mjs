@@ -57,9 +57,10 @@ test('schedule add persists', async ({ page }) => {
 test('notification save persists', async ({ page }) => {
   await clearStorageAndOpen(page);
 
-  await page.locator('#notificationFold summary').click();
-  await page.locator('#notificationTimeInput').fill('08:30');
-  await page.locator('#notificationTimeSaveBtn').click();
+  const notificationFold = page.locator('#notificationFold');
+  await notificationFold.locator('summary').click();
+  await notificationFold.locator('input#notificationTimeInput').fill('08:30');
+  await notificationFold.locator('button#notificationTimeSaveBtn').click();
 
   await expect(page.locator('#notificationTimePill')).toContainText('08:30');
 });
