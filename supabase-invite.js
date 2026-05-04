@@ -1,7 +1,7 @@
 (() => {
   const SUPABASE_INVITE_CONFIG = {
     url: "https://pfpcifidfrnsubhxvgzw.supabase.co",
-    publishableKey: "__SUPABASE_PUBLISHABLE_KEY__",
+    publishableKey: "sb_publishable_VtMrmN53iH599XMJQbxVhA_BUN1BFuW",
   };
 
   const STORAGE_KEYS = {
