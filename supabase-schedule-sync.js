@@ -136,7 +136,11 @@
     }
   }
 
-  async function syncSchedulesFromServer() {
+  function reloadAfterSync() {
+    window.setTimeout(() => window.location.reload(), 150);
+  }
+
+  async function syncSchedulesFromServer(options = {}) {
     const ids = getRpcIds();
     if (!canUseRpc() || !ids) return false;
 
@@ -149,9 +153,11 @@
       });
       const items = (Array.isArray(rows) ? rows : []).map((row) => normalizeFromServer(row, ids));
       applyScheduleItems(items);
+      if (options.reload) reloadAfterSync();
       return true;
     } catch (error) {
       console.warn("Schedule server sync failed", error);
+      if (options.reload) reloadAfterSync();
       return false;
     }
   }
