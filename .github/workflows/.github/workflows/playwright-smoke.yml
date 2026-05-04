@@ -1,0 +1,32 @@
+name: Playwright Smoke Test
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 21 * * *' # KST 오전 6시
+    - cron: '0 5 * * *'  # KST 오후 2시
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm install --no-save @playwright/test
+
+      - name: Install Playwright browsers
+        run: |
+          npx playwright install --with-deps chromium
+
+      - name: Run smoke tests
+        run: |
+          npx playwright test tests/playwright-smoke.spec.mjs --project=chromium
