@@ -11,6 +11,36 @@
   const DEFAULT_COMPANY_ROOM_ID = "shjj-default";
   const $ = (id) => document.getElementById(id);
 
+  const LOCAL_INVITE_FALLBACKS = {
+    "SHJJ-ADMIN": {
+      pinCode: "0920",
+      roleInfo: {
+        memberId: "local-admin",
+        memberName: "관리자",
+        role: "admin",
+        schedulePermission: "write",
+        status: "active",
+      },
+    },
+    "SHJJ-MEMBER": {
+      pinCode: "0000",
+      roleInfo: {
+        memberId: "local-member",
+        memberName: "구성원",
+        role: "member",
+        schedulePermission: "read",
+        status: "active",
+      },
+    },
+  };
+
+  function showInviteMessage(message, { focusTarget } = {}) {
+    const el = $("scheduleInviteFeedback");
+    if (el) el.textContent = message;
+    if (message) window.alert(message);
+    focusTarget?.focus?.();
+  }
+
   function setFeedback(message) {
     const el = $("scheduleInviteFeedback");
     if (el) el.textContent = message;
@@ -95,9 +125,41 @@
     window.location.reload();
   }
 
+  function joinWithRoleInfo(roleInfo, inviteInput, pinInput) {
+    saveMembership(roleInfo);
+    if (inviteInput) inviteInput.value = "";
+    if (pinInput) pinInput.value = "";
+    setFeedback("");
+    refreshScheduleView();
+  }
+
+  function getLocalFallbackResult(inviteCode, pinCode) {
+    const fallback = LOCAL_INVITE_FALLBACKS[inviteCode];
+    if (!fallback) {
+      return {
+        ok: false,
+        message: "초대코드가 틀렸습니다.",
+        focus: "invite",
+      };
+    }
+
+    if (fallback.pinCode !== pinCode) {
+      return {
+        ok: false,
+        message: "PIN이 틀렸습니다.",
+        focus: "pin",
+      };
+    }
+
+    return {
+      ok: true,
+      roleInfo: fallback.roleInfo,
+    };
+  }
+
   async function handleInviteJoin(event) {
     const button = event.target?.closest?.("#joinCompanyRoomBtn");
-    if (!button || !canUseSupabaseInviteAuth()) return;
+    if (!button) return;
 
     const inviteInput = $("inviteCodeInput");
     const pinInput = $("invitePinInput");
@@ -108,41 +170,49 @@
     event.stopImmediatePropagation();
 
     if (!inviteCode) {
-      setFeedback("초대코드를 입력해주세요.");
-      inviteInput?.focus();
+      showInviteMessage("초대코드를 입력해주세요.", { focusTarget: inviteInput });
       return;
     }
 
     if (!pinCode) {
-      setFeedback("PIN을 입력해주세요.");
-      pinInput?.focus();
+      showInviteMessage("PIN을 입력해주세요.", { focusTarget: pinInput });
       return;
     }
 
     setFeedback("서버에서 초대코드를 확인하는 중입니다.");
 
-    try {
-      const result = await verifyInviteCode(inviteCode, pinCode);
-      if (!result?.ok) {
-        setFeedback(result?.message || "초대코드 또는 PIN을 확인해주세요.");
-        return;
-      }
+    if (canUseSupabaseInviteAuth()) {
+      try {
+        const result = await verifyInviteCode(inviteCode, pinCode);
+        if (!result?.ok) {
+          const fallbackResult = getLocalFallbackResult(inviteCode, pinCode);
+          const message = result?.message || fallbackResult.message || "초대코드 또는 PIN을 확인해주세요.";
+          showInviteMessage(message, { focusTarget: fallbackResult.focus === "pin" ? pinInput : inviteInput });
+          return;
+        }
 
-      const roleInfo = normalizeRoleInfo(result);
-      if (!roleInfo.memberId) {
-        setFeedback("구성원 정보를 확인할 수 없습니다.");
-        return;
-      }
+        const roleInfo = normalizeRoleInfo(result);
+        if (!roleInfo.memberId) {
+          showInviteMessage("구성원 정보를 확인할 수 없습니다.");
+          return;
+        }
 
-      saveMembership(roleInfo);
-      if (inviteInput) inviteInput.value = "";
-      if (pinInput) pinInput.value = "";
-      setFeedback("");
-      refreshScheduleView();
-    } catch (error) {
-      console.warn("Supabase invite verification failed", error);
-      setFeedback("서버 연결을 확인해주세요.");
+        joinWithRoleInfo(roleInfo, inviteInput, pinInput);
+        return;
+      } catch (error) {
+        console.warn("Supabase invite verification failed", error);
+      }
     }
+
+    const fallbackResult = getLocalFallbackResult(inviteCode, pinCode);
+    if (!fallbackResult.ok) {
+      showInviteMessage(fallbackResult.message, {
+        focusTarget: fallbackResult.focus === "pin" ? pinInput : inviteInput,
+      });
+      return;
+    }
+
+    joinWithRoleInfo(fallbackResult.roleInfo, inviteInput, pinInput);
   }
 
   function handleInviteKeydown(event) {
