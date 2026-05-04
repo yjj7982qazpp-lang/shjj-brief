@@ -12,6 +12,7 @@
 
   const STORAGE_KEYS = {
     companyMembership: "shjj_company_membership_v1",
+    postLoginAction: "shjj_post_login_action_v1",
   };
 
   const DEFAULT_COMPANY_ROOM_ID = "shjj-default";
@@ -107,6 +108,7 @@
 
   function normalizeRoleInfo(result) {
     return {
+      companyRoomId: String(result?.company_id || result?.company_room_id || DEFAULT_COMPANY_ROOM_ID),
       memberId: String(result?.member_id || ""),
       memberName: String(result?.member_name || "구성원"),
       role: result?.role === "admin" ? "admin" : "member",
@@ -122,41 +124,46 @@
       return false;
     }
 
-    if (typeof window.saveCompanyMembership === "function") {
-      window.saveCompanyMembership(roleInfo);
-      return true;
-    }
-
-    localStorage.setItem(STORAGE_KEYS.companyMembership, JSON.stringify({
-      companyRoomId: DEFAULT_COMPANY_ROOM_ID,
+    const payload = {
+      companyRoomId: roleInfo.companyRoomId || DEFAULT_COMPANY_ROOM_ID,
       memberId: roleInfo.memberId,
       memberName: roleInfo.memberName,
       role: roleInfo.role,
       schedulePermission: roleInfo.schedulePermission,
       status: roleInfo.status,
-    }));
+    };
+
+    localStorage.setItem(STORAGE_KEYS.companyMembership, JSON.stringify(payload));
+    try {
+      if (typeof state !== "undefined") state.companyMembership = payload;
+    } catch {
+      // state 접근 불가 시 localStorage 저장만 유지한다.
+    }
     return true;
   }
 
+  function openScheduleAfterReload() {
+    localStorage.setItem(STORAGE_KEYS.postLoginAction, JSON.stringify({
+      action: "open-schedule",
+      at: Date.now(),
+    }));
+  }
+
   function refreshScheduleView() {
-    window.location.reload();
+    openScheduleAfterReload();
+    const url = new URL(window.location.href);
+    url.searchParams.set("v", `login-${Date.now()}`);
+    window.location.replace(url.toString());
   }
 
   function syncSchedulesAfterLogin() {
-    if (typeof window.SHJJ_SYNC_SCHEDULES !== "function") {
-      refreshScheduleView();
+    setFeedback("일정을 동기화하는 중입니다.");
+    if (typeof window.SHJJ_SYNC_SCHEDULES === "function") {
+      window.SHJJ_SYNC_SCHEDULES({ reload: false })
+        .finally(() => refreshScheduleView());
       return;
     }
-
-    setFeedback("일정을 동기화하는 중입니다.");
-    window.SHJJ_SYNC_SCHEDULES({ reload: true })
-      .then((synced) => {
-        if (!synced) refreshScheduleView();
-      })
-      .catch((error) => {
-        console.warn("Schedule sync after login failed", error);
-        refreshScheduleView();
-      });
+    refreshScheduleView();
   }
 
   function joinWithRoleInfo(roleInfo, inviteInput, pinInput) {
@@ -189,7 +196,10 @@
 
     return {
       ok: true,
-      roleInfo: fallback.roleInfo,
+      roleInfo: {
+        ...fallback.roleInfo,
+        companyRoomId: DEFAULT_COMPANY_ROOM_ID,
+      },
     };
   }
 
