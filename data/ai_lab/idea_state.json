@@ -1,8 +1,8 @@
 {
-  "date": "2026-05-05",
-  "slot": "afternoon",
+  "date": "2026-05-06",
+  "slot": "morning",
   "focus_area": "API/운영비 절감",
-  "decision_summary": "날씨·법령·일정의 변경 감지 기준과 예외 처리 우선순위를 문서로 먼저 고정해 불필요한 호출을 줄이고 판단 속도를 높인다.",
+  "decision_summary": "날씨·법령·일정의 변경감지 기준과 예외 처리 순서를 1페이지 표로 고정해 불필요한 호출과 재작업을 줄인다.",
   "existing_ideas_review": [
     {
       "title": "브리핑 안정화 체크리스트 고도화",
@@ -17,7 +17,7 @@
     {
       "title": "광고 수익화 즉시 적용",
       "decision": "보류",
-      "reason": "사용자 확보와 체류 지표를 먼저 확인한 뒤 판단하는 편이 더 빠르다."
+      "reason": "사용자 확보와 체류 지표를 먼저 확인한 뒤 판단하는 편이 빠르다."
     }
   ],
   "new_ideas": [
@@ -39,7 +39,7 @@
       "implementation_cost": "low",
       "decision": "review",
       "type": "ops",
-      "risk": "우선순위가 실제 사용 패턴과 다르면 재조정이 필요하다.",
+      "risk": "우선순위가 실제 사용 패턴과 다르면 조정이 필요하다.",
       "confidence": "medium",
       "recommendation": "review"
     }
@@ -52,12 +52,12 @@
     "변경감지 기준이 과도하게 좁으면 브리핑 신선도가 약해질 수 있다.",
     "예외 처리 우선순위가 실제 사용 패턴과 다르면 조정이 필요하다."
   ],
-  "project_goal_summary": "SHJJ Brief를 날씨·일정·법령 브리핑 기반의 개인/소기업용 모바일 앱으로 발전시킨다.",
+  "project_goal_summary": "# SHJJ Brief 공동 목표",
   "goal_link": "공동 목표와 우선순위를 기준으로 오늘의 집중 분야를 실행 가능한 단위로 정리한다.",
-  "cost_control_note": "고비용 구현과 배포는 제외하고 문서화와 기준 정리만 진행한다.",
   "developed_existing_ideas": [
     "기존 아이디어를 목표 우선순위 기준으로 재검토한다."
   ],
   "paused_ideas": [],
-  "killed_ideas": []
+  "killed_ideas": [],
+  "cost_control_note": "고비용 구현과 배포는 제외하고 문서화와 기준 정리만 진행한다."
 }
