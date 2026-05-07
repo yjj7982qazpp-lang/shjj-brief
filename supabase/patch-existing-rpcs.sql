@@ -246,7 +246,104 @@ end;
 $function$;
 
 -- =========================================================
--- 4. Post-apply smoke test queries
+-- 4. Patch verify_invite_code messages
+-- =========================================================
+-- Goal:
+-- - Keep current invite_code + PIN flow.
+-- - Return clearer message for revoked/expired/inactive member states.
+-- - Current client already displays result.message when ok=false.
+
+create or replace function public.verify_invite_code(
+  p_invite_code text,
+  p_pin_code text
+)
+returns table(
+  ok boolean,
+  company_id uuid,
+  company_name text,
+  member_id uuid,
+  member_name text,
+  role text,
+  schedule_permission text,
+  member_status text,
+  message text
+)
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  v_row record;
+begin
+  select
+    ic.status as invite_status,
+    ic.expires_at,
+    c.id as company_id,
+    c.name as company_name,
+    m.id as member_id,
+    m.display_name as member_name,
+    m.role,
+    m.schedule_permission,
+    m.status as member_status
+  into v_row
+  from invite_codes ic
+  join companies c on c.id = ic.company_id
+  join company_members m on m.id = ic.member_id
+  where upper(ic.invite_code) = upper(trim(p_invite_code))
+    and ic.pin_code = trim(p_pin_code)
+  limit 1;
+
+  if v_row is null then
+    return query
+    select false, null::uuid, null::text, null::uuid, null::text, null::text, null::text, null::text,
+      '초대코드 또는 PIN이 올바르지 않습니다.'::text;
+    return;
+  end if;
+
+  if v_row.invite_status = 'revoked' then
+    return query
+    select false, null::uuid, null::text, null::uuid, null::text, null::text, null::text, null::text,
+      '사용할 수 없는 초대코드입니다. 관리자에게 문의하세요.'::text;
+    return;
+  end if;
+
+  if v_row.invite_status <> 'active' then
+    return query
+    select false, null::uuid, null::text, null::uuid, null::text, null::text, null::text, null::text,
+      '활성화되지 않은 초대코드입니다. 관리자에게 문의하세요.'::text;
+    return;
+  end if;
+
+  if v_row.expires_at is not null and v_row.expires_at <= now() then
+    return query
+    select false, null::uuid, null::text, null::uuid, null::text, null::text, null::text, null::text,
+      '만료된 초대코드입니다. 관리자에게 문의하세요.'::text;
+    return;
+  end if;
+
+  if v_row.member_status <> 'active' then
+    return query
+    select false, null::uuid, null::text, null::uuid, null::text, null::text, null::text, v_row.member_status,
+      '접근이 제한되었습니다. 관리자에게 문의하세요.'::text;
+    return;
+  end if;
+
+  return query
+  select
+    true,
+    v_row.company_id,
+    v_row.company_name,
+    v_row.member_id,
+    v_row.member_name,
+    v_row.role,
+    v_row.schedule_permission,
+    v_row.member_status,
+    '인증 성공'::text;
+end;
+$function$;
+
+-- =========================================================
+-- 5. Post-apply smoke test queries
 -- =========================================================
 -- These are examples. Replace UUID values before running.
 
@@ -264,7 +361,7 @@ $function$;
 -- );
 
 -- =========================================================
--- 5. Review checklist
+-- 6. Review checklist
 -- =========================================================
 -- [ ] Confirm current production code expects invite_codes.status active/inactive or active/revoked.
 -- [ ] Confirm UI handles revoked invite status message properly.
