@@ -1,6 +1,7 @@
 (() => {
   const STORAGE_KEYS = {
     companyMembership: "shjj_company_membership_v1",
+    companyMembers: "shjj_company_members_v1",
   };
 
   const $ = (id) => document.getElementById(id);
@@ -17,20 +18,40 @@
 
   function getMembership() {
     const stored = readJson(STORAGE_KEYS.companyMembership, null);
-    if (stored) return stored;
 
     try {
-      if (typeof state !== "undefined" && state.companyMembership) return state.companyMembership;
+      if (typeof state !== "undefined" && state.companyMembership) {
+        return withManagedMemberPermission(state.companyMembership);
+      }
     } catch {
-      return null;
+      // state 접근 불가 시 localStorage 기준으로 판단한다.
     }
 
-    return null;
+    return withManagedMemberPermission(stored);
   }
 
-  function isAdmin() {
+  function withManagedMemberPermission(membership) {
+    if (!membership) return null;
+    const members = readJson(STORAGE_KEYS.companyMembers, []);
+    const managed = Array.isArray(members)
+      ? members.find((member) => member.memberId === membership.memberId)
+      : null;
+
+    if (!managed) return membership;
+
+    return {
+      ...membership,
+      role: managed.role || membership.role,
+      schedulePermission: managed.role === "admin" ? "write" : managed.schedulePermission || membership.schedulePermission,
+      status: managed.status || membership.status,
+    };
+  }
+
+  function canWriteSchedule() {
     const membership = getMembership();
-    return membership?.status === "active" && membership?.role === "admin";
+    return membership?.status === "active" && (
+      membership.role === "admin" || membership.schedulePermission === "write"
+    );
   }
 
   function isDeleteButton(button) {
@@ -52,10 +73,10 @@
       if (!button || !isDeleteButton(button)) return;
       if (!button.closest?.("#scheduleSection")) return;
 
-      if (!isAdmin()) {
+      if (!canWriteSchedule()) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        showFeedback("일정 삭제는 관리자만 가능합니다.");
+        showFeedback("일정 삭제 권한이 없습니다.");
       }
     },
     true
