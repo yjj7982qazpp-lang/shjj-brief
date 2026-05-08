@@ -9,6 +9,7 @@
   const STORAGE_KEYS = {
     schedules: "shjj_brief_schedules_v4",
     companyMembership: "shjj_company_membership_v1",
+    companyMembers: "shjj_company_members_v1",
     postLoginAction: "shjj_post_login_action_v1",
   };
 
@@ -48,17 +49,35 @@
     });
   }
 
+  function withManagedMemberPermission(membership) {
+    if (!membership) return null;
+    const members = readJson(STORAGE_KEYS.companyMembers, []);
+    const managed = Array.isArray(members)
+      ? members.find((member) => member.memberId === membership.memberId)
+      : null;
+
+    if (!managed) return membership;
+
+    return {
+      ...membership,
+      role: managed.role || membership.role,
+      schedulePermission: managed.role === "admin" ? "write" : managed.schedulePermission || membership.schedulePermission,
+      status: managed.status || membership.status,
+    };
+  }
+
   function getMembership() {
     const stored = readJson(STORAGE_KEYS.companyMembership, null);
-    if (stored) return stored;
 
     try {
-      if (typeof state !== "undefined" && state.companyMembership) return state.companyMembership;
+      if (typeof state !== "undefined" && state.companyMembership) {
+        return withManagedMemberPermission(state.companyMembership);
+      }
     } catch {
-      return null;
+      // state 접근 불가 시 localStorage 기준으로 판단한다.
     }
 
-    return null;
+    return withManagedMemberPermission(stored);
   }
 
   function getRpcIds() {
@@ -186,11 +205,6 @@
     );
   }
 
-  function canDeleteSchedule() {
-    const membership = getMembership();
-    return membership?.status === "active" && membership.role === "admin";
-  }
-
   function buildDraftSchedule(ids) {
     const title = String($("scheduleTitleInput")?.value || "").trim();
     const date = String($("scheduleDateInput")?.value || "").trim();
@@ -301,8 +315,8 @@
     event.preventDefault();
     event.stopImmediatePropagation();
 
-    if (!canDeleteSchedule()) {
-      showFeedback("일정 삭제는 관리자만 가능합니다.", { alert: true });
+    if (!canWriteSchedule()) {
+      showFeedback("일정 삭제 권한이 없습니다.", { alert: true });
       return;
     }
 
