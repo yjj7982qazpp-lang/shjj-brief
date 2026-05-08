@@ -1,0 +1,17 @@
+{
+  "name": "shjj-brief",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "http-server . -p 4173 -c-1",
+    "test:static": "node scripts/static-guard.mjs",
+    "test:syntax": "node --check app.js && node --check supabase-invite.js && node --check supabase-schedule-sync.js",
+    "test:e2e": "playwright test",
+    "test:guard": "npm run test:static && npm run test:syntax && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "http-server": "^14.1.1"
+  }
+}
