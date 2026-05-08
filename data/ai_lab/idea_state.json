@@ -1,46 +1,46 @@
 {
   "date": "2026-05-08",
-  "slot": "morning",
+  "slot": "afternoon",
   "focus_area": "API/운영비 절감",
-  "decision_summary": "날씨·법령·일정의 변경감지 기준과 예외 우선순위를 먼저 고정하고, 소스별 호출 중단선을 함께 정리해 재조회와 재작업을 줄인다.",
+  "decision_summary": "날씨·법령·일정의 변경감지 기준과 예외 우선순위를 1페이지로 고정하고, 소스별 호출 중단선은 보조 표로 묶어 재조회와 재작업을 줄인다.",
   "existing_ideas_review": [
     {
       "title": "브리핑 안정화 체크리스트 고도화",
       "decision": "발전",
-      "reason": "1순위 안정성을 저비용으로 강화하는 방향이다."
+      "reason": "1순위 안정성을 저비용으로 끌어올린다."
     },
     {
       "title": "외부 API 호출 캐시 TTL 재설계",
       "decision": "발전",
-      "reason": "호출 빈도와 비용을 직접 낮춰 2순위에 바로 기여한다."
+      "reason": "호출 빈도와 비용을 직접 낮춰 2순위에 즉시 기여한다."
     },
     {
       "title": "광고 수익화 즉시 적용",
       "decision": "보류",
-      "reason": "사용자 확보와 체류 지표를 먼저 보고 판단하는 편이 효율적이다."
+      "reason": "사용자 확보와 체류 지표를 먼저 확인한 뒤 판단하는 편이 효율적이다."
     }
   ],
   "new_ideas": [
     {
+      "title": "날씨·법령·일정 변경감지 기준 + 예외 우선순위 통합표",
+      "summary": "각 소스의 실제 변경 기준, 누락/지연/비정상 값 처리 순서, 재조회 중단 조건을 한 장으로 정리한다.",
+      "expected_value": "재조회 판단을 단순화해 불필요한 호출과 재작업을 줄인다.",
+      "implementation_cost": "low",
+      "decision": "development",
+      "confidence": "medium",
+      "type": "product",
+      "risk": "기준이 과도하게 좁으면 브리핑 신선도가 떨어질 수 있다.",
+      "recommendation": "development"
+    },
+    {
       "title": "소스별 일일 호출 중단선 표준표",
-      "summary": "날씨·법령·일정 소스별 하루 허용 호출 수, 중단선, 재개 조건을 한 장으로 정리한다.",
+      "summary": "날씨·법령·일정별 하루 허용 호출 수, 중단선, 재개 조건을 표준화한다.",
       "expected_value": "TTL 조정과 예산 통제를 빠르게 연결해 비용 초과를 막는다.",
       "implementation_cost": "low",
       "decision": "development",
       "confidence": "medium",
       "type": "product",
-      "risk": "실사용자 피드백 부족 시 판단 편향 가능",
-      "recommendation": "development"
-    },
-    {
-      "title": "브리핑 필수 필드 최소집합 정의",
-      "summary": "브리핑 생성에 꼭 필요한 필드만 추려 재조회 범위를 줄인다.",
-      "expected_value": "불필요한 호출을 줄이고 갱신 판단을 단순화한다.",
-      "implementation_cost": "low",
-      "decision": "development",
-      "confidence": "medium",
-      "type": "product",
-      "risk": "실사용자 피드백 부족 시 판단 편향 가능",
+      "risk": "운영 데이터와 맞지 않으면 중단선 조정이 필요하다.",
       "recommendation": "development"
     }
   ],
@@ -48,7 +48,7 @@
   "next_best_action": "날씨·법령·일정별 변경감지 기준과 예외 우선순위를 1페이지 표로 확정한다.",
   "why_this_gets_us_to_goal_faster": "기준이 선명해지면 재조회와 재작업이 줄어 안정성과 운영비 절감을 동시에 앞당길 수 있다.",
   "risks": [
-    "변경감지 기준이 과도하게 좁으면 브리핑 신선도가 약해질 수 있다.",
+    "변경감지 기준이 지나치게 좁으면 브리핑 신선도가 약해질 수 있다.",
     "예외 우선순위가 실제 사용 패턴과 다르면 조정이 필요하다."
   ],
   "cost_control": "문서화와 기준 정리만 진행하고 구현, 배포, 대규모 기능 추가는 제외한다.",
