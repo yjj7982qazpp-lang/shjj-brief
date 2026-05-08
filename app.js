@@ -2127,26 +2127,7 @@ function getLawCheckStatusLabel(item) {
 }
 
 function getLawDetailUrl(item) {
-  return safeText(item.detail_url || item.source_url, "");
-}
-
-function renderLawDateBadges(item) {
-  const entries = getLawDateEntries(item);
-  if (!entries.length) {
-    return `
-      <div class="law-date-row">
-        <span class="law-date-chip law-date-chip-empty">정보 없음</span>
-      </div>
-    `;
-  }
-
-  return `
-    <div class="law-date-row">
-      ${entries.map(([label, value]) => `
-        <span class="law-date-chip">${escapeHtml(label)} ${escapeHtml(safeText(value))}</span>
-      `).join("")}
-    </div>
-  `;
+  return safeText(item.article_url || item.detail_url || item.source_url, "");
 }
 
 function renderLawMetaGrid(item) {
@@ -2171,62 +2152,6 @@ function renderLawRelevanceNote(item) {
       <p>${escapeHtml(getLawRelevanceMemo(item))}</p>
     </div>
   `;
-}
-
-function renderLawCardActions(item) {
-  const url = getLawDetailUrl(item);
-  if (!url) return "";
-
-  return `
-    <div class="law-card-actions">
-      <a class="law-link-btn" href="${escapeHtml(url)}" target="_blank" rel="noreferrer">원문 보기</a>
-    </div>
-  `;
-}
-
-function renderLawDetailCard(item) {
-  return `
-    <article class="law-item law-item-changed law-detail-card">
-      <div class="law-item-head">
-        <div>
-          <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
-          <span class="law-category">${safeHtml(item.category, "분류 없음")}</span>
-        </div>
-        <span class="law-status ${lawStatusClass(item)}">${escapeHtml(getLawCheckStatusLabel(item))}</span>
-      </div>
-      ${renderLawDateBadges(item)}
-      ${renderLawMetaGrid(item)}
-      ${renderLawRelevanceNote(item)}
-      ${renderLawCardActions(item)}
-    </article>
-  `;
-}
-
-function getLawDateEntries(item) {
-  return [
-    ["시행일", item.effective_date],
-    ["공포일", item.promulgation_date],
-  ].filter(([, value]) => safeText(value, ""));
-}
-
-function getLawPreviewDateEntries(item) {
-  return getLawDateEntries(item).slice(0, 2);
-}
-
-function getLawPrimaryContent(item) {
-  const candidates = [
-    item.amendment_text,
-    item["변경 내용"],
-    item["개정 조문"],
-    item.article,
-    item["개정 이유"],
-    item.reason,
-    item.change_summary,
-    item.summary,
-  ];
-
-  const content = candidates.find((value) => safeText(value, ""));
-  return safeText(content, "상세 변경 내용은 원문에서 확인");
 }
 
 function getLawSummarySourceText(item) {
@@ -2511,19 +2436,6 @@ function renderLawOriginalPanel(item, index) {
   `;
 }
 
-function getLawDetailUrl(item) {
-  return safeText(item.article_url || item.detail_url || item.source_url, "");
-}
-
-function renderLawPreviewDates(item) {
-  const entries = getLawPreviewDateEntries(item);
-  if (!entries.length) return `<span class="law-date-chip law-date-chip-empty">날짜 정보 없음</span>`;
-
-  return entries.map(([label, value]) => `
-    <span class="law-date-chip">${escapeHtml(label)} ${escapeHtml(safeText(value))}</span>
-  `).join("");
-}
-
 function renderLawExpandedDates(item) {
   const entries = getLawDateEntries(item);
   if (!entries.length) return "";
@@ -2535,47 +2447,6 @@ function renderLawExpandedDates(item) {
       `).join("")}
     </div>
   `;
-}
-
-function renderLawCardActions(item) {
-  const url = getLawDetailUrl(item);
-  if (!url) return "";
-
-  return `
-    <div class="law-card-actions">
-      <a class="law-link-btn" href="${escapeHtml(url)}" target="_blank" rel="noreferrer">원문 보기</a>
-    </div>
-  `;
-}
-
-function renderLawDetailCard(item, index = 0) {
-  const contentId = `law-detail-content-${index}`;
-  const category = safeText(item.category, "");
-
-  return `
-    <details class="law-item law-item-changed law-detail-card">
-      <summary class="law-detail-summary" aria-controls="${escapeHtml(contentId)}">
-        <div class="law-detail-summary-main">
-          <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
-          ${category ? `<span class="law-category">${escapeHtml(category)}</span>` : ""}
-          ${renderLawAiSummaryBlock(item)}
-        </div>
-        <span class="law-toggle-indicator" aria-hidden="true">열기</span>
-      </summary>
-      <div id="${escapeHtml(contentId)}" class="law-detail-body">
-        ${renderLawPrimaryContent(item, index)}
-        ${renderLawExpandedDates(item)}
-        ${renderLawCardActions(item)}
-      </div>
-    </details>
-  `;
-}
-
-function getLawDateEntries(item) {
-  return [
-    ["시행일", item.effective_date],
-    ["공포일", item.promulgation_date],
-  ].filter(([, value]) => safeText(value, ""));
 }
 
 function getLawPreviewDateEntries(item) {
@@ -2605,30 +2476,6 @@ function getLawDateToneClass(item, label) {
   return "";
 }
 
-function getLawPrimaryContent(item) {
-  const candidates = [
-    item.change_summary,
-    item.summary,
-    item.amendment_text,
-    item.amendment,
-    item.reason,
-    item.change_reason,
-    item.article,
-    item.article_text,
-    item.content,
-    item.law_content,
-    item.detail,
-    item.description,
-  ];
-
-  const content = candidates.find((value) => safeText(value, ""));
-  return safeText(content, "수집 데이터에 구체 변경 내용이 없습니다. 원문에서 세부 조항을 확인하세요.");
-}
-
-function getLawDetailUrl(item) {
-  return safeText(item.article_url || item.detail_url || item.source_url, "");
-}
-
 function renderLawPreviewDates(item) {
   const entries = getLawPreviewDateEntries(item);
   if (!entries.length) {
@@ -2640,10 +2487,6 @@ function renderLawPreviewDates(item) {
   `);
 
   return chips.join("");
-}
-
-function shouldShowLawContentMore(text) {
-  return safeText(text, "").length > 140;
 }
 
 function renderLawCardActions(item, index) {
@@ -2688,30 +2531,6 @@ function renderLawOriginalSection(item, index) {
         <p class="law-original-text">${escapeHtml(originalText)}</p>
       </div>
     </section>
-  `;
-}
-
-function renderLawDetailCard(item, index = 0) {
-  const keyword = getLawKeywordText(item);
-
-  return `
-    <details class="law-item law-item-changed law-detail-card">
-      <summary class="law-detail-summary" aria-controls="${escapeHtml(`law-card-body-${index}`)}">
-        <div class="law-detail-summary-main">
-          <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
-          ${keyword ? `<span class="law-keyword-chip">키워드 ${escapeHtml(keyword)}</span>` : ""}
-          <div class="law-date-row law-date-row-preview">
-            ${renderLawPreviewDates(item)}
-          </div>
-        </div>
-        <span class="law-toggle-indicator" aria-hidden="true">열기</span>
-      </summary>
-      <div id="${escapeHtml(`law-card-body-${index}`)}" class="law-detail-body">
-        ${renderLawCardActions(item, index)}
-        ${renderLawSummaryPanel(item, index)}
-        ${renderLawOriginalSection(item, index)}
-      </div>
-    </details>
   `;
 }
 
@@ -2852,30 +2671,6 @@ function renderLawPrimaryContent(item, index) {
         }
       )}
     </div>
-  `;
-}
-
-function renderLawDetailCard(item, index = 0) {
-  const category = safeText(item.category, "");
-
-  return `
-    <details class="law-item law-item-changed law-detail-card" open>
-      <summary class="law-detail-summary" aria-controls="${escapeHtml(`law-detail-body-${index}`)}">
-        <div class="law-detail-summary-main">
-          <span class="law-name">${safeHtml(item.law_name, "정보 없음")}</span>
-          ${category ? `<span class="law-category">${escapeHtml(category)}</span>` : ""}
-          <div class="law-date-row law-date-row-preview">
-            ${renderLawPreviewDates(item)}
-          </div>
-        </div>
-        <span class="law-toggle-indicator" aria-hidden="true">열기</span>
-      </summary>
-      <div id="${escapeHtml(`law-detail-body-${index}`)}" class="law-detail-body">
-        ${renderLawAiSummaryBlock(item)}
-        ${renderLawOriginalFold(item, index)}
-        ${renderLawCardActions(item)}
-      </div>
-    </details>
   `;
 }
 
@@ -3100,41 +2895,6 @@ function renderLawSections(data, todayItems, weekItems, monthItems) {
   renderLawList("lawTodayList", todayItems, LAW_MESSAGES.emptyToday, { apiStatus: data.apiStatus });
   renderLawList("lawWeekList", weekItems, LAW_MESSAGES.emptyWeek, { apiStatus: data.apiStatus });
   renderLawList("lawMonthList", monthItems, LAW_MESSAGES.emptyMonth, { apiStatus: data.apiStatus });
-}
-
-function renderLawLoadFailure() {
-  setText("lawNotice", LAW_MESSAGES.loadFailed);
-  setText("lawCheckedAt", "확인일: -");
-  setText("lawMetaSummary", "법령 데이터 마지막 갱신 - · 총 저장 0건");
-  setText("trackedLawUpdatedAt", "법령 데이터 마지막 갱신 -");
-  setText("lawActionTitle", "확인 필요");
-  setText("lawActionText", "자동 브리프를 표시하지 못했습니다. 오늘 업무 전 수동으로 주요 법령 변경 여부를 확인하세요.");
-
-  renderLawList("lawTodayList", [], LAW_MESSAGES.loadFailedDetail, { apiStatus: "api_error" });
-  renderLawList("lawWeekList", [], LAW_MESSAGES.loadFailedDetail, { apiStatus: "api_error" });
-  renderLawList("lawMonthList", [], LAW_MESSAGES.loadFailedDetail, { apiStatus: "api_error" });
-  renderTrackedLaws([]);
-}
-
-async function loadLawUpdates() {
-  try {
-    const res = await fetch("./data/law_updates.json", { cache: "no-store" });
-    if (!res.ok) throw new Error("law_updates.json 로딩 실패");
-
-    const data = normalizeLawUpdatesData(await res.json());
-    const { todayItems, weekItems, monthItems } = getFilteredLawLists(data);
-    const todayCount = todayItems.length;
-    const weekCount = weekItems.length;
-    const monthCount = monthItems.length;
-
-    renderLawHeader(data, monthCount);
-    updateLawSummaryCounts(todayCount, weekCount, monthCount);
-    updateLawAction(todayCount, weekCount, monthCount, data.apiStatus, data.error || "");
-    renderTrackedLaws(data.watchedItems);
-    renderLawSections(data, todayItems, weekItems, monthItems);
-  } catch {
-    renderLawLoadFailure();
-  }
 }
 
 function getLawSummaryStatus(todayCount, weekCount, monthCount) {
