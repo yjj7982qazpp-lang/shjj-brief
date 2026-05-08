@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -128,6 +129,105 @@ def _clean_string_list(value: Any) -> list[str]:
 
 def _contains_fallback_marker(text: str) -> bool:
     return any(marker in text for marker in FALLBACK_RISK_MARKERS)
+
+
+def _shorten(text: str, limit: int = 90) -> str:
+    clean = " ".join(_clean_text(text).split())
+    if len(clean) <= limit:
+        return clean
+    return clean[: limit - 1].rstrip() + "..."
+
+
+def build_report_signature(result: dict[str, Any]) -> str:
+    key = {
+        "focus_area": result.get("focus_area"),
+        "existing_ideas_review": [
+            {
+                "title": item.get("title"),
+                "decision": item.get("decision"),
+            }
+            for item in _as_list(result.get("existing_ideas_review"))
+            if isinstance(item, dict)
+        ],
+        "new_ideas": [
+            {
+                "title": item.get("title"),
+                "recommendation": item.get("recommendation") or item.get("decision"),
+            }
+            for item in _as_list(result.get("new_ideas"))
+            if isinstance(item, dict)
+        ],
+        "next_best_action": result.get("next_best_action"),
+        "codex_candidate": result.get("codex_candidate"),
+    }
+    raw = json.dumps(key, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def build_delta_summary(result: dict[str, Any], previous_state: dict[str, Any]) -> dict[str, list[str]]:
+    progress: list[str] = []
+    issues: list[str] = []
+    priority_changes: list[str] = []
+
+    previous_action = _clean_text(previous_state.get("next_best_action"))
+    current_action = _clean_text(result.get("next_best_action"))
+    if previous_action and current_action and previous_action != current_action:
+        progress.append(f"다음 액션 갱신: {_shorten(previous_action, 45)} -> {_shorten(current_action, 45)}")
+    elif current_action:
+        progress.append("전회와 같은 방향을 유지하고, 반복 설명 대신 실행 항목만 좁혀 기록합니다.")
+    else:
+        progress.append("전회 대비 명확한 실행 항목 변화는 없습니다.")
+
+    previous_focus = _clean_text(previous_state.get("focus_area"))
+    current_focus = _clean_text(result.get("focus_area"))
+    if previous_focus and current_focus and previous_focus != current_focus:
+        priority_changes.append(f"집중 분야 변경: {_shorten(previous_focus, 45)} -> {_shorten(current_focus, 45)}")
+
+    previous_reviews = {
+        _clean_text(item.get("title")): _clean_text(item.get("decision"))
+        for item in _as_list(previous_state.get("existing_ideas_review"))
+        if isinstance(item, dict)
+    }
+    for item in _as_list(result.get("existing_ideas_review")):
+        if not isinstance(item, dict):
+            continue
+        title = _clean_text(item.get("title"))
+        decision = _clean_text(item.get("decision"))
+        if title and decision and previous_reviews.get(title) and previous_reviews[title] != decision:
+            priority_changes.append(f"{_shorten(title, 45)}: {previous_reviews[title]} -> {decision}")
+
+    for risk in _clean_string_list(result.get("risks"))[:3]:
+        issues.append(_shorten(risk))
+    if not issues:
+        issues.append("새로 발견한 문제 없음")
+    if not priority_changes:
+        priority_changes.append("우선순위 변경 없음")
+
+    return {
+        "progress_since_last_run": progress[:3],
+        "newly_found_issues": issues[:3],
+        "priority_changes": priority_changes[:3],
+    }
+
+
+def is_duplicate_daily_report(ctx: RunContext, previous_state: dict[str, Any], signature: str) -> bool:
+    meta = previous_state.get("_ai_development_loop")
+    if not isinstance(meta, dict):
+        return False
+    return (
+        meta.get("last_report_date") == ctx.now_kst.strftime("%Y-%m-%d")
+        and meta.get("last_report_signature") == signature
+    )
+
+
+def write_github_outputs(issue_title: str, report_path: str, should_create_issue: bool) -> None:
+    github_output = os.getenv("GITHUB_OUTPUT")
+    if not github_output:
+        return
+    with open(github_output, "a", encoding="utf-8") as f:
+        f.write(f"issue_title={issue_title}\n")
+        f.write(f"report_path={report_path}\n")
+        f.write(f"should_create_issue={'true' if should_create_issue else 'false'}\n")
 
 
 def normalize_result(
@@ -324,34 +424,32 @@ def call_openai(api_key: str, payload: dict[str, Any]) -> dict[str, Any]:
 
 def render_report(result: dict[str, Any], ctx: RunContext) -> str:
     slot_kor = {"morning": "오전", "afternoon": "오후", "manual": "수동"}.get(ctx.slot, "수동")
+    delta = result.get("delta_summary") if isinstance(result.get("delta_summary"), dict) else {}
     lines = [
-        f"# AI 아이디어 디벨롭 리포트 - {result['date']} {slot_kor}",
+        f"# AI Development Loop 리포트 - {result['date']} {slot_kor}",
         "",
-        "## 오늘 집중 분야",
-        f"{result.get('focus_area', '앱 안정성')}",
-        "",
-        "## 목표와의 연결",
-        f"{result.get('goal_link', '')}",
-        "",
-        "## 기존 아이디어 재검토",
+        "## 전회 대비 발전점",
     ]
-    for item in result.get("existing_ideas_review", []):
-        lines.append(f"- {item.get('title','기존 아이디어')} → {item.get('decision','유지')}")
-        lines.append(f"  - 이유: {item.get('reason','')}")
-    lines += ["", "## 새 아이디어"]
-    for idea in result.get("new_ideas", []):
-        lines.append(f"- {idea.get('title','새 아이디어')}")
-        lines.append(f"  - 요약: {idea.get('summary','')}")
-        lines.append(f"  - 예상 가치: {idea.get('expected_value','')}")
-        lines.append(f"  - 구현 난이도: {idea.get('implementation_cost','')}")
-        lines.append(f"  - 판단: {idea.get('recommendation','유지')}")
+    for item in _clean_string_list(delta.get("progress_since_last_run")):
+        lines.append(f"- {item}")
+
+    lines += ["", "## 새로 발견한 문제"]
+    for item in _clean_string_list(delta.get("newly_found_issues")):
+        lines.append(f"- {item}")
+
+    lines += ["", "## 우선순위 변경"]
+    for item in _clean_string_list(delta.get("priority_changes")):
+        lines.append(f"- {item}")
+
     lines += [
         "",
-        "## 다음 실행 때 볼 것",
-        f"{result.get('next_best_action', '')}",
+        "## 다음 액션",
+        f"- {result.get('next_best_action', '')}",
         "",
-        "## Codex 작업 후보",
-        f"{result.get('codex_candidate', '없음')}",
+        "## 참고",
+        f"- 집중 분야: {result.get('focus_area', '')}",
+        f"- Codex 작업 후보: {result.get('codex_candidate', '없음')}",
+        f"- 비용/범위 메모: {result.get('cost_control_note', '')}",
     ]
     return "\n".join(lines).strip() + "\n"
 
@@ -375,6 +473,8 @@ def main() -> int:
             "no_auto_code_change": True,
             "no_auto_merge_deploy": True,
             "past_fallback_logs_are_not_current_state": True,
+            "report_style": "show only progress since last run, newly found issues, priority changes, and next action",
+            "avoid_duplicate_reports": True,
         },
         "required_schema": {
             "date": "YYYY-MM-DD",
@@ -402,21 +502,39 @@ def main() -> int:
 
     result = normalize_result(result, ctx, goal_summary, current_fallback=current_fallback)
 
-    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-    report_name = f"{ctx.now_kst.strftime('%Y-%m-%d-%H%M')}.md"
-    report_body = render_report(result, ctx)
-    (DAILY_DIR / report_name).write_text(report_body, encoding="utf-8")
+    previous_state = idea_state if isinstance(idea_state, dict) else {}
+    result["delta_summary"] = build_delta_summary(result, previous_state)
+    report_signature = build_report_signature(result)
 
     slot_kor = {"morning": "오전", "afternoon": "오후", "manual": "수동"}.get(ctx.slot, "수동")
     issue_title = f"[AI DEV] {ctx.now_kst.strftime('%Y-%m-%d')} {slot_kor} 자동 디벨롭 브리프"
 
-    github_output = os.getenv("GITHUB_OUTPUT")
-    if github_output:
-        with open(github_output, "a", encoding="utf-8") as f:
-            f.write(f"issue_title={issue_title}\n")
-            f.write(f"report_path={(DAILY_DIR / report_name).as_posix()}\n")
+    previous_meta = previous_state.get("_ai_development_loop") if isinstance(previous_state.get("_ai_development_loop"), dict) else {}
+    if is_duplicate_daily_report(ctx, previous_state, report_signature):
+        previous_report_path = _clean_text(previous_meta.get("last_report_path"))
+        previous_issue_title = _clean_text(previous_meta.get("last_issue_title")) or issue_title
+        write_github_outputs(previous_issue_title, previous_report_path, should_create_issue=False)
+        print(f"[ai-dev-loop] duplicate daily report skipped: date={ctx.now_kst.strftime('%Y-%m-%d')}")
+        return 0
+
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    report_name = f"{ctx.now_kst.strftime('%Y-%m-%d-%H%M')}.md"
+    report_body = render_report(result, ctx)
+    report_path = DAILY_DIR / report_name
+    report_path.write_text(report_body, encoding="utf-8")
+
+    result["_ai_development_loop"] = {
+        "last_run_at_kst": ctx.now_kst.isoformat(),
+        "last_slot": ctx.slot,
+        "last_report_date": ctx.now_kst.strftime("%Y-%m-%d"),
+        "last_report_signature": report_signature,
+        "last_report_path": report_path.as_posix(),
+        "last_issue_title": issue_title,
+    }
+    STATE_FILE.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    write_github_outputs(issue_title, report_path.as_posix(), should_create_issue=True)
 
     print(f"[ai-dev-loop] slot={ctx.slot}, report={report_name}")
     return 0
