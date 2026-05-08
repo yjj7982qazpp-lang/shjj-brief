@@ -48,8 +48,8 @@ begin
       else m.status
     end as status,
     coalesce(ic.invite_code, '') as invite_code,
-    coalesce(ic.pin_code, case when m.role = 'admin' then '0920' else '0000' end) as pin_code,
-    coalesce(ic.status, case when m.role = 'admin' then 'active' else 'revoked' end) as invite_status
+    coalesce(ic.pin_code, '') as pin_code,
+    coalesce(ic.status, case when m.role = 'admin' then 'active' else 'inactive' end) as invite_status
   from company_members m
   left join lateral (
     select
@@ -61,11 +61,13 @@ begin
       and invite_codes.member_id = m.id
     order by
       case when invite_codes.status = 'active' then 0 else 1 end,
+      invite_codes.created_at asc nulls last,
+      invite_codes.id asc,
       upper(invite_codes.invite_code)
     limit 1
   ) ic on true
   where m.company_id = p_company_id
-    and m.status <> 'deleted'
+    and m.status in ('active', 'inactive')
   order by
     case when m.role = 'admin' then 0 else 1 end,
     case when m.status = 'active' then 0 else 1 end,

@@ -96,19 +96,11 @@
     const body = document.querySelector("#scheduleAdminPanel .schedule-admin-body");
     if (!body) return null;
 
-    let button = document.getElementById("saveScheduleMembersBtn");
-    if (!button) {
-      button = document.createElement("button");
-      button.id = "saveScheduleMembersBtn";
-      button.type = "button";
-      button.className = "schedule-open-btn";
-      button.textContent = "구성원 변경 저장";
-      button.style.marginTop = "10px";
-      body.appendChild(button);
-    }
+    const button = document.getElementById("saveScheduleMembersBtn");
+    if (button) button.remove();
 
     ensureStatusElement(body);
-    return button;
+    return null;
   }
 
   function setStatus(message) {
@@ -147,12 +139,12 @@
 
     return {
       memberId: String(row?.member_id || row?.id || "").trim(),
-      memberName: String(row?.member_name || row?.display_name || "구성원").trim() || "구성원",
+      memberName: String(row?.member_name || row?.display_name || "직원").trim() || "직원",
       role,
       schedulePermission,
       status,
       inviteCode: String(row?.invite_code || "").trim().toUpperCase(),
-      pinCode: String(row?.pin_code || (role === "admin" ? "0920" : "0000")).trim(),
+      pinCode: String(row?.pin_code || "").trim(),
     };
   }
 
@@ -181,6 +173,13 @@
 
     if (typeof state !== "undefined") {
       state.companyMembers = normalized;
+      if (!state.companyMembersDirty) {
+        if (typeof cloneCompanyMembers === "function") {
+          state.companyMembersDraft = cloneCompanyMembers(normalized);
+        } else {
+          state.companyMembersDraft = normalized.map((member) => ({ ...member }));
+        }
+      }
     }
     syncCurrentMembership(normalized);
     if (typeof renderSchedules === "function") {
@@ -220,12 +219,12 @@
       return {
         member_id: UUID_RE.test(normalizedId) ? normalizedId : null,
         client_member_id: normalizedId,
-        member_name: member?.memberName || "구성원",
+        member_name: member?.memberName || "직원",
         role,
         schedule_permission: role === "admin" || member?.schedulePermission === "write" ? "write" : "read",
         status: role === "admin" ? "active" : member?.status === "inactive" ? "inactive" : "active",
         invite_code: String(member?.inviteCode || "").trim().toUpperCase(),
-        pin_code: String(member?.pinCode || (role === "admin" ? "0920" : "0000")).trim(),
+        pin_code: String(member?.pinCode || "").trim(),
       };
     }).filter((member) => member.invite_code);
   }
@@ -279,12 +278,6 @@
   function handlePanelClick(event) {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
-
-    if (target.id === "saveScheduleMembersBtn") {
-      event.preventDefault();
-      saveMembersToServer();
-      return;
-    }
 
     if (!target.closest("#scheduleAdminPanel")) return;
 

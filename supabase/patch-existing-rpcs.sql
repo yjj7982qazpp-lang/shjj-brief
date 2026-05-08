@@ -25,7 +25,7 @@
 -- =========================================================
 -- Goal:
 -- - Keep member status as active/inactive.
--- - When a member is deactivated, invite_codes.status should become revoked.
+-- - When a member is deactivated, invite_codes.status should become inactive.
 -- - When a member is restored, invite_codes.status can become active again.
 -- - Prevent the active admin from deactivating himself.
 
@@ -45,7 +45,7 @@ declare
   v_invite_status text;
 begin
   v_status := case when p_status = 'inactive' then 'inactive' else 'active' end;
-  v_invite_status := case when v_status = 'inactive' then 'revoked' else 'active' end;
+  v_invite_status := case when v_status = 'inactive' then 'inactive' else 'active' end;
 
   if not exists (
     select 1

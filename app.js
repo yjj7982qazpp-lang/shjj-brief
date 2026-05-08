@@ -49,6 +49,20 @@ const DEFAULT_COMPANY = {
   name: "SHJJ 회사방",
 };
 
+const SUPABASE_COMPANY_RPC_CONFIG = {
+  url: window.SHJJ_SUPABASE_CONFIG?.url || "https://pfpcifidfrnsubhxvgzw.supabase.co",
+  publishableKey: window.SHJJ_SUPABASE_CONFIG?.publishableKey || "sb_publishable_VtMrmN53iH599XMJQbxVhA_BUN1BFuW",
+  timeoutMs: 5000,
+  fallbackCompanyId: "e978f664-848e-4609-a56a-820d11ef55e6",
+};
+
+const LEGACY_MEMBER_UUID_MAP = {
+  "local-admin": "ca482e0e-07b9-4341-8f16-cbf28e445db6",
+  "local-member": "84507457-cd81-4904-a707-ca85c20fa22b",
+};
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 const DEFAULT_MEMBER = {
   id: "local-admin",
   name: "관리자",
@@ -65,7 +79,7 @@ const INVITE_CODES = {
   },
   "SHJJ-MEMBER": {
     memberId: "local-member",
-    memberName: "구성원",
+    memberName: "직원",
     role: "member",
     schedulePermission: "read",
     status: "active",
@@ -83,7 +97,7 @@ const DEFAULT_COMPANY_MEMBERS = [
   },
   {
     memberId: "local-member",
-    memberName: "구성원",
+    memberName: "직원",
     role: "member",
     schedulePermission: "read",
     status: "active",
@@ -162,6 +176,9 @@ const state = {
   member: null,
   companyMembership: null,
   companyMembers: [],
+  companyMembersDraft: [],
+  companyMembersDirty: false,
+  companyMembersSaving: false,
   inactiveNoticeShown: false,
   invitePanelOpen: false,
   notificationTime: DEFAULT_NOTIFICATION_TIME,
@@ -740,13 +757,13 @@ function canManageCompany(member = state.member) {
 
 function getMemberRoleLabel(member = state.member) {
   if (member?.role === "admin") return "관리자";
-  if (member?.role === "member") return "구성원";
+  if (member?.role === "member") return "직원";
   return "미참여";
 }
 
 function getSchedulePermissionLabel(member = state.member) {
-  if (!member || member.status === "inactive") return "접속 차단";
-  if (member.role === "admin" || member.schedulePermission === "write") return "읽기/쓰기";
+  if (!member || member.status === "inactive") return "차단";
+  if (member.role === "admin" || member.schedulePermission === "write") return "읽기쓰기";
   return "읽기";
 }
 
@@ -780,29 +797,37 @@ function generateMemberInviteCode(extraMembers = []) {
   return code;
 }
 
+function generateMemberPinCode() {
+  let pinNumber = 0;
+  do {
+    pinNumber = Math.floor(Math.random() * 10000);
+  } while (pinNumber === 0);
+  return String(pinNumber).padStart(4, "0");
+}
+
 function getFixedInviteCodeByMemberId(memberId) {
   if (memberId === "local-admin") return "SHJJ-ADMIN";
   if (memberId === "local-member") return "SHJJ-MEMBER";
   return "";
 }
 
-function normalizeGeneratedInviteCode(rawCode, memberId, extraMembers = []) {
+function normalizeGeneratedInviteCode(rawCode, memberId) {
   const fixedInviteCode = getFixedInviteCodeByMemberId(memberId);
   if (fixedInviteCode) return fixedInviteCode;
 
   const code = safeText(rawCode, "").trim().toUpperCase();
-  if (/^SHJJ-[A-Z0-9]{5}$/.test(code)) return code;
-  return generateMemberInviteCode(extraMembers);
+  if (/^SHJJ-[A-Z0-9]{4,12}$/.test(code)) return code;
+  return "";
 }
 
-function getNextMemberName() {
-  const usedNumbers = state.companyMembers.reduce((numbers, member) => {
-    const match = safeText(member?.memberName, "").match(/^구성원\s+(\d+)$/);
+function getNextMemberName(members = state.companyMembersDraft) {
+  const usedNumbers = members.reduce((numbers, member) => {
+    const match = safeText(member?.memberName, "").match(/^직원\s+(\d+)$/);
     if (match) numbers.push(Number(match[1]));
     return numbers;
   }, []);
   const nextNumber = usedNumbers.length ? Math.max(...usedNumbers) + 1 : 1;
-  return `구성원 ${nextNumber}`;
+  return `직원 ${nextNumber}`;
 }
 
 function normalizeCompanyMember(value) {
@@ -822,8 +847,37 @@ function normalizeCompanyMember(value) {
     schedulePermission,
     status,
     inviteCode,
-    pinCode: safeText(value?.pinCode, memberId === "local-admin" ? "0920" : "0000"),
+    pinCode: safeText(value?.pinCode, ""),
   };
+}
+
+function cloneCompanyMembers(list) {
+  return (Array.isArray(list) ? list : [])
+    .map((member) => normalizeCompanyMember(member))
+    .sort(compareCompanyMembers);
+}
+
+function syncCompanyMembersDraft() {
+  state.companyMembersDraft = cloneCompanyMembers(state.companyMembers);
+  state.companyMembersDirty = false;
+  state.companyMembersSaving = false;
+}
+
+function serializeCompanyMembers(list) {
+  return JSON.stringify(cloneCompanyMembers(list));
+}
+
+function updateCompanyMembersDirtyState() {
+  state.companyMembersDirty = serializeCompanyMembers(state.companyMembersDraft) !== serializeCompanyMembers(state.companyMembers);
+}
+
+function setCompanyMembersDraft(nextMembers) {
+  state.companyMembersDraft = cloneCompanyMembers(nextMembers);
+  updateCompanyMembersDirtyState();
+}
+
+function getDraftCompanyMemberById(memberId) {
+  return state.companyMembersDraft.find((member) => member.memberId === memberId);
 }
 
 function getCompanyMemberById(memberId) {
@@ -831,11 +885,138 @@ function getCompanyMemberById(memberId) {
 }
 
 function loadCompanyMembers() {
-  state.companyMembers = [];
+  const stored = loadArray(STORAGE_KEYS.companyMembers).map((member) => normalizeCompanyMember(member));
+  state.companyMembers = cloneCompanyMembers(stored);
+  syncCompanyMembersDraft();
 }
 
 function saveCompanyMembers() {
+  state.companyMembers = cloneCompanyMembers(state.companyMembers);
+  saveJson(STORAGE_KEYS.companyMembers, state.companyMembers);
+  syncCompanyMembersDraft();
   return state.companyMembers;
+}
+
+function canUseCompanyMemberRpc() {
+  return Boolean(
+    SUPABASE_COMPANY_RPC_CONFIG.url &&
+    SUPABASE_COMPANY_RPC_CONFIG.publishableKey &&
+    SUPABASE_COMPANY_RPC_CONFIG.publishableKey.startsWith("sb_publishable_")
+  );
+}
+
+function getCompanyMemberRpcIds() {
+  const membership = state.companyMembership;
+  if (!membership || membership.status !== "active") return null;
+
+  const rawCompanyId = safeText(
+    membership.companyId || membership.company_id || membership.serverCompanyId || membership.companyRoomId,
+    ""
+  ).trim();
+  const rawMemberId = safeText(membership.memberId || membership.member_id, "").trim();
+  const companyId = UUID_RE.test(rawCompanyId) ? rawCompanyId : SUPABASE_COMPANY_RPC_CONFIG.fallbackCompanyId;
+  const memberId = LEGACY_MEMBER_UUID_MAP[rawMemberId] || rawMemberId;
+
+  if (!UUID_RE.test(companyId) || !UUID_RE.test(memberId)) return null;
+  return { companyId, memberId };
+}
+
+async function callCompanyMemberRpc(functionName, payload) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SUPABASE_COMPANY_RPC_CONFIG.timeoutMs);
+  try {
+    const response = await fetch(`${SUPABASE_COMPANY_RPC_CONFIG.url}/rest/v1/rpc/${functionName}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_COMPANY_RPC_CONFIG.publishableKey,
+        Authorization: `Bearer ${SUPABASE_COMPANY_RPC_CONFIG.publishableKey}`,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    const text = await response.text();
+    if (!response.ok) {
+      throw new Error(`${functionName} failed: ${response.status} ${text}`);
+    }
+    return text ? JSON.parse(text) : null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function normalizeServerCompanyMember(row) {
+  return normalizeCompanyMember({
+    memberId: row.member_id || row.id,
+    memberName: row.member_name || row.display_name || "직원",
+    role: row.role === "admin" ? "admin" : "member",
+    schedulePermission: row.role === "admin" || row.schedule_permission === "write" ? "write" : "read",
+    status: row.status === "inactive" ? "inactive" : "active",
+    inviteCode: row.invite_code || "",
+    pinCode: row.pin_code || "",
+  });
+}
+
+async function refreshCompanyMembersFromServer(options = {}) {
+  if (!canManageCompany() || !canUseCompanyMemberRpc()) return false;
+  const ids = getCompanyMemberRpcIds();
+  if (!ids) return false;
+
+  try {
+    const rows = await callCompanyMemberRpc("list_company_members_with_invites_rpc", {
+      p_requester_member_id: ids.memberId,
+      p_company_id: ids.companyId,
+    });
+    if (!Array.isArray(rows)) return false;
+
+    state.companyMembers = cloneCompanyMembers(rows.map((row) => normalizeServerCompanyMember(row)));
+    saveJson(STORAGE_KEYS.companyMembers, state.companyMembers);
+
+    if (!state.companyMembersDirty || options.forceDraftSync) {
+      syncCompanyMembersDraft();
+    }
+
+    loadCompanyMembership();
+    if (options.render !== false) renderSchedules();
+    return true;
+  } catch (error) {
+    console.warn("Failed to refresh company members from server", error);
+    return false;
+  }
+}
+
+function queueCompanyMemberRefresh(options = {}) {
+  Promise.resolve().then(() => refreshCompanyMembersFromServer(options)).catch((error) => {
+    console.warn("Queued company member refresh failed", error);
+  });
+}
+
+function buildCompanyMembersSavePayload() {
+  return cloneCompanyMembers(state.companyMembersDraft).map((member) => {
+    const payload = {
+      member_name: member.memberName,
+      role: member.role === "admin" ? "admin" : "member",
+      schedule_permission: member.role === "admin" ? "write" : member.schedulePermission,
+      status: member.role === "admin" ? "active" : member.status,
+      invite_code: member.inviteCode,
+      pin_code: safeText(member.pinCode, ""),
+    };
+
+    if (UUID_RE.test(safeText(member.memberId, ""))) {
+      payload.member_id = member.memberId;
+    }
+
+    return payload;
+  });
+}
+
+function getMemberPinDisplayText(member) {
+  const pinCode = safeText(member?.pinCode, "");
+  if (!pinCode) {
+    return safeText(member?.memberId, "").startsWith("draft-") ? "서버 PIN 확인 필요" : "PIN 미설정";
+  }
+  return `PIN ${pinCode}`;
 }
 
 function findRoleInfoByInviteCode(code) {
@@ -885,7 +1066,7 @@ function normalizeCompanyMembership(value) {
     companyRoomName: companyName,
     serverCompanyId: companyId,
     memberId,
-    memberName: managedMember?.memberName || safeText(value.memberName, role === "admin" ? "관리자" : "구성원"),
+    memberName: managedMember?.memberName || safeText(value.memberName, role === "admin" ? "관리자" : "직원"),
     role,
     schedulePermission,
     status,
@@ -937,6 +1118,7 @@ function saveCompanyMembership(roleInfo) {
     ...membership,
     memberName: roleInfo.memberName,
   });
+  queueCompanyMemberRefresh({ render: true, forceDraftSync: true });
 }
 
 function clearCompanyMembership() {
@@ -956,7 +1138,7 @@ function joinCompanyRoom() {
   }
 
   if (roleInfo.status === "inactive") {
-    setText("scheduleInviteFeedback", "비활성 구성원은 참여할 수 없습니다.");
+    setText("scheduleInviteFeedback", "차단된 직원은 참여할 수 없습니다.");
     input?.focus();
     return;
   }
@@ -987,7 +1169,7 @@ function logoutCompanyRoom() {
 
 function updateCompanyMemberAccess(memberId, accessValue) {
   if (!canManageCompany()) return;
-  state.companyMembers = state.companyMembers.map((member) => {
+  setCompanyMembersDraft(state.companyMembersDraft.map((member) => {
     if (member.memberId !== memberId || member.role === "admin") return member;
     if (accessValue === "inactive") {
       return { ...member, status: "inactive", schedulePermission: "read" };
@@ -997,26 +1179,23 @@ function updateCompanyMemberAccess(memberId, accessValue) {
       status: "active",
       schedulePermission: accessValue === "write" ? "write" : "read",
     };
-  });
-  saveCompanyMembers();
-  loadCompanyMembership();
-  renderSchedules();
+  }));
+  renderScheduleAdminPanel();
 }
 
 function addCompanyMember() {
   if (!canManageCompany()) return;
   const draftMember = normalizeCompanyMember({
     memberId: `draft-${makeId()}`,
-    memberName: getNextMemberName(),
+    memberName: getNextMemberName(state.companyMembersDraft),
     role: "member",
     schedulePermission: "read",
     status: "active",
-    inviteCode: generateMemberInviteCode(),
-    pinCode: "0000",
+    inviteCode: generateMemberInviteCode(state.companyMembersDraft),
+    pinCode: generateMemberPinCode(),
   });
-  state.companyMembers = [...state.companyMembers, draftMember].sort(compareCompanyMembers);
-  saveCompanyMembers();
-  renderSchedules();
+  setCompanyMembersDraft([...state.companyMembersDraft, draftMember]);
+  renderScheduleAdminPanel();
 }
 
 function canDeleteCompanyMember(member) {
@@ -1026,41 +1205,82 @@ function canDeleteCompanyMember(member) {
 
 function renameCompanyMember(memberId) {
   if (!canManageCompany()) return;
-  const target = getCompanyMemberById(memberId);
+  const target = getDraftCompanyMemberById(memberId);
   if (!target) return;
-  const nextName = prompt("구성원 이름을 입력하세요.", target.memberName);
+  const nextName = prompt("직원 이름을 입력하세요.", target.memberName);
   if (nextName === null) return;
   const trimmedName = nextName.trim();
   if (!trimmedName) return;
 
-  state.companyMembers = state.companyMembers.map((member) => (
+  setCompanyMembersDraft(state.companyMembersDraft.map((member) => (
     member.memberId === memberId ? { ...member, memberName: trimmedName } : member
-  )).sort(compareCompanyMembers);
-  saveCompanyMembers();
-  loadCompanyMembership();
-  renderSchedules();
+  )));
+  renderScheduleAdminPanel();
 }
 
 function removeCompanyMember(memberId) {
   if (!canManageCompany()) return;
-  const target = getCompanyMemberById(memberId);
+  const target = getDraftCompanyMemberById(memberId);
   if (!canDeleteCompanyMember(target)) return;
-  if (!confirm("이 구성원을 삭제할까요?")) return;
+  if (!confirm("이 직원을 삭제 예정으로 표시합니다. 구성원 변경사항 저장을 눌러야 최종 반영됩니다. 계속할까요?")) return;
 
-  state.companyMembers = state.companyMembers
-    .filter((member) => member.memberId !== memberId)
-    .sort(compareCompanyMembers);
-  saveCompanyMembers();
+  setCompanyMembersDraft(state.companyMembersDraft.map((member) => {
+    if (member.memberId !== memberId) return member;
+    return {
+      ...member,
+      status: "inactive",
+      schedulePermission: "read",
+    };
+  }));
+  renderScheduleAdminPanel();
+  showNotificationToast("직원을 차단 상태로 저장 예정 표시했습니다.");
+}
 
-  if (state.companyMembership?.memberId === memberId) {
-    clearCompanyMembership();
-    state.invitePanelOpen = false;
-    state.inactiveNoticeShown = false;
-  } else {
-    loadCompanyMembership();
+async function saveCompanyMemberChanges() {
+  if (!canManageCompany() || !state.companyMembersDirty || state.companyMembersSaving) return;
+
+  state.companyMembersSaving = true;
+  renderScheduleAdminPanel();
+
+  try {
+    const ids = getCompanyMemberRpcIds();
+    if (canUseCompanyMemberRpc() && ids) {
+      const result = await callCompanyMemberRpc("save_company_members_rpc", {
+        p_company_id: ids.companyId,
+        p_admin_member_id: ids.memberId,
+        p_members: buildCompanyMembersSavePayload(),
+      });
+      const row = Array.isArray(result) ? result[0] : result;
+      if (row && Object.prototype.hasOwnProperty.call(row, "ok") && !row.ok) {
+        throw new Error(row.message || "구성원 서버 저장 실패");
+      }
+      const refreshed = await refreshCompanyMembersFromServer({ render: false, forceDraftSync: true });
+      if (!refreshed) {
+        state.companyMembers = cloneCompanyMembers(state.companyMembersDraft);
+        saveJson(STORAGE_KEYS.companyMembers, state.companyMembers);
+        syncCompanyMembersDraft();
+        loadCompanyMembership();
+      }
+    } else {
+      state.companyMembers = cloneCompanyMembers(state.companyMembersDraft);
+      saveCompanyMembers();
+      loadCompanyMembership();
+    }
+
+    if (state.companyMembership?.memberId && !getCompanyMemberById(state.companyMembership.memberId)) {
+      clearCompanyMembership();
+      state.invitePanelOpen = false;
+      state.inactiveNoticeShown = false;
+    }
+
+    renderSchedules();
+    showNotificationToast("구성원 변경사항 저장 완료");
+  } catch (error) {
+    console.warn("Failed to save company member changes", error);
+    state.companyMembersSaving = false;
+    renderScheduleAdminPanel();
+    showNotificationToast("구성원 변경사항 저장 실패");
   }
-
-  renderSchedules();
 }
 
 async function copyInviteCode(inviteCode) {
@@ -1081,13 +1301,15 @@ async function copyInviteCode(inviteCode) {
 function renderScheduleAdminPanel() {
   const list = $("scheduleAdminMemberList");
   const addButton = $("addScheduleMemberBtn");
+  const body = $("scheduleAdminPanel")?.querySelector(".schedule-admin-body");
   if (!list) return;
   clearChildren(list);
   if (addButton) addButton.hidden = !canManageCompany();
+  body?.querySelector(".schedule-admin-save-row")?.remove();
 
   if (!canManageCompany()) return;
 
-  [...state.companyMembers].sort(compareCompanyMembers).forEach((member) => {
+  [...state.companyMembersDraft].sort(compareCompanyMembers).forEach((member) => {
     const row = document.createElement("div");
     row.className = "schedule-admin-member";
     row.dataset.memberId = member.memberId;
@@ -1105,8 +1327,8 @@ function renderScheduleAdminPanel() {
     editButton.type = "button";
     editButton.className = "schedule-admin-edit-btn";
     editButton.textContent = "✎";
-    editButton.setAttribute("aria-label", "구성원 이름 수정");
-    editButton.setAttribute("title", "구성원 이름 수정");
+    editButton.setAttribute("aria-label", "직원 이름 수정");
+    editButton.setAttribute("title", "직원 이름 수정");
     editButton.addEventListener("click", () => renameCompanyMember(member.memberId));
 
     const codeRow = document.createElement("div");
@@ -1120,7 +1342,7 @@ function renderScheduleAdminPanel() {
 
     const authBadge = document.createElement("span");
     authBadge.className = "schedule-role-badge schedule-auth-badge";
-    authBadge.textContent = `PIN ${safeText(member.pinCode, member.role === "admin" ? "0920" : "0000")}`;
+    authBadge.textContent = getMemberPinDisplayText(member);
 
     const copyButton = document.createElement("button");
     copyButton.type = "button";
@@ -1135,8 +1357,8 @@ function renderScheduleAdminPanel() {
       deleteButton.type = "button";
       deleteButton.className = "schedule-admin-delete-btn";
       deleteButton.textContent = "−";
-      deleteButton.setAttribute("aria-label", "구성원 삭제");
-      deleteButton.setAttribute("title", "구성원 삭제");
+      deleteButton.setAttribute("aria-label", "직원 삭제");
+      deleteButton.setAttribute("title", "직원 삭제");
       deleteButton.addEventListener("click", () => removeCompanyMember(member.memberId));
     }
 
@@ -1148,9 +1370,9 @@ function renderScheduleAdminPanel() {
     const select = document.createElement("select");
     select.disabled = member.role === "admin";
     [
-      ["write", "읽기/쓰기"],
+      ["write", "읽기쓰기"],
       ["read", "읽기"],
-      ["inactive", "비활성화"],
+      ["inactive", "차단"],
     ].forEach(([value, label]) => {
       const option = document.createElement("option");
       option.value = value;
@@ -1167,6 +1389,29 @@ function renderScheduleAdminPanel() {
     row.append(info, controls);
     list.appendChild(row);
   });
+
+  if (!body) return;
+
+  const saveRow = document.createElement("div");
+  saveRow.className = "schedule-admin-save-row";
+
+  const saveNote = document.createElement("p");
+  saveNote.className = "schedule-admin-save-note";
+  saveNote.textContent = state.companyMembersDirty
+    ? "변경사항이 있습니다. 저장 전까지는 현재 화면에만 반영됩니다."
+    : "변경사항 없음";
+
+  const saveButton = document.createElement("button");
+  saveButton.type = "button";
+  saveButton.className = "schedule-admin-save-btn";
+  saveButton.textContent = state.companyMembersSaving ? "저장 중..." : "구성원 변경사항 저장";
+  saveButton.disabled = !state.companyMembersDirty || state.companyMembersSaving;
+  saveButton.addEventListener("click", () => {
+    saveCompanyMemberChanges();
+  });
+
+  saveRow.append(saveNote, saveButton);
+  body.appendChild(saveRow);
 }
 
 function normalizeScheduleItem(item) {
@@ -1568,7 +1813,7 @@ function renderScheduleAccess() {
   setText("scheduleCompanyBadge", state.company.name);
   setText("scheduleRoleBadge", getMemberRoleLabel());
   setText("schedulePermissionBadge", getSchedulePermissionLabel());
-  setText("scheduleReadonlyNotice", writable ? "" : "구성원은 읽기입니다.");
+  setText("scheduleReadonlyNotice", writable ? "" : "현재 권한은 읽기입니다.");
 
   const input = $("scheduleTitleInput");
   const openButton = $("openScheduleSheetBtn");
@@ -3290,6 +3535,7 @@ async function init() {
 
   loadCompanyMembers();
   loadCompanyMembership();
+  queueCompanyMemberRefresh({ render: false, forceDraftSync: true });
   state.schedules = loadSchedules();
   loadNotificationSettings();
   renderSchedules();

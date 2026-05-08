@@ -2,7 +2,7 @@
 -- Purpose:
 -- - Save company members from the admin UI with server-first behavior.
 -- - Upsert submitted members.
--- - Mark missing non-admin members as deleted.
+-- - Mark missing non-admin members as inactive.
 -- - Keep admin accounts active/admin/write.
 -- - Keep invite code status aligned with member status.
 
@@ -21,11 +21,13 @@ declare
   v_member_id uuid;
   v_saved_count integer := 0;
   v_invite_code text;
+  v_existing_invite_code text;
   v_member_name text;
   v_role text;
   v_schedule_permission text;
   v_status text;
   v_pin_code text;
+  v_existing_pin_code text;
   v_seen_member_ids uuid[] := array[]::uuid[];
 begin
   if not exists (
@@ -50,6 +52,7 @@ begin
     from jsonb_array_elements(p_members)
   loop
     v_invite_code := upper(trim(coalesce(v_item->>'invite_code', '')));
+    v_existing_invite_code := null;
     v_member_name := nullif(trim(coalesce(v_item->>'member_name', '')), '');
     v_role := case when v_item->>'role' = 'admin' then 'admin' else 'member' end;
     v_schedule_permission := case
@@ -62,8 +65,9 @@ begin
       else 'active'
     end;
     v_pin_code := nullif(trim(coalesce(v_item->>'pin_code', '')), '');
+    v_existing_pin_code := null;
 
-    if v_invite_code = '' or v_member_name is null then
+    if v_member_name is null then
       continue;
     end if;
 
@@ -76,6 +80,24 @@ begin
       where ic.company_id = p_company_id
         and upper(ic.invite_code) = v_invite_code
       order by case when ic.status = 'active' then 0 else 1 end, upper(ic.invite_code)
+      limit 1;
+    end if;
+
+    if v_member_id is not null then
+      select
+        ic.invite_code,
+        nullif(trim(ic.pin_code), '')
+      into
+        v_existing_invite_code,
+        v_existing_pin_code
+      from invite_codes ic
+      where ic.company_id = p_company_id
+        and ic.member_id = v_member_id
+      order by
+        case when ic.status = 'active' then 0 else 1 end,
+        ic.created_at asc nulls last,
+        ic.id asc,
+        upper(ic.invite_code)
       limit 1;
     end if;
 
@@ -112,14 +134,16 @@ begin
 
     v_seen_member_ids := array_append(v_seen_member_ids, v_member_id);
 
+    if v_existing_invite_code is not null then
+      v_invite_code := v_existing_invite_code;
+    end if;
+
+    if v_invite_code = '' then
+      continue;
+    end if;
+
     if v_pin_code is null then
-      select nullif(trim(ic.pin_code), '')
-      into v_pin_code
-      from invite_codes ic
-      where ic.company_id = p_company_id
-        and ic.member_id = v_member_id
-      order by case when ic.status = 'active' then 0 else 1 end, upper(ic.invite_code)
-      limit 1;
+      v_pin_code := v_existing_pin_code;
     end if;
 
     if v_pin_code is null then
@@ -129,41 +153,58 @@ begin
       end;
     end if;
 
-    insert into invite_codes (
-      company_id,
-      member_id,
-      invite_code,
-      pin_code,
-      status
-    ) values (
-      p_company_id,
-      v_member_id,
-      v_invite_code,
-      v_pin_code,
-      case when v_status = 'active' then 'active' else 'revoked' end
-    )
-    on conflict (invite_code)
-    do update set
-      company_id = excluded.company_id,
-      member_id = excluded.member_id,
-      pin_code = excluded.pin_code,
-      status = case
-        when exists (
-          select 1
-          from company_members m
-          where m.id = excluded.member_id
-            and m.company_id = excluded.company_id
-            and m.role = 'admin'
-        ) then 'active'
-        else excluded.status
-      end;
+    if v_existing_invite_code is not null then
+      update invite_codes
+      set
+        pin_code = v_pin_code,
+        status = case when v_status = 'active' then 'active' else 'inactive' end
+      where company_id = p_company_id
+        and member_id = v_member_id
+        and invite_code = v_existing_invite_code;
+
+      update invite_codes
+      set status = 'inactive'
+      where company_id = p_company_id
+        and member_id = v_member_id
+        and invite_code <> v_existing_invite_code
+        and status <> 'inactive';
+    else
+      insert into invite_codes (
+        company_id,
+        member_id,
+        invite_code,
+        pin_code,
+        status
+      ) values (
+        p_company_id,
+        v_member_id,
+        v_invite_code,
+        v_pin_code,
+        case when v_status = 'active' then 'active' else 'inactive' end
+      )
+      on conflict (invite_code)
+      do update set
+        company_id = excluded.company_id,
+        member_id = excluded.member_id,
+        pin_code = excluded.pin_code,
+        status = case
+          when exists (
+            select 1
+            from company_members m
+            where m.id = excluded.member_id
+              and m.company_id = excluded.company_id
+              and m.role = 'admin'
+          ) then 'active'
+          else excluded.status
+        end;
+    end if;
 
     v_saved_count := v_saved_count + 1;
   end loop;
 
   update company_members m
   set
-    status = case when m.role = 'admin' then 'active' else 'deleted' end,
+    status = case when m.role = 'admin' then 'active' else 'inactive' end,
     schedule_permission = case when m.role = 'admin' then 'write' else m.schedule_permission end
   where m.company_id = p_company_id
     and m.role <> 'admin'
@@ -181,7 +222,7 @@ begin
   set status = case
     when m.role = 'admin' then 'active'
     when m.status = 'active' then 'active'
-    else 'revoked'
+    else 'inactive'
   end
   from company_members m
   where m.id = ic.member_id
