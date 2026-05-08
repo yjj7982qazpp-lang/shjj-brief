@@ -120,6 +120,18 @@
     }
   }
 
+  function firstRpcRow(result) {
+    return Array.isArray(result) ? result[0] : result;
+  }
+
+  function assertRpcOk(result, fallbackMessage) {
+    const row = firstRpcRow(result);
+    if (row && Object.prototype.hasOwnProperty.call(row, "ok") && !row.ok) {
+      throw new Error(row.message || fallbackMessage);
+    }
+    return row;
+  }
+
   function normalizeFromServer(row, ids) {
     return {
       id: row.id,
@@ -276,8 +288,7 @@
         p_location: draft.item.location || null,
         p_memo: draft.item.detailMemo || null,
       });
-      const row = Array.isArray(result) ? result[0] : result;
-      if (!row?.ok) throw new Error(row?.message || "create schedule failed");
+      assertRpcOk(result, "create schedule failed");
 
       await syncSchedulesFromServer();
       showFeedback("서버 일정 저장 완료", { alert: true });
@@ -321,17 +332,19 @@
     }
 
     try {
-      await callRpc("delete_company_schedule", {
+      const result = await callRpc("delete_company_schedule", {
         p_company_id: ids.companyId,
         p_member_id: ids.memberId,
         p_schedule_id: scheduleId,
       });
+      assertRpcOk(result, "delete schedule failed");
+
       await syncSchedulesFromServer();
       showFeedback("일정 삭제가 완료되었습니다.", { alert: true });
     } catch (error) {
-      console.warn("Delete schedule RPC failed. Falling back to local storage.", error);
-      applyScheduleItems(getStoredScheduleItems().filter((item) => item.id !== scheduleId));
-      showFeedback("서버 삭제 실패: 기기 저장소에서만 삭제했습니다.", { alert: true });
+      console.warn("Delete schedule RPC failed", error);
+      const message = error?.message || "서버 삭제에 실패했습니다.";
+      showFeedback(`일정 삭제 실패: ${message}`, { alert: true });
     }
   }
 
