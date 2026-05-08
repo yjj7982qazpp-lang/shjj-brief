@@ -12,10 +12,12 @@
 
   const STORAGE_KEYS = {
     companyMembership: "shjj_company_membership_v1",
+    companyMembers: "shjj_company_members_v1",
     postLoginAction: "shjj_post_login_action_v1",
   };
 
   const DEFAULT_COMPANY_ROOM_ID = "shjj-default";
+  const DEFAULT_LOCAL_MEMBER_PIN = "0000";
   const $ = (id) => document.getElementById(id);
 
   const LOCAL_INVITE_FALLBACKS = {
@@ -30,7 +32,7 @@
       },
     },
     "SHJJ-MEMBER": {
-      pinCode: "0000",
+      pinCode: DEFAULT_LOCAL_MEMBER_PIN,
       roleInfo: {
         memberId: "local-member",
         memberName: "구성원",
@@ -51,6 +53,16 @@
   function setFeedback(message) {
     const el = $("scheduleInviteFeedback");
     if (el) el.textContent = message;
+  }
+
+  function readJson(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw) || fallback;
+    } catch {
+      return fallback;
+    }
   }
 
   function ensurePinInput() {
@@ -174,16 +186,40 @@
     syncSchedulesAfterLogin();
   }
 
+  function getManagedLocalInvite(inviteCode) {
+    const members = readJson(STORAGE_KEYS.companyMembers, []);
+    if (!Array.isArray(members)) return null;
+    return members.find((member) => String(member?.inviteCode || "").trim().toUpperCase() === inviteCode) || null;
+  }
+
   function getLocalFallbackResult(inviteCode, pinCode) {
     const fallback = LOCAL_INVITE_FALLBACKS[inviteCode];
-    if (!fallback) return { ok: false, message: "초대코드가 틀렸습니다.", focus: "invite" };
-    if (fallback.pinCode !== pinCode) return { ok: false, message: "PIN이 틀렸습니다.", focus: "pin" };
+    if (fallback) {
+      if (fallback.pinCode !== pinCode) return { ok: false, message: "PIN이 틀렸습니다.", focus: "pin" };
+      return {
+        ok: true,
+        roleInfo: {
+          ...fallback.roleInfo,
+          companyRoomId: DEFAULT_COMPANY_ROOM_ID,
+          serverCompanyId: "",
+        },
+      };
+    }
+
+    const managedMember = getManagedLocalInvite(inviteCode);
+    if (!managedMember) return { ok: false, message: "초대코드가 틀렸습니다.", focus: "invite" };
+    if (pinCode !== DEFAULT_LOCAL_MEMBER_PIN) return { ok: false, message: "PIN이 틀렸습니다. 신규 구성원 기본 PIN은 0000입니다.", focus: "pin" };
+
     return {
       ok: true,
       roleInfo: {
-        ...fallback.roleInfo,
         companyRoomId: DEFAULT_COMPANY_ROOM_ID,
         serverCompanyId: "",
+        memberId: managedMember.memberId,
+        memberName: managedMember.memberName || "구성원",
+        role: managedMember.role === "admin" ? "admin" : "member",
+        schedulePermission: managedMember.role === "admin" || managedMember.schedulePermission === "write" ? "write" : "read",
+        status: managedMember.status === "inactive" ? "inactive" : "active",
       },
     };
   }
@@ -215,7 +251,7 @@
       return;
     }
 
-    if (LOCAL_INVITE_FALLBACKS[inviteCode]) {
+    if (LOCAL_INVITE_FALLBACKS[inviteCode] || getManagedLocalInvite(inviteCode)) {
       showInviteMessage(localResult.message, {
         focusTarget: localResult.focus === "pin" ? pinInput : inviteInput,
       });
