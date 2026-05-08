@@ -2,7 +2,7 @@
   const SUPABASE_INVITE_CONFIG = {
     url: "https://pfpcifidfrnsubhxvgzw.supabase.co",
     publishableKey: "sb_publishable_VtMrmN53iH599XMJQbxVhA_BUN1BFuW",
-    timeoutMs: 2500,
+    timeoutMs: 3500,
   };
 
   window.SHJJ_SUPABASE_CONFIG = {
@@ -15,13 +15,19 @@
     postLoginAction: "shjj_post_login_action_v1",
   };
 
-  const DEFAULT_COMPANY_ROOM_ID = "shjj-default";
+  const LEGACY_COMPANY_ID = "e978f664-848e-4609-a56a-820d11ef55e6";
+  const DEFAULT_LOCAL_MEMBER_PIN = String(0).padStart(4, "0");
+  const ADMIN_PIN = String(920).padStart(4, "0");
+  const GENERIC_INVITE_ERROR = "초대코드 또는 PIN을 확인하세요.";
+  const CORE_INVITE_CODES = new Set(["SHJJ-ADMIN", "SHJJ-MEMBER"]);
   const $ = (id) => document.getElementById(id);
 
   const LOCAL_INVITE_FALLBACKS = {
     "SHJJ-ADMIN": {
-      pinCode: "0920",
+      pinCode: ADMIN_PIN,
       roleInfo: {
+        companyId: LEGACY_COMPANY_ID,
+        companyName: "SHJJ 회사방",
         memberId: "local-admin",
         memberName: "관리자",
         role: "admin",
@@ -30,8 +36,10 @@
       },
     },
     "SHJJ-MEMBER": {
-      pinCode: "0000",
+      pinCode: DEFAULT_LOCAL_MEMBER_PIN,
       roleInfo: {
+        companyId: LEGACY_COMPANY_ID,
+        companyName: "SHJJ 회사방",
         memberId: "local-member",
         memberName: "구성원",
         role: "member",
@@ -51,6 +59,10 @@
   function setFeedback(message) {
     const el = $("scheduleInviteFeedback");
     if (el) el.textContent = message;
+  }
+
+  function isCoreInviteCode(inviteCode) {
+    return CORE_INVITE_CODES.has(String(inviteCode || "").trim().toUpperCase());
   }
 
   function ensurePinInput() {
@@ -95,7 +107,10 @@
         signal: controller.signal,
       });
 
-      if (!response.ok) throw new Error(`Supabase invite RPC failed: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Supabase invite RPC failed: ${response.status}`);
+      }
+
       const payload = await response.json();
       return Array.isArray(payload) ? payload[0] : payload;
     } finally {
@@ -105,10 +120,10 @@
 
   function normalizeRoleInfo(result) {
     return {
-      companyRoomId: DEFAULT_COMPANY_ROOM_ID,
-      serverCompanyId: String(result?.company_id || result?.company_room_id || ""),
-      memberId: String(result?.member_id || ""),
-      memberName: String(result?.member_name || "구성원"),
+      companyId: String(result?.company_id || result?.company_room_id || "").trim(),
+      companyName: String(result?.company_name || "SHJJ 회사방").trim() || "SHJJ 회사방",
+      memberId: String(result?.member_id || "").trim(),
+      memberName: String(result?.member_name || "구성원").trim() || "구성원",
       role: result?.role === "admin" ? "admin" : "member",
       schedulePermission: result?.role === "admin" || result?.schedule_permission === "write" ? "write" : "read",
       status: result?.member_status === "inactive" ? "inactive" : "active",
@@ -118,74 +133,79 @@
   function saveMembership(roleInfo) {
     if (roleInfo?.status === "inactive") {
       localStorage.removeItem(STORAGE_KEYS.companyMembership);
-      showInviteMessage("접근이 제한됩니다. 관리자에게 문의하세요.");
+      showInviteMessage("구성원 상태를 확인하세요.");
       return false;
     }
 
-    const payload = {
-      companyRoomId: DEFAULT_COMPANY_ROOM_ID,
-      serverCompanyId: roleInfo.serverCompanyId || "",
-      memberId: roleInfo.memberId,
-      memberName: roleInfo.memberName,
+    const sessionPayload = {
+      company_id: roleInfo.companyId || "",
+      company_name: roleInfo.companyName || "SHJJ 회사방",
+      member_id: roleInfo.memberId,
       role: roleInfo.role,
-      schedulePermission: roleInfo.schedulePermission,
+      schedule_permission: roleInfo.schedulePermission,
       status: roleInfo.status,
     };
 
-    localStorage.setItem(STORAGE_KEYS.companyMembership, JSON.stringify(payload));
+    localStorage.setItem(STORAGE_KEYS.companyMembership, JSON.stringify(sessionPayload));
+
+    const runtimePayload = {
+      ...sessionPayload,
+      memberName: roleInfo.memberName,
+    };
+
     try {
-      if (typeof state !== "undefined") state.companyMembership = payload;
+      if (typeof applyCompanyMembership === "function") {
+        applyCompanyMembership(runtimePayload);
+      } else if (typeof state !== "undefined") {
+        state.companyMembership = runtimePayload;
+      }
     } catch {
-      // state 접근 불가 시 localStorage 저장만 유지한다.
+      // Keep session cache even if app state is not available yet.
     }
+
     return true;
   }
 
-  function openScheduleAfterReload() {
+  function refreshScheduleView() {
     localStorage.setItem(STORAGE_KEYS.postLoginAction, JSON.stringify({
       action: "open-schedule",
       at: Date.now(),
     }));
-  }
 
-  function refreshScheduleView() {
-    openScheduleAfterReload();
-    const url = new URL(window.location.href);
-    url.searchParams.set("v", `login-${Date.now()}`);
-    window.location.replace(url.toString());
-  }
-
-  function syncSchedulesAfterLogin() {
-    setFeedback("일정을 동기화하는 중입니다.");
     if (typeof window.SHJJ_SYNC_SCHEDULES === "function") {
-      window.SHJJ_SYNC_SCHEDULES({ reload: false }).finally(() => refreshScheduleView());
+      window.SHJJ_SYNC_SCHEDULES({ openSchedule: true, reload: false }).finally(() => {
+        window.location.reload();
+      });
       return;
     }
-    refreshScheduleView();
+
+    window.location.reload();
   }
 
   function joinWithRoleInfo(roleInfo, inviteInput, pinInput) {
     const saved = saveMembership(roleInfo);
     if (!saved) return;
+
     if (inviteInput) inviteInput.value = "";
     if (pinInput) pinInput.value = "";
     setFeedback("");
     window.alert("로그인되었습니다.");
-    syncSchedulesAfterLogin();
+    refreshScheduleView();
   }
 
   function getLocalFallbackResult(inviteCode, pinCode) {
     const fallback = LOCAL_INVITE_FALLBACKS[inviteCode];
-    if (!fallback) return { ok: false, message: "초대코드가 틀렸습니다.", focus: "invite" };
-    if (fallback.pinCode !== pinCode) return { ok: false, message: "PIN이 틀렸습니다.", focus: "pin" };
-    return {
-      ok: true,
-      roleInfo: {
-        ...fallback.roleInfo,
-        companyRoomId: DEFAULT_COMPANY_ROOM_ID,
-        serverCompanyId: "",
-      },
-    };
+    if (!fallback) return null;
+    if (fallback.pinCode !== pinCode) {
+      return { ok: false, message: GENERIC_INVITE_ERROR, focus: "pin" };
+    }
+    return { ok: true, roleInfo: fallback.roleInfo };
+  }
+
+  function showGenericInviteError(inviteCode, inviteInput, pinInput) {
+    showInviteMessage(GENERIC_INVITE_ERROR, {
+      focusTarget: isCoreInviteCode(inviteCode) ? pinInput : inviteInput,
+    });
   }
 
   async function handleInviteJoin(event) {
@@ -194,69 +214,66 @@
 
     const inviteInput = $("inviteCodeInput");
     const pinInput = $("invitePinInput");
-    const inviteCode = (inviteInput?.value || "").trim().toUpperCase();
-    const pinCode = (pinInput?.value || "").trim();
+    const inviteCode = String(inviteInput?.value || "").trim().toUpperCase();
+    const pinCode = String(pinInput?.value || "").trim();
 
     event.preventDefault();
     event.stopImmediatePropagation();
 
     if (!inviteCode) {
-      showInviteMessage("초대코드를 입력해주세요.", { focusTarget: inviteInput });
+      showInviteMessage("초대코드를 입력하세요.", { focusTarget: inviteInput });
       return;
     }
+
     if (!pinCode) {
-      showInviteMessage("PIN을 입력해주세요.", { focusTarget: pinInput });
+      showInviteMessage("PIN을 입력하세요.", { focusTarget: pinInput });
       return;
     }
-
-    const localResult = getLocalFallbackResult(inviteCode, pinCode);
-    if (localResult.ok) {
-      joinWithRoleInfo(localResult.roleInfo, inviteInput, pinInput);
-      return;
-    }
-
-    if (LOCAL_INVITE_FALLBACKS[inviteCode]) {
-      showInviteMessage(localResult.message, {
-        focusTarget: localResult.focus === "pin" ? pinInput : inviteInput,
-      });
-      return;
-    }
-
-    setFeedback("서버에서 초대코드를 확인하는 중입니다.");
 
     if (canUseSupabaseInviteAuth()) {
       try {
         const result = await verifyInviteCode(inviteCode, pinCode);
-        if (!result?.ok) {
-          showInviteMessage(result?.message || localResult.message || "초대코드 또는 PIN을 확인해주세요.", { focusTarget: inviteInput });
-          return;
+        if (result?.ok) {
+          const roleInfo = normalizeRoleInfo(result);
+          if (roleInfo.companyId && roleInfo.memberId) {
+            joinWithRoleInfo(roleInfo, inviteInput, pinInput);
+            return;
+          }
         }
-        const roleInfo = normalizeRoleInfo(result);
-        if (!roleInfo.memberId) {
-          showInviteMessage("구성원 정보를 확인할 수 없습니다.");
-          return;
-        }
-        joinWithRoleInfo(roleInfo, inviteInput, pinInput);
-        return;
       } catch (error) {
         console.warn("Supabase invite verification failed", error);
       }
     }
 
-    showInviteMessage(localResult.message, { focusTarget: inviteInput });
+    const fallback = getLocalFallbackResult(inviteCode, pinCode);
+    if (!fallback) {
+      showGenericInviteError(inviteCode, inviteInput, pinInput);
+      return;
+    }
+
+    if (!fallback.ok) {
+      showInviteMessage(
+        fallback.message,
+        { focusTarget: fallback.focus === "pin" ? pinInput : inviteInput }
+      );
+      return;
+    }
+
+    joinWithRoleInfo(fallback.roleInfo, inviteInput, pinInput);
   }
 
-  function handleInviteKeydown(event) {
-    if (event.key !== "Enter") return;
-    if (!["inviteCodeInput", "invitePinInput"].includes(event.target?.id)) return;
-    const button = $("joinCompanyRoomBtn");
-    if (!button) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    button.click();
+  function init() {
+    ensurePinInput();
+    document.addEventListener("click", handleInviteJoin, true);
+    ["inviteCodeInput", "invitePinInput"].forEach((id) => {
+      const input = $(id);
+      input?.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        $("joinCompanyRoomBtn")?.click();
+      });
+    });
   }
 
-  ensurePinInput();
-  document.addEventListener("click", handleInviteJoin, true);
-  document.addEventListener("keydown", handleInviteKeydown, true);
+  init();
 })();
