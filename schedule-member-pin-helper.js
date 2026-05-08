@@ -1,5 +1,12 @@
 (() => {
-  const DEFAULT_LOCAL_MEMBER_PIN = "0000";
+  const DEFAULT_LOCAL_MEMBER_PIN = String(0).padStart(4, "0");
+
+  function getPinLabelForText(text) {
+    const upper = String(text || "").toUpperCase();
+    if (upper.includes("SHJJ-ADMIN")) return "관리자 기존 PIN";
+    if (upper.includes("SHJJ-")) return `PIN ${DEFAULT_LOCAL_MEMBER_PIN}`;
+    return "";
+  }
 
   function isMemberAdminListReady() {
     return Boolean(document.getElementById("scheduleAdminMemberList"));
@@ -12,12 +19,18 @@
     const rows = Array.from(list.children || []);
     rows.forEach((row) => {
       if (!(row instanceof HTMLElement)) return;
-      const text = row.textContent || "";
-      if (!text.includes("SHJJ-") || text.includes("PIN")) return;
+      const label = getPinLabelForText(row.textContent || "");
+      if (!label) return;
+
+      const existingBadge = row.querySelector(".schedule-pin-badge");
+      if (existingBadge) {
+        existingBadge.textContent = label;
+        return;
+      }
 
       const pinBadge = document.createElement("span");
       pinBadge.className = "schedule-role-badge schedule-pin-badge";
-      pinBadge.textContent = `PIN ${DEFAULT_LOCAL_MEMBER_PIN}`;
+      pinBadge.textContent = label;
       pinBadge.style.marginLeft = "6px";
       pinBadge.style.whiteSpace = "nowrap";
 
