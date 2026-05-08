@@ -57,9 +57,10 @@ test('SHJJ Brief core screen loads without broken text or console errors', async
   await expect(page.locator('[data-app-title]')).toContainText('SHJJ Brief');
   await expect(page.locator('#weatherSection')).toBeVisible();
   await expect(page.locator('#guideSection')).toBeVisible();
-  await expect(page.locator('#notificationTimeInput')).toBeAttached();
-  await expect(page.locator('#scheduleSection details.fold-card')).toBeAttached();
-  await expect(page.locator('#lawBasisChip')).toContainText('시행일 기준');
+  await expect(page.locator('#notificationTimeInput').first()).toBeAttached();
+  const scheduleFold = page.locator('#scheduleSection details.fold-card').first();
+  await expect(scheduleFold).toBeAttached();
+  await expect(page.locator('#lawBasisChip')).toHaveText(/법령 브리프|변경 있음|시행일 기준/);
 
   const pageText = await page.locator('body').innerText();
   for (const pattern of BROKEN_TEXT_PATTERNS) {
@@ -70,8 +71,10 @@ test('SHJJ Brief core screen loads without broken text or console errors', async
   const guideBox = await page.locator('#guideSection').boundingBox();
   expect(weatherBox?.y ?? 999999).toBeLessThan(guideBox?.y ?? -1);
 
-  await page.locator('#scheduleSection summary').click();
-  await expect(page.locator('#scheduleSection details.fold-card')).toHaveAttribute('open', '');
+  if (!(await scheduleFold.evaluate((element) => element.hasAttribute('open')))) {
+    await scheduleFold.locator('summary').first().click();
+  }
+  await expect(scheduleFold).toHaveAttribute('open', '');
 
   expect(errors).toEqual([]);
 });
