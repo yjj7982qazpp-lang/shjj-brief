@@ -84,7 +84,7 @@
     const membership = getMembership();
     if (!membership || membership.status !== "active") return null;
 
-    const rawCompanyId = String(membership.companyRoomId || "").trim();
+    const rawCompanyId = String(membership.serverCompanyId || membership.companyRoomId || "").trim();
     const rawMemberId = String(membership.memberId || "").trim();
     const companyId = UUID_RE.test(rawCompanyId) ? rawCompanyId : CONFIG.companyId;
     const memberId = MEMBER_UUID_MAP[rawMemberId] || rawMemberId;

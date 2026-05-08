@@ -194,6 +194,7 @@
         throw new Error(row.message || "save failed");
       }
       if (status) status.textContent = "구성원 변경 저장 완료";
+      window.alert("구성원 변경 저장 완료");
     } catch (error) {
       console.warn("Save company members failed", error);
       if (status) status.textContent = "구성원 변경 저장 실패: 서버 저장 함수 적용이 필요합니다.";
