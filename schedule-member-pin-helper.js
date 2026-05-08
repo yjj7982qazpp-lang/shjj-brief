@@ -136,6 +136,9 @@
     const status = role === "admin"
       ? "active"
       : row?.status === "inactive" ? "inactive" : "active";
+    const inviteStatus = role === "admin"
+      ? "active"
+      : row?.invite_status === "inactive" ? "inactive" : "active";
 
     return {
       memberId: String(row?.member_id || row?.id || "").trim(),
@@ -145,6 +148,7 @@
       status,
       inviteCode: String(row?.invite_code || "").trim().toUpperCase(),
       pinCode: String(row?.pin_code || "").trim(),
+      inviteStatus,
     };
   }
 
@@ -225,6 +229,7 @@
         status: role === "admin" ? "active" : member?.status === "inactive" ? "inactive" : "active",
         invite_code: String(member?.inviteCode || "").trim().toUpperCase(),
         pin_code: String(member?.pinCode || "").trim(),
+        invite_status: role === "admin" ? "active" : member?.inviteStatus === "inactive" ? "inactive" : "active",
       };
     }).filter((member) => member.invite_code);
   }

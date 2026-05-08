@@ -3,7 +3,8 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $sqlFiles = @(
   (Join-Path $PSScriptRoot "patch-save-company-members-rpc.sql"),
-  (Join-Path $PSScriptRoot "patch-list-company-members-with-invites-rpc.sql")
+  (Join-Path $PSScriptRoot "patch-list-company-members-with-invites-rpc.sql"),
+  (Join-Path $PSScriptRoot "patch-readwrite-delete-rpc.sql")
 )
 
 $psqlCommand = Get-Command psql -ErrorAction SilentlyContinue

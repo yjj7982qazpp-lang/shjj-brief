@@ -1,4 +1,4 @@
-/* Structure
+﻿/* Structure
  * - Weather
  * - Daily Guide
  * - Schedule
@@ -121,6 +121,20 @@ const LAW_MESSAGES = {
   emptyWeek: "최근 7일 기준 변경이 없습니다.",
   emptyMonth: "최근 30일 기준 변경이 없습니다.",
 };
+
+const RPC_MESSAGE_MAP = {
+  schedule_delete_success: "일정 삭제 완료",
+  schedule_delete_forbidden: "일정 삭제 권한이 없습니다.",
+  schedule_delete_not_found: "일정을 찾을 수 없습니다.",
+};
+
+function resolveRpcMessage(message, fallback = "") {
+  const normalized = safeText(message, "").trim();
+  if (!normalized) return fallback;
+  return RPC_MESSAGE_MAP[normalized] || normalized;
+}
+
+window.SHJJ_RESOLVE_RPC_MESSAGE = resolveRpcMessage;
 
 const LAW_TAB_PANELS = {
   today: "lawPanelToday",
@@ -762,9 +776,13 @@ function getMemberRoleLabel(member = state.member) {
 }
 
 function getSchedulePermissionLabel(member = state.member) {
-  if (!member || member.status === "inactive") return "차단";
+  if (isBlockedCompanyMember(member)) return "차단";
   if (member.role === "admin" || member.schedulePermission === "write") return "읽기쓰기";
   return "읽기";
+}
+
+function isBlockedCompanyMember(member) {
+  return Boolean(member) && member.status === "active" && member.inviteStatus === "inactive";
 }
 
 function compareCompanyMembers(a, b) {
@@ -848,6 +866,8 @@ function normalizeCompanyMember(value) {
     status,
     inviteCode,
     pinCode: safeText(value?.pinCode, ""),
+    inviteStatus: value?.inviteStatus === "inactive" ? "inactive" : "active",
+    pendingRemoval: Boolean(value?.pendingRemoval),
   };
 }
 
@@ -955,6 +975,7 @@ function normalizeServerCompanyMember(row) {
     status: row.status === "inactive" ? "inactive" : "active",
     inviteCode: row.invite_code || "",
     pinCode: row.pin_code || "",
+    inviteStatus: row.invite_status === "inactive" ? "inactive" : "active",
   });
 }
 
@@ -1001,6 +1022,11 @@ function buildCompanyMembersSavePayload() {
       status: member.role === "admin" ? "active" : member.status,
       invite_code: member.inviteCode,
       pin_code: safeText(member.pinCode, ""),
+      invite_status: member.role === "admin"
+        ? "active"
+        : member.pendingRemoval || member.status === "inactive" || member.inviteStatus === "inactive"
+          ? "inactive"
+          : "active",
     };
 
     if (UUID_RE.test(safeText(member.memberId, ""))) {
@@ -1030,7 +1056,7 @@ function findRoleInfoByInviteCode(code) {
       memberName: managedMember.memberName,
       role: managedMember.role,
       schedulePermission: managedMember.role === "admin" ? "write" : managedMember.schedulePermission,
-      status: managedMember.status,
+      status: managedMember.status === "inactive" || isBlockedCompanyMember(managedMember) ? "inactive" : managedMember.status,
     };
   }
 
@@ -1048,7 +1074,9 @@ function normalizeCompanyMembership(value) {
   const memberId = safeText(value.memberId || value.member_id, "");
   if (!companyId || !memberId) return null;
   const managedMember = getCompanyMemberById(memberId);
-  const status = managedMember?.status || (value.status === "inactive" ? "inactive" : "active");
+  const status = isBlockedCompanyMember(managedMember)
+    ? "inactive"
+    : managedMember?.status || (value.status === "inactive" ? "inactive" : "active");
   const schedulePermission = role === "admin"
     ? "write"
     : managedMember?.schedulePermission || (
@@ -1172,12 +1200,14 @@ function updateCompanyMemberAccess(memberId, accessValue) {
   setCompanyMembersDraft(state.companyMembersDraft.map((member) => {
     if (member.memberId !== memberId || member.role === "admin") return member;
     if (accessValue === "inactive") {
-      return { ...member, status: "inactive", schedulePermission: "read" };
+      return { ...member, status: "active", schedulePermission: "read", inviteStatus: "inactive", pendingRemoval: false };
     }
     return {
       ...member,
       status: "active",
       schedulePermission: accessValue === "write" ? "write" : "read",
+      inviteStatus: "active",
+      pendingRemoval: false,
     };
   }));
   renderScheduleAdminPanel();
@@ -1230,10 +1260,12 @@ function removeCompanyMember(memberId) {
       ...member,
       status: "inactive",
       schedulePermission: "read",
+      inviteStatus: "inactive",
+      pendingRemoval: true,
     };
   }));
   renderScheduleAdminPanel();
-  showNotificationToast("직원을 차단 상태로 저장 예정 표시했습니다.");
+  showNotificationToast("직원을 삭제 예정 상태로 표시했습니다.");
 }
 
 async function saveCompanyMemberChanges() {
@@ -1256,13 +1288,17 @@ async function saveCompanyMemberChanges() {
       }
       const refreshed = await refreshCompanyMembersFromServer({ render: false, forceDraftSync: true });
       if (!refreshed) {
-        state.companyMembers = cloneCompanyMembers(state.companyMembersDraft);
+        state.companyMembers = cloneCompanyMembers(
+          state.companyMembersDraft.filter((member) => member.role === "admin" || !member.pendingRemoval)
+        );
         saveJson(STORAGE_KEYS.companyMembers, state.companyMembers);
         syncCompanyMembersDraft();
         loadCompanyMembership();
       }
     } else {
-      state.companyMembers = cloneCompanyMembers(state.companyMembersDraft);
+      state.companyMembers = cloneCompanyMembers(
+        state.companyMembersDraft.filter((member) => member.role === "admin" || !member.pendingRemoval)
+      );
       saveCompanyMembers();
       loadCompanyMembership();
     }
@@ -1313,6 +1349,7 @@ function renderScheduleAdminPanel() {
     const row = document.createElement("div");
     row.className = "schedule-admin-member";
     row.dataset.memberId = member.memberId;
+    if (member.pendingRemoval) row.classList.add("is-pending-removal");
 
     const info = document.createElement("div");
     info.className = "schedule-admin-member-info";
@@ -1344,6 +1381,14 @@ function renderScheduleAdminPanel() {
     authBadge.className = "schedule-role-badge schedule-auth-badge";
     authBadge.textContent = getMemberPinDisplayText(member);
 
+    const pendingRemovalBadge = document.createElement("span");
+    pendingRemovalBadge.className = "schedule-role-badge";
+    pendingRemovalBadge.textContent = "삭제 예정";
+
+    const blockedBadge = document.createElement("span");
+    blockedBadge.className = "schedule-role-badge";
+    blockedBadge.textContent = "차단";
+
     const copyButton = document.createElement("button");
     copyButton.type = "button";
     copyButton.className = "schedule-admin-copy-btn";
@@ -1363,12 +1408,15 @@ function renderScheduleAdminPanel() {
     }
 
     nameRow.append(name, editButton);
-    codeRow.append(codeChip, authBadge, copyButton);
+    codeRow.append(codeChip, authBadge);
+    if (member.pendingRemoval) codeRow.append(pendingRemovalBadge);
+    if (!member.pendingRemoval && isBlockedCompanyMember(member)) codeRow.append(blockedBadge);
+    codeRow.append(copyButton);
     if (canDeleteCompanyMember(member)) codeRow.append(deleteButton);
     info.append(nameRow, codeRow);
 
     const select = document.createElement("select");
-    select.disabled = member.role === "admin";
+    select.disabled = member.role === "admin" || member.pendingRemoval;
     [
       ["write", "읽기쓰기"],
       ["read", "읽기"],
@@ -1379,7 +1427,7 @@ function renderScheduleAdminPanel() {
       option.textContent = label;
       select.appendChild(option);
     });
-    select.value = member.status === "inactive" ? "inactive" : member.schedulePermission;
+    select.value = member.pendingRemoval || isBlockedCompanyMember(member) ? "inactive" : member.schedulePermission;
     select.addEventListener("change", () => updateCompanyMemberAccess(member.memberId, select.value));
 
     const controls = document.createElement("div");

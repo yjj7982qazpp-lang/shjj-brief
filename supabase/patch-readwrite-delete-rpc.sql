@@ -26,7 +26,7 @@ begin
       )
   ) then
     return query
-    select false, '일정 삭제 권한이 없습니다.'::text;
+    select false, 'schedule_delete_forbidden'::text;
     return;
   end if;
 
@@ -36,12 +36,12 @@ begin
 
   if not found then
     return query
-    select false, '삭제할 일정을 찾을 수 없습니다.'::text;
+    select false, 'schedule_delete_not_found'::text;
     return;
   end if;
 
   return query
-  select true, '일정 삭제 완료'::text;
+  select true, 'schedule_delete_success'::text;
 end;
 $function$;
 

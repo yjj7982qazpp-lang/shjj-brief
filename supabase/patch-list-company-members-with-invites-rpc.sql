@@ -1,7 +1,7 @@
 -- SHJJ Brief Supabase RPC Patch v2
 -- Purpose:
 -- - List company members for the admin UI with invite code and PIN.
--- - Hide deleted members.
+-- - Hide inactive members from the main admin member list after save.
 -- - Keep admins at the top, then active members, then the rest.
 
 create or replace function public.list_company_members_with_invites_rpc(
@@ -67,7 +67,7 @@ begin
     limit 1
   ) ic on true
   where m.company_id = p_company_id
-    and m.status in ('active', 'inactive')
+    and m.status = 'active'
   order by
     case when m.role = 'admin' then 0 else 1 end,
     case when m.status = 'active' then 0 else 1 end,

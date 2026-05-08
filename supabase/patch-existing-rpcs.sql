@@ -310,7 +310,7 @@ begin
   if v_row.invite_status <> 'active' then
     return query
     select false, null::uuid, null::text, null::uuid, null::text, null::text, null::text, null::text,
-      '활성화되지 않은 초대코드입니다. 관리자에게 문의하세요.'::text;
+      'Access blocked. Contact admin.'::text;
     return;
   end if;
 

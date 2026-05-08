@@ -96,7 +96,8 @@
   function assertRpcOk(result, fallbackMessage) {
     const row = firstRpcRow(result);
     if (row && Object.prototype.hasOwnProperty.call(row, "ok") && !row.ok) {
-      throw new Error(row.message || fallbackMessage);
+      const resolveMessage = window.SHJJ_RESOLVE_RPC_MESSAGE;
+      throw new Error(typeof resolveMessage === "function" ? resolveMessage(row.message, fallbackMessage) : (row.message || fallbackMessage));
     }
     return row;
   }
@@ -315,10 +316,16 @@
         p_member_id: ids.memberId,
         p_schedule_id: scheduleId,
       });
-      assertRpcOk(result, "delete schedule failed");
+      const row = assertRpcOk(result, "delete schedule failed");
 
       await syncSchedulesFromServer({ openSchedule: true });
-      showFeedback("일정이 삭제되었습니다.", { alert: true });
+      const resolveMessage = window.SHJJ_RESOLVE_RPC_MESSAGE;
+      showFeedback(
+        typeof resolveMessage === "function"
+          ? resolveMessage(row?.message, "일정 삭제 완료")
+          : "일정 삭제 완료",
+        { alert: true }
+      );
     } catch (error) {
       console.warn("Delete schedule RPC failed", error);
       showFeedback(`일정 삭제 실패: ${error?.message || "unknown error"}`, { alert: true });

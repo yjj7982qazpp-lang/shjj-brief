@@ -26,6 +26,7 @@ declare
   v_role text;
   v_schedule_permission text;
   v_status text;
+  v_invite_status text;
   v_pin_code text;
   v_existing_pin_code text;
   v_seen_member_ids uuid[] := array[]::uuid[];
@@ -62,6 +63,12 @@ begin
     v_status := case
       when v_role = 'admin' then 'active'
       when v_item->>'status' = 'inactive' then 'inactive'
+      else 'active'
+    end;
+    v_invite_status := case
+      when v_role = 'admin' then 'active'
+      when v_item->>'invite_status' = 'inactive' then 'inactive'
+      when v_status = 'inactive' then 'inactive'
       else 'active'
     end;
     v_pin_code := nullif(trim(coalesce(v_item->>'pin_code', '')), '');
@@ -157,7 +164,7 @@ begin
       update invite_codes
       set
         pin_code = v_pin_code,
-        status = case when v_status = 'active' then 'active' else 'inactive' end
+        status = v_invite_status
       where company_id = p_company_id
         and member_id = v_member_id
         and invite_code = v_existing_invite_code;
@@ -180,7 +187,7 @@ begin
         v_member_id,
         v_invite_code,
         v_pin_code,
-        case when v_status = 'active' then 'active' else 'inactive' end
+        v_invite_status
       )
       on conflict (invite_code)
       do update set
@@ -221,10 +228,18 @@ begin
   update invite_codes ic
   set status = case
     when m.role = 'admin' then 'active'
+    when src.invite_status = 'inactive' then 'inactive'
     when m.status = 'active' then 'active'
     else 'inactive'
   end
   from company_members m
+  left join (
+    select
+      nullif(value->>'member_id', '')::uuid as member_id,
+      case when value->>'invite_status' = 'inactive' then 'inactive' else 'active' end as invite_status
+    from jsonb_array_elements(p_members)
+    where nullif(value->>'member_id', '') is not null
+  ) src on src.member_id = m.id
   where m.id = ic.member_id
     and m.company_id = p_company_id
     and ic.company_id = p_company_id;
