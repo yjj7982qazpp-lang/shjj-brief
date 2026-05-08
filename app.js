@@ -252,11 +252,12 @@ function readScheduleStoragePayload() {
     if (!raw) return { version: SCHEDULE_STORAGE_VERSION, items: [] };
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      return { version: 0, items: parsed };
+      return { version: 0, companyId: "", items: parsed };
     }
     if (parsed && typeof parsed === "object" && Array.isArray(parsed.items)) {
       return {
         version: Number.isFinite(Number(parsed.version)) ? Number(parsed.version) : 0,
+        companyId: safeText(parsed.companyId, ""),
         items: parsed.items,
       };
     }
@@ -266,10 +267,29 @@ function readScheduleStoragePayload() {
   return { version: SCHEDULE_STORAGE_VERSION, items: [] };
 }
 
+function getCurrentScheduleCompanyId() {
+  return safeText(
+    state.companyMembership?.companyId ||
+    state.companyMembership?.company_id ||
+    state.companyMembership?.serverCompanyId ||
+    state.company?.id,
+    DEFAULT_COMPANY.id
+  );
+}
+
 function saveSchedulesSafe(items) {
-  const normalized = Array.isArray(items) ? items.map(normalizeScheduleItem) : [];
+  const companyId = getCurrentScheduleCompanyId();
+  const normalized = Array.isArray(items)
+    ? items
+      .map((item) => normalizeScheduleItem({
+        ...item,
+        companyId: safeText(item?.companyId, companyId),
+      }))
+      .filter((item) => safeText(item.companyId, companyId) === companyId)
+    : [];
   saveJson(STORAGE_KEYS.schedules, {
     version: SCHEDULE_STORAGE_VERSION,
+    companyId,
     items: normalized,
   });
   return normalized;
@@ -277,8 +297,17 @@ function saveSchedulesSafe(items) {
 
 function migrateSchedulesIfNeeded() {
   const payload = readScheduleStoragePayload();
-  const normalized = Array.isArray(payload.items) ? payload.items.map(normalizeScheduleItem) : [];
+  const companyId = getCurrentScheduleCompanyId();
+  const normalized = Array.isArray(payload.items)
+    ? payload.items
+      .map((item) => normalizeScheduleItem({
+        ...item,
+        companyId: safeText(item?.companyId, payload.companyId || companyId),
+      }))
+      .filter((item) => safeText(item.companyId, companyId) === companyId)
+    : [];
   const shouldSave = payload.version !== SCHEDULE_STORAGE_VERSION ||
+    safeText(payload.companyId, "") !== companyId ||
     !Array.isArray(payload.items) ||
     JSON.stringify(payload.items) !== JSON.stringify(normalized);
 
@@ -691,11 +720,11 @@ function getWeekRange(dateString = getTodayDateString()) {
 }
 
 function hasCompanyMembership() {
-  return state.companyMembership?.status === "active" && state.companyMembership?.companyRoomId === DEFAULT_COMPANY.id;
+  return state.companyMembership?.status === "active" && Boolean(state.companyMembership?.companyId);
 }
 
 function isCompanyMembershipInactive() {
-  return state.companyMembership?.status === "inactive" && state.companyMembership?.companyRoomId === DEFAULT_COMPANY.id;
+  return state.companyMembership?.status === "inactive" && Boolean(state.companyMembership?.companyId);
 }
 
 function canWriteSchedule(member = state.member) {
@@ -781,6 +810,7 @@ function normalizeCompanyMember(value) {
     schedulePermission,
     status,
     inviteCode,
+    pinCode: safeText(value?.pinCode, memberId === "local-admin" ? "0920" : "0000"),
   };
 }
 
@@ -789,23 +819,11 @@ function getCompanyMemberById(memberId) {
 }
 
 function loadCompanyMembers() {
-  const rawStored = localStorage.getItem(STORAGE_KEYS.companyMembers);
-  const stored = rawStored ? loadArray(STORAGE_KEYS.companyMembers) : [];
-  const seedMembers = rawStored ? [DEFAULT_COMPANY_MEMBERS[0]] : DEFAULT_COMPANY_MEMBERS;
-  const byId = new Map(seedMembers.map((member) => [member.memberId, normalizeCompanyMember(member)]));
-  stored.forEach((member) => {
-    const normalized = normalizeCompanyMember({
-      ...member,
-      inviteCode: normalizeGeneratedInviteCode(member?.inviteCode, member?.memberId, Array.from(byId.values())),
-    });
-    byId.set(normalized.memberId, normalized);
-  });
-  state.companyMembers = Array.from(byId.values());
-  saveJson(STORAGE_KEYS.companyMembers, state.companyMembers);
+  state.companyMembers = [];
 }
 
 function saveCompanyMembers() {
-  saveJson(STORAGE_KEYS.companyMembers, state.companyMembers);
+  return state.companyMembers;
 }
 
 function findRoleInfoByInviteCode(code) {
@@ -828,20 +846,32 @@ function findRoleInfoByInviteCode(code) {
 
 function normalizeCompanyMembership(value) {
   if (!value || typeof value !== "object") return null;
-  if (value.companyRoomId !== DEFAULT_COMPANY.id) return null;
   const role = value.role === "admin" ? "admin" : value.role === "member" ? "member" : "";
   if (!role) return null;
-  const memberId = safeText(value.memberId, role === "admin" ? "local-admin" : "local-member");
+  const companyId = safeText(
+    value.companyId || value.company_id || value.serverCompanyId || value.companyRoomId,
+    ""
+  );
+  const memberId = safeText(value.memberId || value.member_id, "");
+  if (!companyId || !memberId) return null;
   const managedMember = getCompanyMemberById(memberId);
-  if (memberId !== "local-admin" && !managedMember) return null;
   const status = managedMember?.status || (value.status === "inactive" ? "inactive" : "active");
   const schedulePermission = role === "admin"
     ? "write"
-    : managedMember?.schedulePermission || (value.schedulePermission === "write" ? "write" : "read");
+    : managedMember?.schedulePermission || (
+      (value.schedulePermission || value.schedule_permission) === "write" ? "write" : "read"
+    );
+  const companyName = safeText(
+    value.companyName || value.company_name || value.companyRoomName,
+    DEFAULT_COMPANY.name
+  );
 
   return {
-    companyRoomId: DEFAULT_COMPANY.id,
-    companyRoomName: DEFAULT_COMPANY.name,
+    companyId,
+    companyName,
+    companyRoomId: companyId,
+    companyRoomName: companyName,
+    serverCompanyId: companyId,
     memberId,
     memberName: managedMember?.memberName || safeText(value.memberName, role === "admin" ? "관리자" : "구성원"),
     role,
@@ -853,7 +883,12 @@ function normalizeCompanyMembership(value) {
 
 function applyCompanyMembership(membership) {
   state.companyMembership = normalizeCompanyMembership(membership);
-  state.company = DEFAULT_COMPANY;
+  state.company = state.companyMembership
+    ? {
+      id: state.companyMembership.companyId,
+      name: state.companyMembership.companyName,
+    }
+    : DEFAULT_COMPANY;
   state.member = state.companyMembership
     ? {
       id: state.companyMembership.memberId,
@@ -877,18 +912,19 @@ function loadCompanyMembership() {
 
 function saveCompanyMembership(roleInfo) {
   const membership = {
-    companyRoomId: DEFAULT_COMPANY.id,
-    companyRoomName: DEFAULT_COMPANY.name,
-    memberId: roleInfo.memberId,
-    memberName: roleInfo.memberName,
+    company_id: safeText(roleInfo.companyId || roleInfo.serverCompanyId, ""),
+    company_name: safeText(roleInfo.companyName || roleInfo.companyRoomName, DEFAULT_COMPANY.name),
+    member_id: roleInfo.memberId,
     role: roleInfo.role,
-    schedulePermission: roleInfo.schedulePermission,
+    schedule_permission: roleInfo.schedulePermission,
     status: roleInfo.status,
-    joinedAt: new Date().toISOString(),
   };
 
   saveJson(STORAGE_KEYS.companyMembership, membership);
-  applyCompanyMembership(membership);
+  applyCompanyMembership({
+    ...membership,
+    memberName: roleInfo.memberName,
+  });
 }
 
 function clearCompanyMembership() {
@@ -958,12 +994,13 @@ function updateCompanyMemberAccess(memberId, accessValue) {
 function addCompanyMember() {
   if (!canManageCompany()) return;
   const draftMember = normalizeCompanyMember({
-    memberId: makeId(),
+    memberId: `draft-${makeId()}`,
     memberName: getNextMemberName(),
     role: "member",
     schedulePermission: "read",
     status: "active",
     inviteCode: generateMemberInviteCode(),
+    pinCode: "0000",
   });
   state.companyMembers = [...state.companyMembers, draftMember];
   saveCompanyMembers();
@@ -972,7 +1009,7 @@ function addCompanyMember() {
 
 function canDeleteCompanyMember(member) {
   if (!member) return false;
-  return member.memberId !== "local-admin";
+  return member.role !== "admin";
 }
 
 function renameCompanyMember(memberId) {
@@ -1039,6 +1076,7 @@ function renderScheduleAdminPanel() {
   state.companyMembers.forEach((member) => {
     const row = document.createElement("div");
     row.className = "schedule-admin-member";
+    row.dataset.memberId = member.memberId;
 
     const info = document.createElement("div");
     info.className = "schedule-admin-member-info";
@@ -1066,6 +1104,10 @@ function renderScheduleAdminPanel() {
     codeChip.className = "schedule-admin-code";
     codeChip.textContent = member.inviteCode;
 
+    const authBadge = document.createElement("span");
+    authBadge.className = "schedule-role-badge schedule-auth-badge";
+    authBadge.textContent = `PIN ${safeText(member.pinCode, member.role === "admin" ? "0920" : "0000")}`;
+
     const copyButton = document.createElement("button");
     copyButton.type = "button";
     copyButton.className = "schedule-admin-copy-btn";
@@ -1085,7 +1127,7 @@ function renderScheduleAdminPanel() {
     }
 
     nameRow.append(name, editButton);
-    codeRow.append(codeChip, copyButton);
+    codeRow.append(codeChip, authBadge, copyButton);
     if (canDeleteCompanyMember(member)) codeRow.append(deleteButton);
     info.append(nameRow, codeRow);
 
@@ -1126,7 +1168,7 @@ function normalizeScheduleItem(item) {
 
   return {
     id,
-    companyId: safeText(item?.companyId, DEFAULT_COMPANY.id),
+    companyId: safeText(item?.companyId, getCurrentScheduleCompanyId()),
     calendarScope: safeText(item?.calendarScope, "company"),
     date,
     time,
@@ -1314,6 +1356,7 @@ function createScheduleRow(item) {
 
   if (canWriteSchedule()) {
     const deleteButton = createActionButton("삭제", "delete-schedule", item.id, () => {
+      if (window.SHJJ_SUPABASE_SCHEDULE_SYNC_ACTIVE) return;
       removeSchedule(item.id);
     });
     actions.appendChild(deleteButton);
@@ -2973,7 +3016,9 @@ function bindScheduleEvents() {
   bindEvent($("addScheduleMemberBtn"), "click", addCompanyMember);
   bindEvent($("joinCompanyRoomBtn"), "click", joinCompanyRoom);
   bindEvent($("inviteCodeInput"), "keydown", (event) => {
-    if (event.key === "Enter") joinCompanyRoom();
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    $("joinCompanyRoomBtn")?.click();
   });
   bindEvent($("openScheduleSheetBtn"), "click", () => {
     showScheduleFeedback("");
@@ -2987,9 +3032,14 @@ function bindScheduleEvents() {
     resetScheduleForm();
     setScheduleSheetOpen(false);
   });
-  bindEvent($("confirmScheduleBtn"), "click", addSchedule);
+  bindEvent($("confirmScheduleBtn"), "click", () => {
+    if (window.SHJJ_SUPABASE_SCHEDULE_SYNC_ACTIVE) return;
+    addSchedule();
+  });
   bindEvent($("scheduleTitleInput"), "keydown", (event) => {
-    if (event.key === "Enter") addSchedule();
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    $("confirmScheduleBtn")?.click();
   });
   bindEvent($("scheduleSheet"), "click", (event) => {
     if (event.target === $("scheduleSheet")) {
@@ -3007,6 +3057,10 @@ function bindScheduleEvents() {
     const selected = getSelectedScheduleDate();
     state.scheduleCalendarMonth = `${selected.slice(0, 7)}-01`;
     renderSchedules();
+  });
+  bindEvent(document.querySelector(".schedule-calendar-fold"), "toggle", (event) => {
+    if (!event.target?.open || !hasCompanyMembership()) return;
+    renderScheduleCalendar();
   });
   bindEvent($("schedulePrevMonthBtn"), "click", () => moveScheduleCalendarMonth(-1));
   bindEvent($("scheduleNextMonthBtn"), "click", () => moveScheduleCalendarMonth(1));
