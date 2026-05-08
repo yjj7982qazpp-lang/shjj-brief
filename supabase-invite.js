@@ -2,7 +2,7 @@
   const SUPABASE_INVITE_CONFIG = {
     url: "https://pfpcifidfrnsubhxvgzw.supabase.co",
     publishableKey: "sb_publishable_VtMrmN53iH599XMJQbxVhA_BUN1BFuW",
-    timeoutMs: 2500,
+    timeoutMs: 3500,
   };
 
   window.SHJJ_SUPABASE_CONFIG = {
@@ -17,12 +17,13 @@
   };
 
   const DEFAULT_COMPANY_ROOM_ID = "shjj-default";
-  const DEFAULT_LOCAL_MEMBER_PIN = "0000";
+  const DEFAULT_LOCAL_MEMBER_PIN = String(0).padStart(4, "0");
+  const ADMIN_PIN = String(920).padStart(4, "0");
   const $ = (id) => document.getElementById(id);
 
   const LOCAL_INVITE_FALLBACKS = {
     "SHJJ-ADMIN": {
-      pinCode: "0920",
+      pinCode: ADMIN_PIN,
       roleInfo: {
         memberId: "local-admin",
         memberName: "관리자",
@@ -224,6 +225,21 @@
     };
   }
 
+  async function tryServerJoin(inviteCode, pinCode, inviteInput, pinInput) {
+    if (!canUseSupabaseInviteAuth()) return false;
+    try {
+      const result = await verifyInviteCode(inviteCode, pinCode);
+      if (!result?.ok) return false;
+      const roleInfo = normalizeRoleInfo(result);
+      if (!roleInfo.memberId || !roleInfo.serverCompanyId) return false;
+      joinWithRoleInfo(roleInfo, inviteInput, pinInput);
+      return true;
+    } catch (error) {
+      console.warn("Supabase invite verification failed", error);
+      return false;
+    }
+  }
+
   async function handleInviteJoin(event) {
     const button = event.target?.closest?.("#joinCompanyRoomBtn");
     if (!button) return;
@@ -245,41 +261,28 @@
       return;
     }
 
+    const isFixedLocalCode = Boolean(LOCAL_INVITE_FALLBACKS[inviteCode]);
+
+    if (!isFixedLocalCode) {
+      setFeedback("서버에서 초대코드를 확인하는 중입니다.");
+      const joinedFromServer = await tryServerJoin(inviteCode, pinCode, inviteInput, pinInput);
+      if (joinedFromServer) return;
+    }
+
     const localResult = getLocalFallbackResult(inviteCode, pinCode);
     if (localResult.ok) {
       joinWithRoleInfo(localResult.roleInfo, inviteInput, pinInput);
       return;
     }
 
-    if (LOCAL_INVITE_FALLBACKS[inviteCode] || getManagedLocalInvite(inviteCode)) {
+    if (isFixedLocalCode || getManagedLocalInvite(inviteCode)) {
       showInviteMessage(localResult.message, {
         focusTarget: localResult.focus === "pin" ? pinInput : inviteInput,
       });
       return;
     }
 
-    setFeedback("서버에서 초대코드를 확인하는 중입니다.");
-
-    if (canUseSupabaseInviteAuth()) {
-      try {
-        const result = await verifyInviteCode(inviteCode, pinCode);
-        if (!result?.ok) {
-          showInviteMessage(result?.message || localResult.message || "초대코드 또는 PIN을 확인해주세요.", { focusTarget: inviteInput });
-          return;
-        }
-        const roleInfo = normalizeRoleInfo(result);
-        if (!roleInfo.memberId) {
-          showInviteMessage("구성원 정보를 확인할 수 없습니다.");
-          return;
-        }
-        joinWithRoleInfo(roleInfo, inviteInput, pinInput);
-        return;
-      } catch (error) {
-        console.warn("Supabase invite verification failed", error);
-      }
-    }
-
-    showInviteMessage(localResult.message, { focusTarget: inviteInput });
+    showInviteMessage("초대코드 또는 PIN을 확인해주세요.", { focusTarget: inviteInput });
   }
 
   function handleInviteKeydown(event) {
