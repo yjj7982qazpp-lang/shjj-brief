@@ -186,6 +186,11 @@
     );
   }
 
+  function canDeleteSchedule() {
+    const membership = getMembership();
+    return membership?.status === "active" && membership.role === "admin";
+  }
+
   function buildDraftSchedule(ids) {
     const title = String($("scheduleTitleInput")?.value || "").trim();
     const date = String($("scheduleDateInput")?.value || "").trim();
@@ -291,10 +296,15 @@
 
     const scheduleId = getScheduleIdFromDeleteButton(button);
     const ids = getRpcIds();
-    if (!scheduleId || !canUseRpc() || !ids || !canWriteSchedule()) return;
+    if (!scheduleId || !canUseRpc() || !ids) return;
 
     event.preventDefault();
     event.stopImmediatePropagation();
+
+    if (!canDeleteSchedule()) {
+      showFeedback("일정 삭제는 관리자만 가능합니다.", { alert: true });
+      return;
+    }
 
     try {
       await callRpc("delete_company_schedule", {
