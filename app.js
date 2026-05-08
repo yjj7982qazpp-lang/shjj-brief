@@ -750,6 +750,18 @@ function getSchedulePermissionLabel(member = state.member) {
   return "읽기";
 }
 
+function compareCompanyMembers(a, b) {
+  const rank = (member) => {
+    if (member?.role === "admin") return 0;
+    if (member?.status === "active") return 1;
+    return 2;
+  };
+
+  const rankDiff = rank(a) - rank(b);
+  if (rankDiff !== 0) return rankDiff;
+  return safeText(a?.memberName, "").localeCompare(safeText(b?.memberName, ""), "ko");
+}
+
 function buildInviteCodeSet(extraMembers = []) {
   const codes = new Set(Object.keys(INVITE_CODES));
   [...state.companyMembers, ...extraMembers].forEach((member) => {
@@ -1002,7 +1014,7 @@ function addCompanyMember() {
     inviteCode: generateMemberInviteCode(),
     pinCode: "0000",
   });
-  state.companyMembers = [...state.companyMembers, draftMember];
+  state.companyMembers = [...state.companyMembers, draftMember].sort(compareCompanyMembers);
   saveCompanyMembers();
   renderSchedules();
 }
@@ -1023,7 +1035,7 @@ function renameCompanyMember(memberId) {
 
   state.companyMembers = state.companyMembers.map((member) => (
     member.memberId === memberId ? { ...member, memberName: trimmedName } : member
-  ));
+  )).sort(compareCompanyMembers);
   saveCompanyMembers();
   loadCompanyMembership();
   renderSchedules();
@@ -1035,7 +1047,9 @@ function removeCompanyMember(memberId) {
   if (!canDeleteCompanyMember(target)) return;
   if (!confirm("이 구성원을 삭제할까요?")) return;
 
-  state.companyMembers = state.companyMembers.filter((member) => member.memberId !== memberId);
+  state.companyMembers = state.companyMembers
+    .filter((member) => member.memberId !== memberId)
+    .sort(compareCompanyMembers);
   saveCompanyMembers();
 
   if (state.companyMembership?.memberId === memberId) {
@@ -1073,7 +1087,7 @@ function renderScheduleAdminPanel() {
 
   if (!canManageCompany()) return;
 
-  state.companyMembers.forEach((member) => {
+  [...state.companyMembers].sort(compareCompanyMembers).forEach((member) => {
     const row = document.createElement("div");
     row.className = "schedule-admin-member";
     row.dataset.memberId = member.memberId;

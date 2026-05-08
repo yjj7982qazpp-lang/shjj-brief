@@ -18,6 +18,8 @@
   const LEGACY_COMPANY_ID = "e978f664-848e-4609-a56a-820d11ef55e6";
   const DEFAULT_LOCAL_MEMBER_PIN = String(0).padStart(4, "0");
   const ADMIN_PIN = String(920).padStart(4, "0");
+  const GENERIC_INVITE_ERROR = "초대코드 또는 PIN을 확인하세요.";
+  const CORE_INVITE_CODES = new Set(["SHJJ-ADMIN", "SHJJ-MEMBER"]);
   const $ = (id) => document.getElementById(id);
 
   const LOCAL_INVITE_FALLBACKS = {
@@ -57,6 +59,10 @@
   function setFeedback(message) {
     const el = $("scheduleInviteFeedback");
     if (el) el.textContent = message;
+  }
+
+  function isCoreInviteCode(inviteCode) {
+    return CORE_INVITE_CODES.has(String(inviteCode || "").trim().toUpperCase());
   }
 
   function ensurePinInput() {
@@ -127,7 +133,7 @@
   function saveMembership(roleInfo) {
     if (roleInfo?.status === "inactive") {
       localStorage.removeItem(STORAGE_KEYS.companyMembership);
-      showInviteMessage("비활성 구성원입니다. 관리자에게 문의하세요.");
+      showInviteMessage("구성원 상태를 확인하세요.");
       return false;
     }
 
@@ -191,9 +197,15 @@
     const fallback = LOCAL_INVITE_FALLBACKS[inviteCode];
     if (!fallback) return null;
     if (fallback.pinCode !== pinCode) {
-      return { ok: false, message: "PIN이 올바르지 않습니다.", focus: "pin" };
+      return { ok: false, message: GENERIC_INVITE_ERROR, focus: "pin" };
     }
     return { ok: true, roleInfo: fallback.roleInfo };
+  }
+
+  function showGenericInviteError(inviteCode, inviteInput, pinInput) {
+    showInviteMessage(GENERIC_INVITE_ERROR, {
+      focusTarget: isCoreInviteCode(inviteCode) ? pinInput : inviteInput,
+    });
   }
 
   async function handleInviteJoin(event) {
@@ -228,13 +240,6 @@
             return;
           }
         }
-
-        if (result?.message) {
-          showInviteMessage(result.message, {
-            focusTarget: result?.member_status === "inactive" ? inviteInput : pinInput,
-          });
-          return;
-        }
       } catch (error) {
         console.warn("Supabase invite verification failed", error);
       }
@@ -242,7 +247,7 @@
 
     const fallback = getLocalFallbackResult(inviteCode, pinCode);
     if (!fallback) {
-      showInviteMessage("초대코드 또는 PIN을 확인하세요.", { focusTarget: inviteInput });
+      showGenericInviteError(inviteCode, inviteInput, pinInput);
       return;
     }
 

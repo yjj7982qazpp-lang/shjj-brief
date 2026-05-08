@@ -123,18 +123,34 @@
     return membership?.status === "active" && membership?.role === "admin";
   }
 
+  function compareMembers(a, b) {
+    const rank = (member) => {
+      if (member?.role === "admin") return 0;
+      if (member?.status === "active") return 1;
+      return 2;
+    };
+
+    const rankDiff = rank(a) - rank(b);
+    if (rankDiff !== 0) return rankDiff;
+
+    return String(a?.memberName || "").localeCompare(String(b?.memberName || ""), "ko");
+  }
+
   function normalizeServerMember(row) {
     const role = row?.role === "admin" ? "admin" : "member";
     const schedulePermission = role === "admin"
       ? "write"
       : row?.schedule_permission === "write" ? "write" : "read";
+    const status = role === "admin"
+      ? "active"
+      : row?.status === "inactive" ? "inactive" : "active";
 
     return {
       memberId: String(row?.member_id || row?.id || "").trim(),
       memberName: String(row?.member_name || row?.display_name || "구성원").trim() || "구성원",
       role,
       schedulePermission,
-      status: row?.status === "inactive" ? "inactive" : "active",
+      status,
       inviteCode: String(row?.invite_code || "").trim().toUpperCase(),
       pinCode: String(row?.pin_code || (role === "admin" ? "0920" : "0000")).trim(),
     };
@@ -159,10 +175,14 @@
   }
 
   function applyCompanyMembers(members) {
+    const normalized = (Array.isArray(members) ? members : [])
+      .filter((member) => member.memberId && member.inviteCode)
+      .sort(compareMembers);
+
     if (typeof state !== "undefined") {
-      state.companyMembers = Array.isArray(members) ? members : [];
+      state.companyMembers = normalized;
     }
-    syncCurrentMembership(members);
+    syncCurrentMembership(normalized);
     if (typeof renderSchedules === "function") {
       renderSchedules();
     }
@@ -181,10 +201,7 @@
         p_company_id: ids.companyId,
       });
 
-      const members = (Array.isArray(result) ? result : [])
-        .map(normalizeServerMember)
-        .filter((member) => member.memberId && member.inviteCode);
-
+      const members = (Array.isArray(result) ? result : []).map(normalizeServerMember);
       applyCompanyMembers(members);
       setStatus("");
       return true;
@@ -197,20 +214,20 @@
 
   function buildMemberPayload() {
     const members = Array.isArray(state?.companyMembers) ? state.companyMembers : [];
-    return members
-      .map((member) => {
-        const normalizedId = String(member?.memberId || "").trim();
-        return {
-          member_id: UUID_RE.test(normalizedId) ? normalizedId : null,
-          client_member_id: normalizedId,
-          member_name: member?.memberName || "구성원",
-          role: member?.role === "admin" ? "admin" : "member",
-          schedule_permission: member?.role === "admin" || member?.schedulePermission === "write" ? "write" : "read",
-          status: member?.status === "inactive" ? "inactive" : "active",
-          invite_code: String(member?.inviteCode || "").trim().toUpperCase(),
-        };
-      })
-      .filter((member) => member.invite_code);
+    return members.map((member) => {
+      const normalizedId = String(member?.memberId || "").trim();
+      const role = member?.role === "admin" ? "admin" : "member";
+      return {
+        member_id: UUID_RE.test(normalizedId) ? normalizedId : null,
+        client_member_id: normalizedId,
+        member_name: member?.memberName || "구성원",
+        role,
+        schedule_permission: role === "admin" || member?.schedulePermission === "write" ? "write" : "read",
+        status: role === "admin" ? "active" : member?.status === "inactive" ? "inactive" : "active",
+        invite_code: String(member?.inviteCode || "").trim().toUpperCase(),
+        pin_code: String(member?.pinCode || (role === "admin" ? "0920" : "0000")).trim(),
+      };
+    }).filter((member) => member.invite_code);
   }
 
   async function saveMembersToServer() {
@@ -241,6 +258,7 @@
       if (row && Object.prototype.hasOwnProperty.call(row, "ok") && !row.ok) {
         throw new Error(row.message || "save failed");
       }
+
       await loadMembersFromServer();
       setStatus("구성원 변경 저장 완료");
       window.alert("구성원 변경 저장 완료");
@@ -273,7 +291,6 @@
     ensureSaveButton();
     if (target.id === "addScheduleMemberBtn" || target.closest("#addScheduleMemberBtn")) {
       markDirty();
-      return;
     }
   }
 

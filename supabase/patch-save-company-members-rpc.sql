@@ -1,7 +1,10 @@
--- SHJJ Brief Supabase RPC Patch
--- Purpose: save member list changes from the company room admin UI.
--- Apply manually in Supabase SQL Editor after preview review.
--- Existing tables assumed: company_members, invite_codes.
+-- SHJJ Brief Supabase RPC Patch v2
+-- Purpose:
+-- - Save company members from the admin UI with server-first behavior.
+-- - Upsert submitted members.
+-- - Mark missing non-admin members as deleted.
+-- - Keep admin accounts active/admin/write.
+-- - Keep invite code status aligned with member status.
 
 create or replace function public.save_company_members_rpc(
   p_company_id uuid,
@@ -22,6 +25,8 @@ declare
   v_role text;
   v_schedule_permission text;
   v_status text;
+  v_pin_code text;
+  v_seen_member_ids uuid[] := array[]::uuid[];
 begin
   if not exists (
     select 1
@@ -40,13 +45,23 @@ begin
     return;
   end if;
 
-  for v_item in select * from jsonb_array_elements(p_members)
+  for v_item in
+    select value
+    from jsonb_array_elements(p_members)
   loop
     v_invite_code := upper(trim(coalesce(v_item->>'invite_code', '')));
     v_member_name := nullif(trim(coalesce(v_item->>'member_name', '')), '');
     v_role := case when v_item->>'role' = 'admin' then 'admin' else 'member' end;
-    v_schedule_permission := case when v_role = 'admin' or v_item->>'schedule_permission' = 'write' then 'write' else 'read' end;
-    v_status := case when v_item->>'status' = 'inactive' then 'inactive' else 'active' end;
+    v_schedule_permission := case
+      when v_role = 'admin' or v_item->>'schedule_permission' = 'write' then 'write'
+      else 'read'
+    end;
+    v_status := case
+      when v_role = 'admin' then 'active'
+      when v_item->>'status' = 'inactive' then 'inactive'
+      else 'active'
+    end;
+    v_pin_code := nullif(trim(coalesce(v_item->>'pin_code', '')), '');
 
     if v_invite_code = '' or v_member_name is null then
       continue;
@@ -60,11 +75,15 @@ begin
       from invite_codes ic
       where ic.company_id = p_company_id
         and upper(ic.invite_code) = v_invite_code
+      order by case when ic.status = 'active' then 0 else 1 end, upper(ic.invite_code)
       limit 1;
     end if;
 
     if v_member_id is not null and exists (
-      select 1 from company_members m where m.id = v_member_id and m.company_id = p_company_id
+      select 1
+      from company_members m
+      where m.id = v_member_id
+        and m.company_id = p_company_id
     ) then
       update company_members
       set
@@ -91,6 +110,25 @@ begin
       returning id into v_member_id;
     end if;
 
+    v_seen_member_ids := array_append(v_seen_member_ids, v_member_id);
+
+    if v_pin_code is null then
+      select nullif(trim(ic.pin_code), '')
+      into v_pin_code
+      from invite_codes ic
+      where ic.company_id = p_company_id
+        and ic.member_id = v_member_id
+      order by case when ic.status = 'active' then 0 else 1 end, upper(ic.invite_code)
+      limit 1;
+    end if;
+
+    if v_pin_code is null then
+      v_pin_code := case
+        when v_role = 'admin' or v_invite_code = 'SHJJ-ADMIN' then '0920'
+        else '0000'
+      end;
+    end if;
+
     insert into invite_codes (
       company_id,
       member_id,
@@ -101,7 +139,7 @@ begin
       p_company_id,
       v_member_id,
       v_invite_code,
-      '0000',
+      v_pin_code,
       case when v_status = 'active' then 'active' else 'revoked' end
     )
     on conflict (invite_code)
@@ -109,10 +147,46 @@ begin
       company_id = excluded.company_id,
       member_id = excluded.member_id,
       pin_code = excluded.pin_code,
-      status = excluded.status;
+      status = case
+        when exists (
+          select 1
+          from company_members m
+          where m.id = excluded.member_id
+            and m.company_id = excluded.company_id
+            and m.role = 'admin'
+        ) then 'active'
+        else excluded.status
+      end;
 
     v_saved_count := v_saved_count + 1;
   end loop;
+
+  update company_members m
+  set
+    status = case when m.role = 'admin' then 'active' else 'deleted' end,
+    schedule_permission = case when m.role = 'admin' then 'write' else m.schedule_permission end
+  where m.company_id = p_company_id
+    and m.role <> 'admin'
+    and not (m.id = any(v_seen_member_ids));
+
+  update company_members m
+  set
+    status = 'active',
+    role = 'admin',
+    schedule_permission = 'write'
+  where m.company_id = p_company_id
+    and m.role = 'admin';
+
+  update invite_codes ic
+  set status = case
+    when m.role = 'admin' then 'active'
+    when m.status = 'active' then 'active'
+    else 'revoked'
+  end
+  from company_members m
+  where m.id = ic.member_id
+    and m.company_id = p_company_id
+    and ic.company_id = p_company_id;
 
   return query select true, '구성원 변경 저장 완료'::text, v_saved_count;
 end;

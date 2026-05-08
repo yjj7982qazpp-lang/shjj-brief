@@ -1,6 +1,8 @@
--- SHJJ Brief Supabase RPC Patch
--- Purpose: return company members with invite code and schedule permission
--- for the admin company-room UI without relying on localStorage.
+-- SHJJ Brief Supabase RPC Patch v2
+-- Purpose:
+-- - List company members for the admin UI with invite code and PIN.
+-- - Hide deleted members.
+-- - Keep admins at the top, then active members, then the rest.
 
 create or replace function public.list_company_members_with_invites_rpc(
   p_requester_member_id uuid,
@@ -37,11 +39,17 @@ begin
     m.id as member_id,
     m.display_name as member_name,
     m.role,
-    m.schedule_permission,
-    m.status,
-    ic.invite_code,
-    ic.pin_code,
-    ic.status as invite_status
+    case
+      when m.role = 'admin' then 'write'
+      else m.schedule_permission
+    end as schedule_permission,
+    case
+      when m.role = 'admin' then 'active'
+      else m.status
+    end as status,
+    coalesce(ic.invite_code, '') as invite_code,
+    coalesce(ic.pin_code, case when m.role = 'admin' then '0920' else '0000' end) as pin_code,
+    coalesce(ic.status, case when m.role = 'admin' then 'active' else 'revoked' end) as invite_status
   from company_members m
   left join lateral (
     select
@@ -58,6 +66,10 @@ begin
   ) ic on true
   where m.company_id = p_company_id
     and m.status <> 'deleted'
-  order by m.created_at asc;
+  order by
+    case when m.role = 'admin' then 0 else 1 end,
+    case when m.status = 'active' then 0 else 1 end,
+    m.created_at asc,
+    m.display_name asc;
 end;
 $function$;
