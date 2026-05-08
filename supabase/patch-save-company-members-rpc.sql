@@ -229,6 +229,7 @@ begin
   set status = case
     when m.role = 'admin' then 'active'
     when src.invite_status = 'inactive' then 'inactive'
+    when ic.status = 'inactive' then 'inactive'
     when m.status = 'active' then 'active'
     else 'inactive'
   end
