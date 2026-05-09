@@ -1382,11 +1382,11 @@ function renderScheduleAdminPanel() {
     authBadge.textContent = getMemberPinDisplayText(member);
 
     const pendingRemovalBadge = document.createElement("span");
-    pendingRemovalBadge.className = "schedule-role-badge";
+    pendingRemovalBadge.className = "schedule-role-badge schedule-status-badge schedule-status-badge--pending";
     pendingRemovalBadge.textContent = "삭제 예정";
 
     const blockedBadge = document.createElement("span");
-    blockedBadge.className = "schedule-role-badge";
+    blockedBadge.className = "schedule-role-badge schedule-status-badge schedule-status-badge--blocked";
     blockedBadge.textContent = "차단";
 
     const copyButton = document.createElement("button");
