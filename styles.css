@@ -743,6 +743,27 @@ textarea:focus {
   color: var(--gold);
 }
 
+.schedule-auth-badge {
+  background: rgba(70, 105, 141, 0.12);
+  color: var(--blue);
+}
+
+.schedule-status-badge {
+  border: 1px solid transparent;
+}
+
+.schedule-status-badge--pending {
+  background: rgba(148, 163, 184, 0.16);
+  color: #526171;
+  border-color: rgba(148, 163, 184, 0.26);
+}
+
+.schedule-status-badge--blocked {
+  background: rgba(185, 28, 28, 0.12);
+  color: #9a3030;
+  border-color: rgba(185, 28, 28, 0.18);
+}
+
 .schedule-readonly-notice {
   margin: 0 0 8px;
   color: var(--muted);
@@ -1135,6 +1156,34 @@ textarea:focus {
 
   .schedule-admin-code-row {
     justify-content: flex-start;
+  }
+
+  .schedule-admin-member select {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+}
+
+@media (max-width: 390px) {
+  .schedule-admin-code-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 8px;
+    align-items: center;
+  }
+
+  .schedule-admin-code {
+    grid-column: 1 / -1;
+  }
+
+  .schedule-admin-copy-btn,
+  .schedule-admin-delete-btn {
+    justify-self: start;
+  }
+
+  .schedule-admin-delete-btn {
+    justify-self: end;
   }
 }
 
