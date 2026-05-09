@@ -2,13 +2,8 @@ name: AI Development Loop
 
 on:
   schedule:
-<<<<<<< HEAD
-    # 00:20 UTC = 09:20 KST
-    - cron: "20 0 * * *"
-=======
     # TEMP AUTO-7 schedule verification: every 5 minutes. Revert to 00:20 UTC = 09:20 KST after success.
     - cron: "*/5 * * * *"
->>>>>>> de9ff2e (test: temporarily run ai development loop every 5 minutes)
   workflow_dispatch:
 
 permissions:
