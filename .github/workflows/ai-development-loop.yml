@@ -2,8 +2,8 @@ name: AI Development Loop
 
 on:
   schedule:
-    # TEMP AUTO-7 schedule verification: every 5 minutes. Revert to 00:20 UTC = 09:20 KST after success.
-    - cron: "*/5 * * * *"
+    # 00:20 UTC = 09:20 KST
+    - cron: "20 0 * * *"
   workflow_dispatch:
 
 permissions:
@@ -51,7 +51,6 @@ jobs:
           ISSUE_TITLE: ${{ steps.loop.outputs.issue_title }}
           REPORT_PATH: ${{ steps.loop.outputs.report_path }}
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             const title = process.env.ISSUE_TITLE || '[AI DEV] 자동 디벨롭 브리프';
