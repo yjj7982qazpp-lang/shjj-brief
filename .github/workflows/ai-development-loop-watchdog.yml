@@ -12,8 +12,6 @@ permissions:
   contents: write
   issues: write
 
-groups: {}
-
 jobs:
   run-loop-after-law-update:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
