@@ -1,18 +1,18 @@
 {
-  "date": "2026-05-09",
+  "date": "2026-05-10",
   "slot": "morning",
   "focus_area": "API/운영비 절감",
-  "decision": "기존의 저비용 문서화와 호출 절감 아이디어를 유지·발전시키고, 새 아이디어는 1개만 추가해 기준 확정 속도를 높인다.",
+  "decision": "기존의 기준 문서화와 호출 절감 흐름을 유지하고, 변경감지 기준 1페이지 확정을 즉시 실행 후보로 둔다.",
   "existing_ideas": [
     {
       "title": "브리핑 안정화 체크리스트 고도화",
       "decision": "발전",
-      "reason": "1순위 안정성을 저비용으로 높여 재작업과 확인 비용을 줄인다."
+      "reason": "1순위 안정성을 저비용으로 높여 재작업을 줄인다."
     },
     {
       "title": "외부 API 호출 캐시 TTL 재설계",
       "decision": "발전",
-      "reason": "호출 빈도와 비용을 직접 낮춰 2순위 목표에 즉시 기여한다."
+      "reason": "호출 빈도와 비용을 직접 낮춰 2순위에 빠르게 기여한다."
     },
     {
       "title": "광고 수익화 즉시 적용",
@@ -22,19 +22,19 @@
   ],
   "new_ideas": [
     {
-      "title": "소스별 호출 중단선 1페이지 표",
+      "title": "예외 사유 3줄 템플릿",
       "type": "product",
-      "summary": "날씨·법령·일정별 하루 허용 호출 수, 중단선, 재개 조건을 한 장으로 고정한다.",
-      "expected_value": "TTL 조정과 예산 통제를 빠르게 연결해 불필요한 호출을 줄인다.",
+      "summary": "날씨·법령·일정별 재조회 중단과 재개 판단을 3줄 고정 템플릿으로 적는다.",
+      "expected_value": "판단 기준 작성 시간을 줄여 문서 확정과 적용 속도를 높인다.",
       "implementation_cost": "low",
-      "risk": "기준이 지나치게 복잡해지면 현장 적용 속도가 느려질 수 있다.",
+      "risk": "세부 조건이 과도하게 축약되면 예외 해석이 흔들릴 수 있다.",
       "confidence": "medium",
       "recommendation": "keep"
     }
   ],
   "codex_candidate": "{'title': '날씨·법령·일정 변경감지 기준 및 예외 우선순위 1페이지 초안 작성', 'reason': '판단 기준을 먼저 고정하면 TTL과 호출 중단선 적용 속도가 빨라진다.', 'cost': 'low'}",
   "progress_since_last_run": [
-    "기준 문서와 호출 통제 기준을 먼저 고정한 뒤 TTL 재설계로 연결하는 흐름이 유지됐다."
+    "기존 기준 문서화 방향을 유지했고, 실행 단위를 더 작은 판단 표로 좁혔다."
   ],
   "newly_found_issues": [
     "새로 확인된 문제는 없다."
@@ -42,7 +42,7 @@
   "priority_changes": [
     "우선순위 변경은 없다."
   ],
-  "next_action": "날씨·법령·일정 변경감지 기준과 예외 우선순위를 1페이지 표로 확정하고, 그 기준을 TTL 재설계와 호출 중단선에 바로 반영한다.",
+  "next_action": "날씨·법령·일정 변경감지 기준과 예외 우선순위를 1페이지 표로 확정하고, TTL 재설계와 호출 중단선 기준에 바로 연결한다.",
   "why_this_gets_us_to_goal_faster": "고비용 기능 추가 전에 판단 기준을 먼저 고정해 시행착오와 재조회 비용을 줄인다.",
   "project_goal_summary": "# SHJJ Brief 공동 목표",
   "goal_link": "공동 목표와 우선순위를 기준으로 오늘의 집중 분야를 실행 가능한 단위로 정리한다.",
@@ -73,11 +73,11 @@
     ]
   },
   "_ai_development_loop": {
-    "last_run_at_kst": "2026-05-09T13:04:02.927707+09:00",
+    "last_run_at_kst": "2026-05-10T13:18:17.402272+09:00",
     "last_slot": "morning",
-    "last_report_date": "2026-05-09",
-    "last_report_signature": "e2a791fb9e89305ee484f7f0c3d70f09009adc04a7a8a390749cc93dc97290da",
-    "last_report_path": "/home/runner/work/shjj-brief/shjj-brief/data/ai_lab/daily/2026-05-09-1304.md",
-    "last_issue_title": "[AI DEV] 2026-05-09 오전 자동 디벨롭 브리프"
+    "last_report_date": "2026-05-10",
+    "last_report_signature": "672915bf15d72b305b19112b44dc1b201d3dea774b95eca5cf91ea226a3e459c",
+    "last_report_path": "/home/runner/work/shjj-brief/shjj-brief/data/ai_lab/daily/2026-05-10-1318.md",
+    "last_issue_title": "[AI DEV] 2026-05-10 오전 자동 디벨롭 브리프"
   }
 }
