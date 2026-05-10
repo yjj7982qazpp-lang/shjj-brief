@@ -2,17 +2,17 @@
   "date": "2026-05-10",
   "slot": "morning",
   "focus_area": "API/운영비 절감",
-  "decision": "기존의 기준 문서화와 호출 절감 흐름을 유지하고, 변경감지 기준 1페이지 확정을 즉시 실행 후보로 둔다.",
-  "existing_ideas": [
+  "decision": "변경감지 기준과 예외 우선순위를 먼저 고정해 TTL 재설계와 호출 중단선 적용 속도를 높인다.",
+  "existing_ideas_review": [
     {
       "title": "브리핑 안정화 체크리스트 고도화",
       "decision": "발전",
-      "reason": "1순위 안정성을 저비용으로 높여 재작업을 줄인다."
+      "reason": "앱 안정성을 저비용으로 높여 재작업과 예외 처리를 줄인다."
     },
     {
       "title": "외부 API 호출 캐시 TTL 재설계",
       "decision": "발전",
-      "reason": "호출 빈도와 비용을 직접 낮춰 2순위에 빠르게 기여한다."
+      "reason": "호출 빈도와 비용을 직접 낮춰 운영 효율에 빠르게 기여한다."
     },
     {
       "title": "광고 수익화 즉시 적용",
@@ -22,37 +22,40 @@
   ],
   "new_ideas": [
     {
-      "title": "예외 사유 3줄 템플릿",
+      "title": "브리핑 필수 필드 최소집합 표",
       "type": "product",
-      "summary": "날씨·법령·일정별 재조회 중단과 재개 판단을 3줄 고정 템플릿으로 적는다.",
-      "expected_value": "판단 기준 작성 시간을 줄여 문서 확정과 적용 속도를 높인다.",
+      "summary": "날씨·법령·일정 브리핑에서 꼭 필요한 필드만 남겨 재조회 판단을 단순화한다.",
+      "expected_value": "불필요한 호출과 갱신 대상을 줄여 의사결정 속도를 높인다.",
       "implementation_cost": "low",
-      "risk": "세부 조건이 과도하게 축약되면 예외 해석이 흔들릴 수 있다.",
-      "confidence": "medium",
-      "recommendation": "keep"
+      "risk": "필수 필드 정의가 너무 좁으면 일부 브리핑 품질이 흔들릴 수 있다.",
+      "recommendation": "keep",
+      "confidence": "medium"
+    },
+    {
+      "title": "소스별 호출 중단선 요약표",
+      "type": "process",
+      "summary": "날씨·법령·일정별 하루 허용 호출 수와 중단선을 한 장으로 정리한다.",
+      "expected_value": "TTL 조정과 예산 통제를 빠르게 연결해 운영비 초과를 줄인다.",
+      "implementation_cost": "low",
+      "risk": "표준값이 늦게 갱신되면 실제 운영과 괴리가 생길 수 있다.",
+      "recommendation": "keep",
+      "confidence": "medium"
     }
   ],
   "codex_candidate": "{'title': '날씨·법령·일정 변경감지 기준 및 예외 우선순위 1페이지 초안 작성', 'reason': '판단 기준을 먼저 고정하면 TTL과 호출 중단선 적용 속도가 빨라진다.', 'cost': 'low'}",
+  "next_action": "날씨·법령·일정 변경감지 기준과 예외 우선순위를 1페이지 표로 확정하고, TTL 재설계와 호출 중단선 기준에 바로 연결한다.",
+  "why_this_gets_us_to_goal_faster": "고비용 기능 추가보다 판단 기준을 먼저 고정해 시행착오와 재조회 비용을 줄인다.",
   "progress_since_last_run": [
-    "기존 기준 문서화 방향을 유지했고, 실행 단위를 더 작은 판단 표로 좁혔다."
+    "전회와 같은 방향을 유지했고, 실행 단위를 기준표와 호출 통제선으로 더 좁혔다."
   ],
   "newly_found_issues": [
-    "새로 확인된 문제는 없다."
+    "새로 발견된 문제 없음"
   ],
   "priority_changes": [
-    "우선순위 변경은 없다."
+    "우선순위 변경 없음"
   ],
-  "next_action": "날씨·법령·일정 변경감지 기준과 예외 우선순위를 1페이지 표로 확정하고, TTL 재설계와 호출 중단선 기준에 바로 연결한다.",
-  "why_this_gets_us_to_goal_faster": "고비용 기능 추가 전에 판단 기준을 먼저 고정해 시행착오와 재조회 비용을 줄인다.",
   "project_goal_summary": "# SHJJ Brief 공동 목표",
   "goal_link": "공동 목표와 우선순위를 기준으로 오늘의 집중 분야를 실행 가능한 단위로 정리한다.",
-  "existing_ideas_review": [
-    {
-      "title": "기존 아이디어 재검토",
-      "decision": "유지",
-      "reason": "핵심 목표와 직접 연결되는 항목부터 유지한다."
-    }
-  ],
   "developed_existing_ideas": [
     "기존 아이디어를 목표 우선순위 기준으로 재검토한다."
   ],
@@ -73,11 +76,11 @@
     ]
   },
   "_ai_development_loop": {
-    "last_run_at_kst": "2026-05-10T13:18:17.402272+09:00",
+    "last_run_at_kst": "2026-05-10T13:29:46.942178+09:00",
     "last_slot": "morning",
     "last_report_date": "2026-05-10",
-    "last_report_signature": "672915bf15d72b305b19112b44dc1b201d3dea774b95eca5cf91ea226a3e459c",
-    "last_report_path": "/home/runner/work/shjj-brief/shjj-brief/data/ai_lab/daily/2026-05-10-1318.md",
+    "last_report_signature": "090e2923378109be2bbfbbecab85025365e972feb24947cb871212210251e5ca",
+    "last_report_path": "/home/runner/work/shjj-brief/shjj-brief/data/ai_lab/daily/2026-05-10-1329.md",
     "last_issue_title": "[AI DEV] 2026-05-10 오전 자동 디벨롭 브리프"
   }
 }
