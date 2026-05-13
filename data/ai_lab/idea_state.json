@@ -1,24 +1,24 @@
 {
-  "date": "2026-05-12",
+  "date": "2026-05-13",
   "slot": "morning",
   "focus_area": "API/운영비 절감",
-  "decision_summary": "변경감지 기준 1페이지를 확정하고 TTL 재설계와 호출 중단선에 바로 연결한다.",
+  "decision_summary": "변경감지 기준 1페이지를 확정하고 최소 필드 보호표를 붙인 뒤 TTL 재설계와 호출 중단선에 연결한다.",
   "progress_since_last_run": [
-    "기존 방향을 유지하며 판단 기준을 실행 단위로 더 좁혔다.",
-    "필수 필드 보호표를 기준표와 함께 묶어 품질 흔들림 대비를 분리했다."
+    "기준을 실행 단위로 더 좁혀 TTL 적용에 바로 연결할 수 있게 됐다.",
+    "필수 필드 보호표를 기준표와 분리해 품질 흔들림 대응을 명확히 했다."
   ],
   "newly_found_issues": [
-    "필수 필드 최소치가 지나치게 좁으면 일부 브리핑 품질이 약해질 수 있다."
+    "기준이 과도하게 좁아지면 일부 브리핑 품질이 약해질 수 있어 최소 필드 보호표가 필요하다."
   ],
   "priority_changes": [
     "우선순위 변경 없음"
   ],
-  "next_action": "날씨·법령·일정 변경감지 기준과 예외 우선순위를 1페이지 표로 확정하고, TTL 재설계 및 호출 중단선에 연결한다.",
+  "next_action": "날씨·법령·일정 변경감지 기준과 예외 우선순위를 1페이지 표로 확정하고 TTL 재설계 및 호출 중단선 기준에 연결한다.",
   "existing_ideas_review": [
     {
       "title": "브리핑 안정화 체크리스트 고도화",
       "decision": "발전",
-      "reason": "저비용으로 예외 처리와 재작업을 줄여 앱 안정성에 직접 기여한다."
+      "reason": "저비용으로 예외 처리와 재작업을 줄여 앱 안정성에 바로 기여한다."
     },
     {
       "title": "외부 API 호출 캐시 TTL 재설계",
@@ -44,7 +44,7 @@
       "recommendation": "keep"
     },
     {
-      "title": "필수 필드 축소 영향 기록표",
+      "title": "최소 필드 보호표 점검 로그",
       "type": "process",
       "summary": "필수 필드 축소 시 품질 변화를 간단히 기록해 기준 조정 근거를 남긴다.",
       "expected_value": "과도한 축소를 막으면서도 비용 절감 판단을 더 빠르게 한다.",
@@ -56,11 +56,6 @@
     }
   ],
   "codex_candidate": "{'title': '날씨·법령·일정 변경감지 기준 및 예외 우선순위 1페이지 초안 작성', 'reason': '판단 기준을 먼저 고정하면 TTL과 호출 중단선 적용 속도가 빨라진다.', 'cost': 'low'}",
-  "why_this_gets_us_to_goal_faster": "기준을 먼저 고정하면 재조회와 예외 처리의 반복을 줄여 운영비 절감 속도를 높일 수 있다.",
-  "risks": [
-    "기준이 너무 좁아지지 않도록 최소 필드 보호표를 함께 둔다."
-  ],
-  "report_style": "show only progress since last run, newly found issues, priority changes, and next action",
   "project_goal_summary": "# SHJJ Brief 공동 목표",
   "goal_link": "공동 목표와 우선순위를 기준으로 오늘의 집중 분야를 실행 가능한 단위로 정리한다.",
   "developed_existing_ideas": [
@@ -69,24 +64,26 @@
   "paused_ideas": [],
   "killed_ideas": [],
   "next_best_action": "다음 실행 전까지 기존 아이디어의 우선순위 점검 기준을 1페이지로 정리",
+  "why_this_gets_us_to_goal_faster": "고비용 개발 전에 검증 단위를 작게 쪼개어 시행착오 비용을 줄인다.",
   "cost_control_note": "정상 API 응답 기반 실행. 최근 기록은 최대 7개만 참고해 비용을 제한함.",
+  "risks": [],
   "delta_summary": {
     "progress_since_last_run": [
       "전회와 같은 방향을 유지하고, 반복 설명 대신 실행 항목만 좁혀 기록합니다."
     ],
     "newly_found_issues": [
-      "기준이 너무 좁아지지 않도록 최소 필드 보호표를 함께 둔다."
+      "새로 발견한 문제 없음"
     ],
     "priority_changes": [
       "우선순위 변경 없음"
     ]
   },
   "_ai_development_loop": {
-    "last_run_at_kst": "2026-05-12T13:12:44.765459+09:00",
+    "last_run_at_kst": "2026-05-13T13:19:56.123125+09:00",
     "last_slot": "morning",
-    "last_report_date": "2026-05-12",
-    "last_report_signature": "199f5c00ba694d4dba32af2cfa59cd953497b65b6c3857aea81b6c77a563ff8c",
-    "last_report_path": "/home/runner/work/shjj-brief/shjj-brief/data/ai_lab/daily/2026-05-12-1312.md",
-    "last_issue_title": "[AI DEV] 2026-05-12 오전 자동 디벨롭 브리프"
+    "last_report_date": "2026-05-13",
+    "last_report_signature": "a537dc262d8966edab619e0d53213556ffd94359cce3a5bd3ce6e371d3e8aa5f",
+    "last_report_path": "/home/runner/work/shjj-brief/shjj-brief/data/ai_lab/daily/2026-05-13-1319.md",
+    "last_issue_title": "[AI DEV] 2026-05-13 오전 자동 디벨롭 브리프"
   }
 }
