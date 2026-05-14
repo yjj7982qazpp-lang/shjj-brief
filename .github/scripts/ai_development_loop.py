@@ -18,6 +18,7 @@ GOAL_FILE = AI_LAB_DIR / "project_goal.md"
 CATEGORIES_FILE = AI_LAB_DIR / "growth_categories.json"
 IDEA_LEDGER_FILE = AI_LAB_DIR / "idea_ledger.json"
 DECISIONS_FILE = AI_LAB_DIR / "decisions.json"
+STATE_FILE = AI_LAB_DIR / "idea_state.json"
 
 CATEGORY_ORDER = [
     "revenue",
@@ -358,7 +359,7 @@ def call_openai(api_key: str, payload: dict[str, Any]) -> dict[str, Any]:
 
     client = OpenAI(api_key=api_key)
     response = client.responses.create(
-        model=os.getenv("AI_GROWTH_MODEL", "gpt-5.4-mini"),
+        model=os.getenv("AI_DEV_LOOP_MODEL") or os.getenv("AI_GROWTH_MODEL") or "gpt-5.4-mini",
         input=[
             {
                 "role": "system",
@@ -417,7 +418,7 @@ def render_report(result: dict[str, Any], ctx: RunContext) -> str:
     cost = result["cost_model"]
     impact = result["impact_analysis"]
     lines = [
-        f"# AI Growth PM Loop - {ctx.today}",
+        f"# AI Development Loop 성장 제안 리포트 - {ctx.today}",
         "",
         "## 1. 오늘의 관점",
         f"- 분야: {perspective.get('category_name')} ({perspective.get('category')})",
@@ -492,6 +493,39 @@ def append_ledger(ledger: dict[str, Any], ctx: RunContext, category: str, result
     return ledger
 
 
+def build_idea_state(
+    ctx: RunContext,
+    category: str,
+    result: dict[str, Any],
+    growth_path: Path,
+    daily_path: Path,
+    issue_title: str,
+) -> dict[str, Any]:
+    perspective = result["perspective"]
+    top = result["top_proposal"]
+    growth_report_path = growth_path.relative_to(ROOT).as_posix()
+    daily_report_path = daily_path.relative_to(ROOT).as_posix()
+    return {
+        "date": ctx.today,
+        "mode": "growth_suggestion",
+        "category": category,
+        "category_name": clean_text(perspective.get("category_name")),
+        "top_proposal_title": clean_text(top.get("title")),
+        "top_proposal_summary": clean_text(top.get("summary")) or clean_text(top.get("reason")),
+        "last_report_path": growth_report_path,
+        "last_daily_report_path": daily_report_path,
+        "last_issue_title": issue_title,
+        "last_run_at_kst": ctx.now_kst.isoformat(),
+        "cost_model": result.get("cost_model", {}),
+        "_ai_development_loop": {
+            "last_report_date": ctx.today,
+            "last_report_path": growth_report_path,
+            "last_issue_title": issue_title,
+            "last_run_at_kst": ctx.now_kst.isoformat(),
+        },
+    }
+
+
 def write_github_outputs(issue_title: str, report_path: Path, should_create_issue: bool) -> None:
     github_output = os.getenv("GITHUB_OUTPUT")
     if not github_output:
@@ -551,7 +585,8 @@ def main() -> int:
     write_json(IDEA_LEDGER_FILE, ledger)
 
     category_name = result["perspective"].get("category_name", category)
-    issue_title = f"[AI GROWTH] {ctx.today} {category_name} 개선 제안"
+    issue_title = f"[AI DEV] {ctx.today} {category_name} 성장 제안"
+    write_json(STATE_FILE, build_idea_state(ctx, category, result, growth_path, daily_path, issue_title))
     write_github_outputs(issue_title, growth_path, should_create_issue=True)
     print(f"[ai-growth-loop] category={category}, daily={daily_path.name}, growth={growth_path.name}")
     return 0
