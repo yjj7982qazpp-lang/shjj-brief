@@ -45,7 +45,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/ai_lab/idea_state.json data/ai_lab/daily/*.md
+          git add data/ai_lab/idea_state.json data/ai_lab/daily/*.md data/ai_lab/growth_reports/*.md data/ai_lab/growth_categories.json data/ai_lab/idea_ledger.json data/ai_lab/decisions.json
           git commit -m "chore: run ai development loop watchdog"
           git pull --rebase origin main
           git push origin HEAD:main

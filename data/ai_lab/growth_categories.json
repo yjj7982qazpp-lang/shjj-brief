@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "rotation_order": [
+    "revenue",
+    "design_ux",
+    "feature",
+    "content",
+    "scalability",
+    "automation",
+    "code_quality",
+    "ops_cost",
+    "admin_analytics",
+    "marketing_growth"
+  ],
+  "categories": {
+    "revenue": {
+      "name_ko": "수익",
+      "purpose": "구독, B2B 리드, 후원, 프리미엄 기능 등 직접 매출 가능성을 찾는다.",
+      "sample_questions": [
+        "누가 돈을 낼 이유가 있는가?",
+        "무료 사용자를 해치지 않는 과금 지점은 무엇인가?"
+      ]
+    },
+    "design_ux": {
+      "name_ko": "디자인/UX",
+      "purpose": "모바일 첫 화면, 탐색, 읽기 흐름, 반복 사용 편의성을 개선한다.",
+      "sample_questions": [
+        "사용자가 가장 먼저 읽어야 할 정보가 선명한가?",
+        "반복 사용 흐름이 더 짧아질 수 있는가?"
+      ]
+    },
+    "feature": {
+      "name_ko": "기능",
+      "purpose": "기존 앱 목적을 강화하는 신규 기능 또는 기능 고도화 기회를 찾는다.",
+      "sample_questions": [
+        "오늘 브리프 이후 사용자가 바로 할 수 있는 일이 있는가?",
+        "작은 기능으로 체류나 재방문이 늘어나는가?"
+      ]
+    },
+    "content": {
+      "name_ko": "콘텐츠",
+      "purpose": "법령, 일정, 행동 가이드 외에 재방문을 만드는 콘텐츠 확장 방향을 찾는다.",
+      "sample_questions": [
+        "매일 다른 가치가 보이는가?",
+        "전문가가 저장하거나 공유할 콘텐츠가 있는가?"
+      ]
+    },
+    "scalability": {
+      "name_ko": "확장성",
+      "purpose": "iOS, Android, B2B, 다중 도메인 확장에 필요한 구조적 개선을 찾는다.",
+      "sample_questions": [
+        "앱화할 때 병목이 될 구조는 무엇인가?",
+        "다른 업종으로 확장 가능한 단위는 무엇인가?"
+      ]
+    },
+    "automation": {
+      "name_ko": "자동화",
+      "purpose": "관리자 반복 작업, 보고, 검수, 배포 전 점검을 자동화한다.",
+      "sample_questions": [
+        "사람이 매일 확인하는 일을 줄일 수 있는가?",
+        "자동화가 잘못 실행될 때 멈출 장치가 있는가?"
+      ]
+    },
+    "code_quality": {
+      "name_ko": "코드품질",
+      "purpose": "작은 범위의 유지보수성, 테스트 가능성, 회귀 방지 구조를 개선한다.",
+      "sample_questions": [
+        "반복 수정되는 파일에 분리 가능한 책임이 있는가?",
+        "검증 명령이 충분히 빠른가?"
+      ]
+    },
+    "ops_cost": {
+      "name_ko": "운영비",
+      "purpose": "API 호출, AI 요약, 캐시, 빌드, 저장 비용을 낮춘다.",
+      "sample_questions": [
+        "실사용 가치가 낮은 호출을 줄일 수 있는가?",
+        "캐시 재사용 기준이 충분히 강한가?"
+      ]
+    },
+    "admin_analytics": {
+      "name_ko": "관리자/분석",
+      "purpose": "운영자가 볼 지표, 결정 로그, 품질 신호를 체계화한다.",
+      "sample_questions": [
+        "무엇을 보고 진행/보류/폐기를 결정할 것인가?",
+        "관리자용 지표가 과하지 않은가?"
+      ]
+    },
+    "marketing_growth": {
+      "name_ko": "마케팅/성장",
+      "purpose": "공유, 검색 유입, 랜딩 메시지, 바이럴 루프를 개선한다.",
+      "sample_questions": [
+        "사용자가 공유할 명확한 이유가 있는가?",
+        "검색 유입용 콘텐츠 단위가 있는가?"
+      ]
+    }
+  }
+}
