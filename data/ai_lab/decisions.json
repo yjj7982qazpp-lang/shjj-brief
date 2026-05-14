@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "allowed_statuses": [
+    "proceed",
+    "hold",
+    "revise",
+    "discard",
+    "진행",
+    "보류",
+    "수정",
+    "폐기"
+  ],
+  "decisions": []
+}
