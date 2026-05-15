@@ -1,90 +1,25 @@
 {
-  "date": "2026-05-14",
-  "slot": "morning",
-  "focus_area": "API/운영비 절감",
-  "decision_summary": "변경감지 판단을 문장형에서 숫자형 기준으로 더 좁혀 TTL 재설계와 호출 중단선 적용 속도를 높인다.",
-  "progress_since_last_run": [
-    "TTL 조정에 바로 연결될 수 있도록 판단 단위를 더 실행형으로 좁혔다.",
-    "필수 필드 보호와 예외 우선순위를 분리해 기준 충돌을 줄였다.",
-    "반복 점검 대신 바로 쓸 수 있는 로그/표 형태로 정리 방향을 고정했다."
-  ],
-  "newly_found_issues": [
-    "판단 기준이 문장형이면 실행 전 해석 시간이 늘 수 있어 숫자 기준 표기가 필요하다."
-  ],
-  "priority_changes": [
-    "우선순위 변경 없음"
-  ],
-  "next_action": "날씨·법령·일정 변경감지 기준, 예외 우선순위, 호출 중단선을 숫자 기준 1페이지로 확정하고 TTL 전후 호출량 비교 로그를 하루 1회 남긴다.",
-  "existing_ideas_review": [
-    {
-      "title": "브리핑 안정화 체크리스트 고도화",
-      "decision": "발전",
-      "reason": "저비용으로 예외 처리와 재작업을 줄여 앱 안정성에 바로 기여한다."
-    },
-    {
-      "title": "외부 API 호출 캐시 TTL 재설계",
-      "decision": "발전",
-      "reason": "호출 빈도와 비용을 직접 낮춰 운영 효율을 빠르게 높인다."
-    },
-    {
-      "title": "광고 수익화 즉시 적용",
-      "decision": "보류",
-      "reason": "사용자 확보와 체류 지표를 더 쌓은 뒤 판단하는 편이 전체 속도에 유리하다."
-    }
-  ],
-  "new_ideas": [
-    {
-      "title": "TTL 전후 호출량 비교 로그",
-      "type": "process",
-      "summary": "재조회 전후 API 호출 수와 브리핑 품질 변화를 하루 단위로 1줄 기록한다.",
-      "expected_value": "TTL 조정 효과를 빠르게 판별해 비용 절감 속도를 높인다.",
-      "implementation_cost": "low",
-      "decision": "keep",
-      "risk": "기록 항목이 늘면 운영 부담이 약간 증가할 수 있다.",
-      "confidence": "medium",
-      "recommendation": "keep"
-    },
-    {
-      "title": "호출 중단선 숫자 규칙",
-      "type": "process",
-      "summary": "변경 없음·경미·중요를 숫자 기준으로 바꿔 중단선 판단 시간을 줄인다.",
-      "expected_value": "판단 해석 시간을 줄여 반복 실행 속도를 높인다.",
-      "implementation_cost": "low",
-      "decision": "keep",
-      "risk": "숫자 기준이 너무 단순하면 일부 예외를 놓칠 수 있다.",
-      "confidence": "medium",
-      "recommendation": "keep"
-    }
-  ],
-  "codex_candidate": "{'title': '날씨·법령·일정 변경감지 기준과 호출 중단선 숫자 기준 1페이지 초안 작성', 'reason': '판단 기준을 먼저 고정하면 TTL과 호출 중단선 적용 속도가 빨라진다.', 'cost': 'low'}",
-  "why_this_gets_us_to_goal_faster": "고비용 개발 전에 판단 기준과 로그 형식을 먼저 고정하면 시행착오를 줄이고 API 비용 절감 결정을 더 빨리 반복할 수 있다.",
-  "cost_control_note": "저비용 실행만 우선하며, 고비용 작업은 기준이 고정되기 전까지 후보로만 둔다.",
-  "project_goal_summary": "# SHJJ Brief 공동 목표",
-  "goal_link": "공동 목표와 우선순위를 기준으로 오늘의 집중 분야를 실행 가능한 단위로 정리한다.",
-  "developed_existing_ideas": [
-    "기존 아이디어를 목표 우선순위 기준으로 재검토한다."
-  ],
-  "paused_ideas": [],
-  "killed_ideas": [],
-  "next_best_action": "다음 실행 전까지 기존 아이디어의 우선순위 점검 기준을 1페이지로 정리",
-  "risks": [],
-  "delta_summary": {
-    "progress_since_last_run": [
-      "전회와 같은 방향을 유지하고, 반복 설명 대신 실행 항목만 좁혀 기록합니다."
-    ],
-    "newly_found_issues": [
-      "새로 발견한 문제 없음"
-    ],
-    "priority_changes": [
-      "우선순위 변경 없음"
-    ]
+  "date": "2026-05-15",
+  "mode": "growth_suggestion",
+  "category": "scalability",
+  "category_name": "확장성",
+  "top_proposal_title": "도메인-브리핑-과금 단위 분리",
+  "top_proposal_summary": "날씨·일정·법령을 공통 코어로 두고, 업종별로 필요한 브리핑 팩과 과금 단위를 분리하는 확장 구조를 먼저 정의한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-05-15.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-05-15-1334.md",
+  "last_issue_title": "[AI DEV] 2026-05-15 확장성 성장 제안",
+  "last_run_at_kst": "2026-05-15T13:34:12.688528+09:00",
+  "cost_model": {
+    "implementation_cost": "low",
+    "time_estimate": "0.5~1일 문서화 수준",
+    "runtime_impact": "중립~감소",
+    "ops_savings": "도메인 추가 시 중복 검토와 운영 문의를 줄여 장기 비용을 낮출 가능성이 높다.",
+    "why_low_cost": "실제 앱 변경 없이 정의서/매트릭스만 정리하므로 서버/API 비용이 거의 없다."
   },
   "_ai_development_loop": {
-    "last_run_at_kst": "2026-05-14T13:19:05.556460+09:00",
-    "last_slot": "morning",
-    "last_report_date": "2026-05-14",
-    "last_report_signature": "6db6714e3762e8a35325e559a1b3e75ac162e84da26211662d9325c7b639bf47",
-    "last_report_path": "/home/runner/work/shjj-brief/shjj-brief/data/ai_lab/daily/2026-05-14-1319.md",
-    "last_issue_title": "[AI DEV] 2026-05-14 오전 자동 디벨롭 브리프"
+    "last_report_date": "2026-05-15",
+    "last_report_path": "data/ai_lab/growth_reports/2026-05-15.md",
+    "last_issue_title": "[AI DEV] 2026-05-15 확장성 성장 제안",
+    "last_run_at_kst": "2026-05-15T13:34:12.688528+09:00"
   }
 }

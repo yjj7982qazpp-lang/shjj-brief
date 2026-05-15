@@ -22,7 +22,23 @@
         "요약"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "a2b55f5ed5f59419",
+      "date": "2026-05-15",
+      "category": "scalability",
+      "title": "도메인-브리핑-과금 단위 분리",
+      "summary": "날씨·일정·법령을 공통 코어로 두고, 업종별로 필요한 브리핑 팩과 과금 단위를 분리하는 확장 구조를 먼저 정의한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "앱화",
+        "설정",
+        "동기화",
+        "iOS",
+        "Android"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-05-14T13:18:15.001199+09:00"
+  "last_updated": "2026-05-15T13:34:12.688528+09:00"
 }
