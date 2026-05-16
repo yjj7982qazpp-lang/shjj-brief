@@ -38,7 +38,23 @@
         "Android"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "e894e41ad10abd32",
+      "date": "2026-05-16",
+      "category": "automation",
+      "title": "관리자 일일 운영 리포트 자동화",
+      "summary": "매일 사람이 확인하던 운영 항목을 자동으로 요약해 실패/지연/누락/비용 초과/배포 위험을 한 번에 보여준다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "관리자",
+        "결정",
+        "자동반영",
+        "보류",
+        "폐기"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-05-15T13:34:12.688528+09:00"
+  "last_updated": "2026-05-16T13:10:08.183617+09:00"
 }
