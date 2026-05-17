@@ -1,25 +1,23 @@
 {
-  "date": "2026-05-16",
+  "date": "2026-05-17",
   "mode": "growth_suggestion",
-  "category": "automation",
-  "category_name": "자동화",
-  "top_proposal_title": "관리자 일일 운영 리포트 자동화",
-  "top_proposal_summary": "매일 사람이 확인하던 운영 항목을 자동으로 요약해 실패/지연/누락/비용 초과/배포 위험을 한 번에 보여준다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-05-16.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-05-16-1310.md",
-  "last_issue_title": "[AI DEV] 2026-05-16 자동화 성장 제안",
-  "last_run_at_kst": "2026-05-16T13:10:08.183617+09:00",
+  "category": "code_quality",
+  "category_name": "코드품질",
+  "top_proposal_title": "브리핑 출력 계약 + 골든 샘플 회귀셋 문서화",
+  "top_proposal_summary": "보고서 필수 섹션과 원장 필드를 검증하는 저비용 스키마 체크를 추가해 깨진 보고서 생성을 막는다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-05-17.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-05-17-1338.md",
+  "last_issue_title": "[AI DEV] 2026-05-17 코드품질 성장 제안",
+  "last_run_at_kst": "2026-05-17T13:38:30.012663+09:00",
   "cost_model": {
     "recommended_model": "gpt-4.1-mini",
-    "reasoning_level": "low-to-medium",
-    "why": "일일 운영 리포트 초안, 규칙 정리, 경고 조건 표 작성은 구조화 작업이라 경량 모델로 충분하다.",
-    "credit_saving": "대형 모델 대비 반복 실행 비용을 낮추고, 운영자가 읽는 시간도 줄인다.",
-    "escalation_rule": "예외 판정이 복잡해질 때만 상위 모델로 검토한다."
+    "reason": "문서 설계, 중복 판정, 규격 초안 수준이라 대형 추론이 필요하지 않다.",
+    "credit_saving": "코드 분석이나 실행 없이 1페이지 규격과 사례만 정리하면 충분해 저비용 모델로도 품질을 확보할 수 있다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-05-16",
-    "last_report_path": "data/ai_lab/growth_reports/2026-05-16.md",
-    "last_issue_title": "[AI DEV] 2026-05-16 자동화 성장 제안",
-    "last_run_at_kst": "2026-05-16T13:10:08.183617+09:00"
+    "last_report_date": "2026-05-17",
+    "last_report_path": "data/ai_lab/growth_reports/2026-05-17.md",
+    "last_issue_title": "[AI DEV] 2026-05-17 코드품질 성장 제안",
+    "last_run_at_kst": "2026-05-17T13:38:30.012663+09:00"
   }
 }

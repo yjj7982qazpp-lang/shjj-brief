@@ -54,7 +54,23 @@
         "폐기"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "a5157152571bfcab",
+      "date": "2026-05-17",
+      "category": "code_quality",
+      "title": "브리핑 출력 계약 + 골든 샘플 회귀셋 문서화",
+      "summary": "보고서 필수 섹션과 원장 필드를 검증하는 저비용 스키마 체크를 추가해 깨진 보고서 생성을 막는다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "스키마",
+        "검증",
+        "보고서",
+        "원장",
+        "회귀방지"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-05-16T13:10:08.183617+09:00"
+  "last_updated": "2026-05-17T13:38:30.012663+09:00"
 }
