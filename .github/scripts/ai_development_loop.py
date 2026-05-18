@@ -179,6 +179,36 @@ def clean_list(value: Any) -> list[str]:
     return [text] if text else []
 
 
+EMPTY_TEXT_VALUES = {"none", "null", "n/a", "na", "[]", "{}"}
+
+IMPACT_FIELDS = {
+    "수익": "직접 매출 또는 유료 전환 가능성은 낮지만, 제안 검토 후 수익 연결 여부를 확인할 수 있습니다.",
+    "디자인/UX": "사용자가 다음 행동을 이해하는 데 주는 영향은 작으며, 구현 전 화면 복잡도 증가 여부를 확인해야 합니다.",
+    "기능": "기존 핵심 기능을 바꾸지 않는 범위에서 작은 기능 개선 후보로 검토할 수 있습니다.",
+    "콘텐츠": "보고서와 안내 문구의 실행 가능성을 높이는 방향으로 콘텐츠 품질을 보완합니다.",
+    "확장성": "향후 iOS/Android 확장을 해치지 않도록 데이터와 출력 계약을 명확히 유지합니다.",
+    "운영비": "최근 보고서 최대 7개만 참조하고 캐시/기본값을 활용해 추가 API 비용을 늘리지 않습니다.",
+}
+
+
+def safe_text(value: Any, default: str) -> str:
+    if isinstance(value, list):
+        text = ", ".join(clean_list(value))
+    elif isinstance(value, dict):
+        text = ""
+    else:
+        text = clean_text(value)
+    if not text or text.lower() in EMPTY_TEXT_VALUES:
+        return default
+    return text
+
+
+def safe_list(value: Any, default_items: list[str]) -> list[str]:
+    items = clean_list(value)
+    items = [item for item in items if item.lower() not in EMPTY_TEXT_VALUES]
+    return items or default_items
+
+
 def parse_date(value: Any) -> date | None:
     try:
         return date.fromisoformat(clean_text(value)[:10])
@@ -396,17 +426,80 @@ def normalize_result(raw: dict[str, Any], category: str, categories: dict[str, A
 
     top = result.get("top_proposal") if isinstance(result.get("top_proposal"), dict) else {}
     fallback_top = fallback["top_proposal"]
-    top.setdefault("title", fallback_top["title"])
-    top.setdefault("summary", fallback_top["summary"])
-    top.setdefault("similarity_keywords", fallback_top["similarity_keywords"])
-    top.setdefault("priority", "P1")
+    top["title"] = safe_text(top.get("title"), safe_text(fallback_top.get("title"), "AI Development Loop 보고서 출력 품질 보완"))
+    top["summary"] = safe_text(top.get("summary"), safe_text(fallback_top.get("summary"), "보고서 필수 항목을 기본 문장으로 채워 실행 가능한 제안으로 유지합니다."))
+    top["reason"] = safe_text(top.get("reason"), "보고서에 빈값이나 None이 남으면 사용자가 바로 실행할 수 없으므로 출력 계약을 보강합니다.")
+    top["expected_effect"] = safe_text(top.get("expected_effect"), "샘플 보고서에서 필수 항목이 항상 채워지고 검수 기준을 빠르게 확인할 수 있습니다.")
+    top["risk"] = safe_text(top.get("risk"), "출력 보정 범위를 보고서 생성 로직으로 제한하지 않으면 앱 기능 변경으로 번질 수 있습니다.")
+    top["similarity_keywords"] = safe_list(top.get("similarity_keywords"), safe_list(fallback_top.get("similarity_keywords"), ["보고서", "출력", "검증"]))
+    top["priority"] = safe_text(top.get("priority"), "P1")
     result["top_proposal"] = top
 
     perspective = result.get("perspective") if isinstance(result.get("perspective"), dict) else {}
     perspective["category"] = category
-    perspective.setdefault("category_name", categories.get("categories", {}).get(category, {}).get("name_ko", category))
-    perspective.setdefault("core_question", fallback["perspective"]["core_question"])
+    perspective["category_name"] = safe_text(
+        perspective.get("category_name"),
+        safe_text(categories.get("categories", {}).get(category, {}).get("name_ko"), category),
+    )
+    perspective["core_question"] = safe_text(
+        perspective.get("core_question"),
+        safe_text(fallback["perspective"]["core_question"], "오늘 제안이 사용자가 바로 실행 가능한 수준으로 정리되었는가?"),
+    )
     result["perspective"] = perspective
+
+    result["existing_improvements"] = safe_list(
+        result.get("existing_improvements"),
+        ["AI Development Loop는 이미 보고서를 생성하고 원장에 제안을 기록하는 기본 흐름을 갖추고 있습니다."],
+    )
+    result["missing_opportunities"] = safe_list(
+        result.get("missing_opportunities"),
+        ["OpenAI 응답이 일부 필드를 비워도 normalize 단계에서 사람이 읽을 수 있는 기본 문장으로 보정해야 합니다."],
+    )
+
+    impact = result.get("impact_analysis") if isinstance(result.get("impact_analysis"), dict) else {}
+    result["impact_analysis"] = {
+        label: safe_text(impact.get(label), default_text)
+        for label, default_text in IMPACT_FIELDS.items()
+    }
+
+    work = result.get("codex_work_order") if isinstance(result.get("codex_work_order"), dict) else {}
+    fallback_work = fallback["codex_work_order"]
+    work["branch_name"] = safe_text(work.get("branch_name"), f"preview/growth-{category}")
+    work["target_files"] = safe_list(
+        work.get("target_files"),
+        safe_list(fallback_work.get("target_files"), [".github/scripts/ai_development_loop.py", "data/ai_lab/*.json"]),
+    )
+    work["todo"] = safe_text(
+        work.get("todo"),
+        "normalize_result와 render_report 단계에서 필수 보고서 항목을 기본 문장으로 채우고 샘플 보고서로 검수합니다.",
+    )
+    work["do_not_do"] = safe_text(
+        work.get("do_not_do"),
+        "앱 UI, 법령 수집, 날씨, 일정 기능, main 병합, 배포, OpenAI 호출량 증가 작업은 하지 않습니다.",
+    )
+    work["acceptance"] = safe_text(
+        work.get("acceptance"),
+        "샘플 보고서에 None 문자열과 영향 분석 빈칸이 없고 Codex 작업지시서와 비용/모델 판단 항목이 모두 채워져야 합니다.",
+    )
+    result["codex_work_order"] = work
+
+    duplicate = result.get("duplicate_review") if isinstance(result.get("duplicate_review"), dict) else {}
+    duplicate["same_14_days"] = safe_text(duplicate.get("same_14_days"), duplicate_note or "최근 원장 기준 동일 제안 신호 없음")
+    duplicate["similar_30_days"] = safe_text(duplicate.get("similar_30_days"), "최근 원장 기준 30일 내 보류/유사 제안 신호 없음")
+    duplicate["difference_if_duplicate"] = safe_text(
+        duplicate.get("difference_if_duplicate"),
+        "중복 가능성이 발견되면 새 기능 구현보다 출력 검증 기준과 기본값 보정 범위를 차별점으로 둡니다.",
+    )
+    result["duplicate_review"] = duplicate
+
+    cost = result.get("cost_model") if isinstance(result.get("cost_model"), dict) else {}
+    cost["recommended_model"] = safe_text(cost.get("recommended_model"), "GPT-5.4 Mini")
+    cost["reasoning"] = safe_text(cost.get("reasoning"), "Medium")
+    cost["cost_reason"] = safe_text(
+        cost.get("cost_reason"),
+        "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다.",
+    )
+    result["cost_model"] = cost
     return result
 
 
@@ -417,52 +510,54 @@ def render_report(result: dict[str, Any], ctx: RunContext) -> str:
     duplicate = result["duplicate_review"]
     cost = result["cost_model"]
     impact = result["impact_analysis"]
+
     lines = [
         f"# AI Development Loop 성장 제안 리포트 - {ctx.today}",
         "",
         "## 1. 오늘의 관점",
-        f"- 분야: {perspective.get('category_name')} ({perspective.get('category')})",
-        f"- 오늘의 핵심 질문: {perspective.get('core_question')}",
+        f"- 분야: {safe_text(perspective.get('category_name'), '미지정')} ({safe_text(perspective.get('category'), 'unknown')})",
+        f"- 오늘의 핵심 질문: {safe_text(perspective.get('core_question'), '오늘 제안이 바로 실행 가능한가?')}",
         "",
         "## 2. 현재 있는 부분에서 발전할 점",
     ]
-    lines += [f"- {item}" for item in clean_list(result.get("existing_improvements"))]
+    lines += [f"- {item}" for item in safe_list(result.get("existing_improvements"), ["기존 보고서 생성 흐름을 유지합니다."])]
     lines += ["", "## 3. 현재 없는 부분에서 발전할 점"]
-    lines += [f"- {item}" for item in clean_list(result.get("missing_opportunities"))]
+    lines += [f"- {item}" for item in safe_list(result.get("missing_opportunities"), ["빈 필드를 사람이 읽을 수 있는 문장으로 보정합니다."])]
     lines += [
         "",
         "## 4. 분야별 영향 분석",
         "| 분야 | 영향 | 판단 |",
         "| --- | --- | --- |",
     ]
-    for field in ["수익", "디자인/UX", "기능", "콘텐츠", "확장성", "운영비"]:
-        value = impact.get(field, "") if isinstance(impact, dict) else ""
+    for field, default_text in IMPACT_FIELDS.items():
+        value = safe_text(impact.get(field), default_text) if isinstance(impact, dict) else default_text
         lines.append(f"| {field} | {value} | 검토 필요 |")
+
     lines += [
         "",
         "## 5. 오늘의 최우선 제안 1개",
-        f"- 제목: {top.get('title')}",
-        f"- 이유: {top.get('reason')}",
-        f"- 기대효과: {top.get('expected_effect')}",
-        f"- 리스크: {top.get('risk')}",
-        f"- 우선순위: {top.get('priority')}",
+        f"- 제목: {safe_text(top.get('title'), 'AI Development Loop 보고서 출력 품질 보완')}",
+        f"- 이유: {safe_text(top.get('reason'), '보고서 필수 항목이 비면 실행 가능한 작업지시서로 쓰기 어렵습니다.')}",
+        f"- 기대효과: {safe_text(top.get('expected_effect'), '보고서 검수와 후속 작업 착수가 쉬워집니다.')}",
+        f"- 리스크: {safe_text(top.get('risk'), '수정 범위가 보고서 생성 로직 밖으로 커지지 않게 제한해야 합니다.')}",
+        f"- 우선순위: {safe_text(top.get('priority'), 'P1')}",
         "",
         "## 6. Codex 작업지시서",
-        f"- 브랜치명: {work.get('branch_name')}",
-        f"- 수정 대상 파일: {', '.join(clean_list(work.get('target_files')))}",
-        f"- 해야 할 일: {work.get('todo')}",
-        f"- 하지 말아야 할 일: {work.get('do_not_do')}",
-        f"- 검수 기준: {work.get('acceptance')}",
+        f"- 브랜치명: {safe_text(work.get('branch_name'), 'preview/growth-report-quality')}",
+        f"- 수정 대상 파일: {', '.join(safe_list(work.get('target_files'), ['.github/scripts/ai_development_loop.py']))}",
+        f"- 해야 할 일: {safe_text(work.get('todo'), '필수 보고서 항목을 기본 문장으로 보정하고 샘플 보고서를 검수합니다.')}",
+        f"- 하지 말아야 할 일: {safe_text(work.get('do_not_do'), '앱 UI, 법령 수집, 날씨, 일정 기능은 수정하지 않습니다.')}",
+        f"- 검수 기준: {safe_text(work.get('acceptance'), 'None 문자열, 빈 영향 칸, 비어 있는 작업지시서 항목이 없어야 합니다.')}",
         "",
         "## 7. 중복 검토",
-        f"- 최근 14일 내 동일 제안 여부: {duplicate.get('same_14_days')}",
-        f"- 최근 30일 내 유사 제안 여부: {duplicate.get('similar_30_days')}",
-        f"- 중복이면 왜 다른 관점인지 설명: {duplicate.get('difference_if_duplicate')}",
+        f"- 최근 14일 내 동일 제안 여부: {safe_text(duplicate.get('same_14_days'), '최근 원장 기준 동일 제안 신호 없음')}",
+        f"- 최근 30일 내 유사 제안 여부: {safe_text(duplicate.get('similar_30_days'), '최근 원장 기준 유사 제안 신호 없음')}",
+        f"- 중복이라면 무엇이 다른지: {safe_text(duplicate.get('difference_if_duplicate'), '중복 가능성이 있으면 출력 계약 보강과 검증 기준을 차별점으로 둡니다.')}",
         "",
         "## 8. 비용/모델 판단",
-        f"- 추천 모델: {cost.get('recommended_model')}",
-        f"- reasoning/intelligence: {cost.get('reasoning')}",
-        f"- 크레딧 절약 근거: {cost.get('cost_reason')}",
+        f"- 추천 모델: {safe_text(cost.get('recommended_model'), 'GPT-5.4 Mini')}",
+        f"- reasoning/intelligence: {safe_text(cost.get('reasoning'), 'Medium')}",
+        f"- 크레딧 절약 근거: {safe_text(cost.get('cost_reason'), '최근 보고서 최대 7개만 참조하고 로컬 fallback으로 빈 필드를 보정합니다.')}",
         "",
         "## 9. 사용자 결정 필요",
         "- 진행 / 보류 / 수정 / 폐기",
