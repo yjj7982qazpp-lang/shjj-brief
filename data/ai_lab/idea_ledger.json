@@ -70,7 +70,23 @@
         "회귀방지"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "004564a537db7370",
+      "date": "2026-05-18",
+      "category": "ops_cost",
+      "title": "미열람/저사용 섹션 AI 생성 생략 정책",
+      "summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "비용",
+        "캐시",
+        "summary_key",
+        "재사용률",
+        "OpenAI"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-05-17T13:38:30.012663+09:00"
+  "last_updated": "2026-05-18T13:59:54.055290+09:00"
 }
