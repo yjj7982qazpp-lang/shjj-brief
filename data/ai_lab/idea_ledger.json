@@ -86,7 +86,23 @@
         "OpenAI"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "2a6125a450a9167a",
+      "date": "2026-05-19",
+      "category": "admin_analytics",
+      "title": "관리자 의사결정 로그 + 핵심지표 5개 카드",
+      "summary": "제안별 진행/보류/폐기 상태와 카테고리 편중을 JSON으로 축적해 운영자가 다음 작업을 빠르게 고르게 한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "대시보드",
+        "결정",
+        "상태",
+        "카테고리",
+        "운영자"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-05-18T13:59:54.055290+09:00"
+  "last_updated": "2026-05-19T13:38:24.369476+09:00"
 }

@@ -1,26 +1,25 @@
 {
-  "date": "2026-05-18",
+  "date": "2026-05-19",
   "mode": "growth_suggestion",
-  "category": "ops_cost",
-  "category_name": "운영비",
-  "top_proposal_title": "미열람/저사용 섹션 AI 생성 생략 정책",
-  "top_proposal_summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-05-18.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-05-18-1359.md",
-  "last_issue_title": "[AI DEV] 2026-05-18 운영비 성장 제안",
-  "last_run_at_kst": "2026-05-18T13:59:54.055290+09:00",
+  "category": "admin_analytics",
+  "category_name": "관리자/분석",
+  "top_proposal_title": "관리자 의사결정 로그 + 핵심지표 5개 카드",
+  "top_proposal_summary": "제안별 진행/보류/폐기 상태와 카테고리 편중을 JSON으로 축적해 운영자가 다음 작업을 빠르게 고르게 한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-05-19.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-05-19-1338.md",
+  "last_issue_title": "[AI DEV] 2026-05-19 관리자/분석 성장 제안",
+  "last_run_at_kst": "2026-05-19T13:38:24.369476+09:00",
   "cost_model": {
     "recommended_model": "gpt-4.1-mini",
-    "reasoning_level": "low",
-    "why": "오늘은 정책/문서 설계와 중복 회피가 핵심이라 고비용 추론이 필요하지 않다.",
-    "credit_saving_basis": "최근 리포트와 idea_ledger를 기준으로 한 1개 집중 제안, 코드 변경 없음, 문서 초안 수준이라 최소 모델이 적합하다.",
+    "reasoning_intelligence": "low",
+    "credit_saving_basis": "이번 작업은 지표 정의, 임계치 설계, 문서 초안처럼 정형 텍스트 중심이라 고비용 추론이 필요하지 않다. mini로도 충분히 품질을 유지할 수 있다.",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-05-18",
-    "last_report_path": "data/ai_lab/growth_reports/2026-05-18.md",
-    "last_issue_title": "[AI DEV] 2026-05-18 운영비 성장 제안",
-    "last_run_at_kst": "2026-05-18T13:59:54.055290+09:00"
+    "last_report_date": "2026-05-19",
+    "last_report_path": "data/ai_lab/growth_reports/2026-05-19.md",
+    "last_issue_title": "[AI DEV] 2026-05-19 관리자/분석 성장 제안",
+    "last_run_at_kst": "2026-05-19T13:38:24.369476+09:00"
   }
 }
