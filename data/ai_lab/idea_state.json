@@ -1,25 +1,25 @@
 {
-  "date": "2026-05-21",
+  "date": "2026-05-22",
   "mode": "growth_suggestion",
-  "category": "revenue",
-  "category_name": "수익",
-  "top_proposal_title": "사업자 전달형 브리핑 구독 패키지",
-  "top_proposal_summary": "무료 일일 브리프는 유지하고, 주간 변경 요약과 실무 체크리스트를 PDF/메일형 프리미엄 리포트로 분리한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-05-21.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-05-21-1351.md",
-  "last_issue_title": "[AI DEV] 2026-05-21 수익 성장 제안",
-  "last_run_at_kst": "2026-05-21T13:51:49.269636+09:00",
+  "category": "design_ux",
+  "category_name": "디자인/UX",
+  "top_proposal_title": "상황별 첫 화면 프리셋 + 읽기 재개 바",
+  "top_proposal_summary": "오늘 시행 법령, 행동 가이드, 일정 중 사용자의 다음 행동과 연결되는 정보를 첫 화면 상단에 더 명확히 배치한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-05-22.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-05-22-1341.md",
+  "last_issue_title": "[AI DEV] 2026-05-22 디자인/UX 성장 제안",
+  "last_run_at_kst": "2026-05-22T13:41:54.855419+09:00",
   "cost_model": {
     "recommended_model": "gpt-4.1-mini",
-    "reasoning_level": "low-medium",
-    "credit_saving_reason": "기존 보고서와 원장만으로 수익화 가설을 정리할 수 있어 추가 탐색 비용이 거의 없다. 문서/spec 중심이라 고비용 모델이 불필요하다.",
+    "reasoning_intelligence": "Medium",
+    "credit_saving_basis": "문서화와 규칙 정의 중심이라 대형 모델이 과하지 않고, 추가 데이터 호출 없이 기존 상태만으로 설계 가능하다.",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-05-21",
-    "last_report_path": "data/ai_lab/growth_reports/2026-05-21.md",
-    "last_issue_title": "[AI DEV] 2026-05-21 수익 성장 제안",
-    "last_run_at_kst": "2026-05-21T13:51:49.269636+09:00"
+    "last_report_date": "2026-05-22",
+    "last_report_path": "data/ai_lab/growth_reports/2026-05-22.md",
+    "last_issue_title": "[AI DEV] 2026-05-22 디자인/UX 성장 제안",
+    "last_run_at_kst": "2026-05-22T13:41:54.855419+09:00"
   }
 }
