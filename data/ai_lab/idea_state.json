@@ -1,25 +1,26 @@
 {
-  "date": "2026-05-22",
+  "date": "2026-05-23",
   "mode": "growth_suggestion",
-  "category": "design_ux",
-  "category_name": "디자인/UX",
-  "top_proposal_title": "상황별 첫 화면 프리셋 + 읽기 재개 바",
-  "top_proposal_summary": "오늘 시행 법령, 행동 가이드, 일정 중 사용자의 다음 행동과 연결되는 정보를 첫 화면 상단에 더 명확히 배치한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-05-22.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-05-22-1341.md",
-  "last_issue_title": "[AI DEV] 2026-05-22 디자인/UX 성장 제안",
-  "last_run_at_kst": "2026-05-22T13:41:54.855419+09:00",
+  "category": "feature",
+  "category_name": "기능",
+  "top_proposal_title": "브리핑 실행 카드(저장/완료/다음 알림)",
+  "top_proposal_summary": "사용자가 특정 법령 변경에 메모를 남기고 후속 확인 날짜를 저장해 재방문 이유를 만든다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-05-23.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-05-23-1320.md",
+  "last_issue_title": "[AI DEV] 2026-05-23 기능 성장 제안",
+  "last_run_at_kst": "2026-05-23T13:20:32.406971+09:00",
   "cost_model": {
     "recommended_model": "gpt-4.1-mini",
     "reasoning_intelligence": "Medium",
-    "credit_saving_basis": "문서화와 규칙 정의 중심이라 대형 모델이 과하지 않고, 추가 데이터 호출 없이 기존 상태만으로 설계 가능하다.",
+    "credit_saving_basis": "기능 명세와 데이터 구조 정의 중심이라 대형 추론 모델이 아니라도 충분하며, 최근 리포트와 원장만 참조하면 된다.",
+    "ops_cost_view": "새 API 흐름을 늘리지 않고 기존 브리핑 결과 재사용 위주로 설계하면 운영비 증가가 작다.",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-05-22",
-    "last_report_path": "data/ai_lab/growth_reports/2026-05-22.md",
-    "last_issue_title": "[AI DEV] 2026-05-22 디자인/UX 성장 제안",
-    "last_run_at_kst": "2026-05-22T13:41:54.855419+09:00"
+    "last_report_date": "2026-05-23",
+    "last_report_path": "data/ai_lab/growth_reports/2026-05-23.md",
+    "last_issue_title": "[AI DEV] 2026-05-23 기능 성장 제안",
+    "last_run_at_kst": "2026-05-23T13:20:32.406971+09:00"
   }
 }
