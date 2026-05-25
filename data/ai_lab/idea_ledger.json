@@ -182,7 +182,23 @@
         "요약"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "dde0c924a0cd032d",
+      "date": "2026-05-25",
+      "category": "scalability",
+      "title": "채널 분리형 렌더링 어댑터 + 출력 계약 버전 고정",
+      "summary": "알림 시간, 관심 법령, 사용자 결정 기록을 향후 iOS/Android 동기화가 쉬운 데이터 단위로 분리하는 계획을 세운다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "앱화",
+        "설정",
+        "동기화",
+        "iOS",
+        "Android"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-05-24T13:45:40.514439+09:00"
+  "last_updated": "2026-05-25T14:00:45.666409+09:00"
 }

@@ -1,32 +1,25 @@
 {
-  "date": "2026-05-24",
+  "date": "2026-05-25",
   "mode": "growth_suggestion",
-  "category": "content",
-  "category_name": "콘텐츠",
-  "top_proposal_title": "요일·월초·월말 반복 콘텐츠 캘린더",
-  "top_proposal_summary": "브리핑을 사건형이 아니라 편집형 시리즈로 나눠, 사용자가 날짜만 바뀌어도 새 가치를 느끼게 만든다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-05-24.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-05-24-1345.md",
-  "last_issue_title": "[AI DEV] 2026-05-24 콘텐츠 성장 제안",
-  "last_run_at_kst": "2026-05-24T13:45:40.514439+09:00",
+  "category": "scalability",
+  "category_name": "확장성",
+  "top_proposal_title": "채널 분리형 렌더링 어댑터 + 출력 계약 버전 고정",
+  "top_proposal_summary": "알림 시간, 관심 법령, 사용자 결정 기록을 향후 iOS/Android 동기화가 쉬운 데이터 단위로 분리하는 계획을 세운다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-05-25.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-05-25-1400.md",
+  "last_issue_title": "[AI DEV] 2026-05-25 확장성 성장 제안",
+  "last_run_at_kst": "2026-05-25T14:00:45.666409+09:00",
   "cost_model": {
     "recommended_model": "gpt-4.1-mini",
-    "reasoning_level": "low-medium",
-    "credit_saving": [
-      "기존 브리핑 데이터를 재사용",
-      "반복 슬롯 4개만 고정",
-      "템플릿 기반 생성으로 변동폭 축소",
-      "캐시 키를 date+category로 고정"
-    ],
-    "ops_cost_effect": "low",
-    "note": "이번 제안은 새 데이터 수집보다 편집 규칙 정의가 핵심이라 추가 운영비가 작다.",
-    "reasoning": "Medium",
+    "reasoning": "이번 작업은 구조 분석과 문서화 중심이라 고성능 추론 모델이 과하지 않다.",
+    "credit_saving_basis": "채널 분리 원칙을 먼저 고정하면 이후 기능별 분기 검토를 줄여 반복 분석 비용을 낮출 수 있다.",
+    "expected_spend": "low",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-05-24",
-    "last_report_path": "data/ai_lab/growth_reports/2026-05-24.md",
-    "last_issue_title": "[AI DEV] 2026-05-24 콘텐츠 성장 제안",
-    "last_run_at_kst": "2026-05-24T13:45:40.514439+09:00"
+    "last_report_date": "2026-05-25",
+    "last_report_path": "data/ai_lab/growth_reports/2026-05-25.md",
+    "last_issue_title": "[AI DEV] 2026-05-25 확장성 성장 제안",
+    "last_run_at_kst": "2026-05-25T14:00:45.666409+09:00"
   }
 }
