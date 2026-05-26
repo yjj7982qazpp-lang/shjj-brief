@@ -198,7 +198,23 @@
         "Android"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "88dc5cee3f7268a3",
+      "date": "2026-05-26",
+      "category": "automation",
+      "title": "예외 자동 분류 + 원인 패킷 + 처리 큐",
+      "summary": "진행/보류/폐기 결정이 decisions.json에 기록되면 다음 루프가 같은 제안을 반복하지 않도록 자동 반영한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "관리자",
+        "결정",
+        "자동반영",
+        "보류",
+        "폐기"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-05-25T14:00:45.666409+09:00"
+  "last_updated": "2026-05-26T13:44:08.689640+09:00"
 }

@@ -1,25 +1,26 @@
 {
-  "date": "2026-05-25",
+  "date": "2026-05-26",
   "mode": "growth_suggestion",
-  "category": "scalability",
-  "category_name": "확장성",
-  "top_proposal_title": "채널 분리형 렌더링 어댑터 + 출력 계약 버전 고정",
-  "top_proposal_summary": "알림 시간, 관심 법령, 사용자 결정 기록을 향후 iOS/Android 동기화가 쉬운 데이터 단위로 분리하는 계획을 세운다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-05-25.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-05-25-1400.md",
-  "last_issue_title": "[AI DEV] 2026-05-25 확장성 성장 제안",
-  "last_run_at_kst": "2026-05-25T14:00:45.666409+09:00",
+  "category": "automation",
+  "category_name": "자동화",
+  "top_proposal_title": "예외 자동 분류 + 원인 패킷 + 처리 큐",
+  "top_proposal_summary": "진행/보류/폐기 결정이 decisions.json에 기록되면 다음 루프가 같은 제안을 반복하지 않도록 자동 반영한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-05-26.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-05-26-1344.md",
+  "last_issue_title": "[AI DEV] 2026-05-26 자동화 성장 제안",
+  "last_run_at_kst": "2026-05-26T13:44:08.689640+09:00",
   "cost_model": {
     "recommended_model": "gpt-4.1-mini",
-    "reasoning": "이번 작업은 구조 분석과 문서화 중심이라 고성능 추론 모델이 과하지 않다.",
-    "credit_saving_basis": "채널 분리 원칙을 먼저 고정하면 이후 기능별 분기 검토를 줄여 반복 분석 비용을 낮출 수 있다.",
-    "expected_spend": "low",
+    "reasoning_intelligence": "중",
+    "why": "분류/템플릿/요약 중심이라 대형 추론이 필요 없고, 애매한 예외만 상위 모델로 승격하면 된다.",
+    "credit_saving": "규칙 기반 분류를 우선 적용하고, 증빙 패킷 문구는 캐시 재사용한다. 신규 생성은 예외 발생 시에만 수행한다.",
+    "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-05-25",
-    "last_report_path": "data/ai_lab/growth_reports/2026-05-25.md",
-    "last_issue_title": "[AI DEV] 2026-05-25 확장성 성장 제안",
-    "last_run_at_kst": "2026-05-25T14:00:45.666409+09:00"
+    "last_report_date": "2026-05-26",
+    "last_report_path": "data/ai_lab/growth_reports/2026-05-26.md",
+    "last_issue_title": "[AI DEV] 2026-05-26 자동화 성장 제안",
+    "last_run_at_kst": "2026-05-26T13:44:08.689640+09:00"
   }
 }
