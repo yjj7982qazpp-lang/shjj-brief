@@ -1,26 +1,26 @@
 {
-  "date": "2026-05-26",
+  "date": "2026-05-27",
   "mode": "growth_suggestion",
-  "category": "automation",
-  "category_name": "자동화",
-  "top_proposal_title": "예외 자동 분류 + 원인 패킷 + 처리 큐",
-  "top_proposal_summary": "진행/보류/폐기 결정이 decisions.json에 기록되면 다음 루프가 같은 제안을 반복하지 않도록 자동 반영한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-05-26.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-05-26-1344.md",
-  "last_issue_title": "[AI DEV] 2026-05-26 자동화 성장 제안",
-  "last_run_at_kst": "2026-05-26T13:44:08.689640+09:00",
+  "category": "code_quality",
+  "category_name": "코드품질",
+  "top_proposal_title": "성장 제안 원장 정규화 + 중복/파생 판정 스키마",
+  "top_proposal_summary": "보고서 필수 섹션과 원장 필드를 검증하는 저비용 스키마 체크를 추가해 깨진 보고서 생성을 막는다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-05-27.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-05-27-1354.md",
+  "last_issue_title": "[AI DEV] 2026-05-27 코드품질 성장 제안",
+  "last_run_at_kst": "2026-05-27T13:54:23.132385+09:00",
   "cost_model": {
     "recommended_model": "gpt-4.1-mini",
-    "reasoning_intelligence": "중",
-    "why": "분류/템플릿/요약 중심이라 대형 추론이 필요 없고, 애매한 예외만 상위 모델로 승격하면 된다.",
-    "credit_saving": "규칙 기반 분류를 우선 적용하고, 증빙 패킷 문구는 캐시 재사용한다. 신규 생성은 예외 발생 시에만 수행한다.",
+    "reasoning_level": "Low-Medium",
+    "credit_saving_reason": "문서와 원장 정리 중심이라 고성능 추론이 필요 없고, 최근 리포트 7개만 참조하면 충분하다.",
+    "ops_cost_note": "새 API 호출을 늘리는 구조가 아니라 검토 기준을 표준화하는 구조라 장기 비용 절감 효과가 더 크다.",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-05-26",
-    "last_report_path": "data/ai_lab/growth_reports/2026-05-26.md",
-    "last_issue_title": "[AI DEV] 2026-05-26 자동화 성장 제안",
-    "last_run_at_kst": "2026-05-26T13:44:08.689640+09:00"
+    "last_report_date": "2026-05-27",
+    "last_report_path": "data/ai_lab/growth_reports/2026-05-27.md",
+    "last_issue_title": "[AI DEV] 2026-05-27 코드품질 성장 제안",
+    "last_run_at_kst": "2026-05-27T13:54:23.132385+09:00"
   }
 }
