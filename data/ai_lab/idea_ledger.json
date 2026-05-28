@@ -230,7 +230,23 @@
         "회귀방지"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "2644efe8e5247ab1",
+      "date": "2026-05-28",
+      "category": "ops_cost",
+      "title": "섹션 원가 태깅 + 재사용 후보 레지스트리",
+      "summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "비용",
+        "캐시",
+        "summary_key",
+        "재사용률",
+        "OpenAI"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-05-27T13:54:23.132385+09:00"
+  "last_updated": "2026-05-28T13:48:02.962466+09:00"
 }

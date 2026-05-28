@@ -1,26 +1,24 @@
 {
-  "date": "2026-05-27",
+  "date": "2026-05-28",
   "mode": "growth_suggestion",
-  "category": "code_quality",
-  "category_name": "코드품질",
-  "top_proposal_title": "성장 제안 원장 정규화 + 중복/파생 판정 스키마",
-  "top_proposal_summary": "보고서 필수 섹션과 원장 필드를 검증하는 저비용 스키마 체크를 추가해 깨진 보고서 생성을 막는다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-05-27.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-05-27-1354.md",
-  "last_issue_title": "[AI DEV] 2026-05-27 코드품질 성장 제안",
-  "last_run_at_kst": "2026-05-27T13:54:23.132385+09:00",
+  "category": "ops_cost",
+  "category_name": "운영비",
+  "top_proposal_title": "섹션 원가 태깅 + 재사용 후보 레지스트리",
+  "top_proposal_summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-05-28.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-05-28-1348.md",
+  "last_issue_title": "[AI DEV] 2026-05-28 운영비 성장 제안",
+  "last_run_at_kst": "2026-05-28T13:48:02.962466+09:00",
   "cost_model": {
     "recommended_model": "gpt-4.1-mini",
-    "reasoning_level": "Low-Medium",
-    "credit_saving_reason": "문서와 원장 정리 중심이라 고성능 추론이 필요 없고, 최근 리포트 7개만 참조하면 충분하다.",
-    "ops_cost_note": "새 API 호출을 늘리는 구조가 아니라 검토 기준을 표준화하는 구조라 장기 비용 절감 효과가 더 크다.",
-    "reasoning": "Medium",
+    "reasoning": "이번 작업은 구조화된 리포트와 짧은 분류가 중심이라 대형 추론 모델이 필요하지 않다.",
+    "credit_saving_basis": "최근 보고서와 원장만 참조하고, 섹션별 일괄 요약 대신 월 1회 집계형 문구로 유지하면 토큰과 호출 수를 줄일 수 있다.",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-05-27",
-    "last_report_path": "data/ai_lab/growth_reports/2026-05-27.md",
-    "last_issue_title": "[AI DEV] 2026-05-27 코드품질 성장 제안",
-    "last_run_at_kst": "2026-05-27T13:54:23.132385+09:00"
+    "last_report_date": "2026-05-28",
+    "last_report_path": "data/ai_lab/growth_reports/2026-05-28.md",
+    "last_issue_title": "[AI DEV] 2026-05-28 운영비 성장 제안",
+    "last_run_at_kst": "2026-05-28T13:48:02.962466+09:00"
   }
 }
