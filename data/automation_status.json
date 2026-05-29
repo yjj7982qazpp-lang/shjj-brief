@@ -1,13 +1,13 @@
 {
-  "last_run_kst": "2026-05-28T13:47:43+09:00",
-  "next_run_kst": "2026-05-29T09:20:00+09:00",
-  "status": "changed",
-  "message": "오늘 관심 법령 데이터가 갱신되었습니다. 변경 후보 1건, OpenAI 호출 0회입니다.",
+  "last_run_kst": "2026-05-29T13:50:39+09:00",
+  "next_run_kst": "2026-05-30T09:20:00+09:00",
+  "status": "no_change",
+  "message": "오늘 확인 결과 변경된 관심 법령이 없습니다.",
   "failure_hint": "특이사항 없음",
-  "legal_change_count": 1,
+  "legal_change_count": 0,
   "today_count": 0,
   "last_7_days_count": 0,
-  "last_30_days_count": 1,
+  "last_30_days_count": 0,
   "new_summary_key_count": 0,
   "cache_hit_count": 1,
   "openai_call_count": 0,
@@ -326,19 +326,19 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 99.22,
       "changed_files_count": 1
-    }
-  ],
-  "recent_7_runs": [
+    },
     {
-      "date": "2026-05-22",
-      "last_run_kst": "2026-05-22T13:41:34+09:00",
+      "date": "2026-05-29",
+      "last_run_kst": "2026-05-29T13:50:39+09:00",
       "status": "no_change",
       "message": "오늘 확인 결과 변경된 관심 법령이 없습니다.",
       "openai_call_count": 0,
       "estimated_cost_usd": 0.0,
-      "duration_seconds": 90.31,
+      "duration_seconds": 137.44,
       "changed_files_count": 0
-    },
+    }
+  ],
+  "recent_7_runs": [
     {
       "date": "2026-05-23",
       "last_run_kst": "2026-05-23T13:20:16+09:00",
@@ -398,12 +398,20 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 99.22,
       "changed_files_count": 1
+    },
+    {
+      "date": "2026-05-29",
+      "last_run_kst": "2026-05-29T13:50:39+09:00",
+      "status": "no_change",
+      "message": "오늘 확인 결과 변경된 관심 법령이 없습니다.",
+      "openai_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "duration_seconds": 137.44,
+      "changed_files_count": 0
     }
   ],
-  "duration_seconds": 99.22,
-  "changed_files": [
-    "ata/law_updates.json"
-  ],
+  "duration_seconds": 137.44,
+  "changed_files": [],
   "workflow": "Auto Law Brief Update",
   "branch": "main",
   "source": "github_actions"
