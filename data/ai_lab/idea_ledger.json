@@ -246,7 +246,23 @@
         "OpenAI"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "0e90ab79d1ca5f8e",
+      "date": "2026-05-29",
+      "category": "admin_analytics",
+      "title": "관리자 이상징후 우선순위 보드",
+      "summary": "제안별 진행/보류/폐기 상태와 카테고리 편중을 JSON으로 축적해 운영자가 다음 작업을 빠르게 고르게 한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "대시보드",
+        "결정",
+        "상태",
+        "카테고리",
+        "운영자"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-05-28T13:48:02.962466+09:00"
+  "last_updated": "2026-05-29T13:50:57.901737+09:00"
 }

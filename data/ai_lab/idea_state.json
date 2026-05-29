@@ -1,24 +1,30 @@
 {
-  "date": "2026-05-28",
+  "date": "2026-05-29",
   "mode": "growth_suggestion",
-  "category": "ops_cost",
-  "category_name": "운영비",
-  "top_proposal_title": "섹션 원가 태깅 + 재사용 후보 레지스트리",
-  "top_proposal_summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-05-28.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-05-28-1348.md",
-  "last_issue_title": "[AI DEV] 2026-05-28 운영비 성장 제안",
-  "last_run_at_kst": "2026-05-28T13:48:02.962466+09:00",
+  "category": "admin_analytics",
+  "category_name": "관리자/분석",
+  "top_proposal_title": "관리자 이상징후 우선순위 보드",
+  "top_proposal_summary": "제안별 진행/보류/폐기 상태와 카테고리 편중을 JSON으로 축적해 운영자가 다음 작업을 빠르게 고르게 한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-05-29.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-05-29-1350.md",
+  "last_issue_title": "[AI DEV] 2026-05-29 관리자/분석 성장 제안",
+  "last_run_at_kst": "2026-05-29T13:50:57.901737+09:00",
   "cost_model": {
     "recommended_model": "gpt-4.1-mini",
-    "reasoning": "이번 작업은 구조화된 리포트와 짧은 분류가 중심이라 대형 추론 모델이 필요하지 않다.",
-    "credit_saving_basis": "최근 보고서와 원장만 참조하고, 섹션별 일괄 요약 대신 월 1회 집계형 문구로 유지하면 토큰과 호출 수를 줄일 수 있다.",
+    "reasoning_intelligence": "중간",
+    "credit_saving_basis": [
+      "최근 7개 보고서만 참조",
+      "상위 3개 이상징후만 요약",
+      "규칙 기반 우선순위와 짧은 서술을 결합"
+    ],
+    "expected_cost_impact": "low",
+    "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-05-28",
-    "last_report_path": "data/ai_lab/growth_reports/2026-05-28.md",
-    "last_issue_title": "[AI DEV] 2026-05-28 운영비 성장 제안",
-    "last_run_at_kst": "2026-05-28T13:48:02.962466+09:00"
+    "last_report_date": "2026-05-29",
+    "last_report_path": "data/ai_lab/growth_reports/2026-05-29.md",
+    "last_issue_title": "[AI DEV] 2026-05-29 관리자/분석 성장 제안",
+    "last_run_at_kst": "2026-05-29T13:50:57.901737+09:00"
   }
 }
