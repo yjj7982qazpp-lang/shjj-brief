@@ -262,7 +262,23 @@
         "운영자"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "858c9b0394e709f8",
+      "date": "2026-05-30",
+      "category": "marketing_growth",
+      "title": "질문형 검색 랜딩팩 + 전환 CTA",
+      "summary": "업종/상황별 질문 페이지를 고정 템플릿으로 만들고, 각 페이지에 앱 설치·구독·대기자 등록 CTA를 넣는다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "공유",
+        "요약문구",
+        "카카오톡",
+        "메일",
+        "유입"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-05-29T13:50:57.901737+09:00"
+  "last_updated": "2026-05-30T13:31:43.704612+09:00"
 }
