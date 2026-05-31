@@ -278,7 +278,23 @@
         "유입"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "d913f3e7a3e3d183",
+      "date": "2026-05-31",
+      "category": "revenue",
+      "title": "소기업 공유 계정 + 좌석형 과금",
+      "summary": "개인 브리프를 그대로 두고, 사업장 단위로 공유되는 워크스페이스를 유료화한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "유료",
+        "주간",
+        "프리미엄",
+        "리포트",
+        "전문가"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-05-30T13:31:43.704612+09:00"
+  "last_updated": "2026-05-31T13:58:08.330333+09:00"
 }
