@@ -1,29 +1,29 @@
 {
-  "date": "2026-05-31",
+  "date": "2026-06-01",
   "mode": "growth_suggestion",
-  "category": "revenue",
-  "category_name": "수익",
-  "top_proposal_title": "소기업 공유 계정 + 좌석형 과금",
-  "top_proposal_summary": "개인 브리프를 그대로 두고, 사업장 단위로 공유되는 워크스페이스를 유료화한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-05-31.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-05-31-1358.md",
-  "last_issue_title": "[AI DEV] 2026-05-31 수익 성장 제안",
-  "last_run_at_kst": "2026-05-31T13:58:08.330333+09:00",
+  "category": "design_ux",
+  "category_name": "디자인/UX",
+  "top_proposal_title": "목적 선택형 홈 모드 + 카드별 단일 CTA 고정",
+  "top_proposal_summary": "홈 진입 시 사용자가 '훑기/저장/공유/재확인' 중 하나를 고르면, 같은 콘텐츠라도 카드 순서와 버튼을 고정해 읽기 흐름을 짧게 만든다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-06-01.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-06-01-1424.md",
+  "last_issue_title": "[AI DEV] 2026-06-01 디자인/UX 성장 제안",
+  "last_run_at_kst": "2026-06-01T14:24:06.583272+09:00",
   "cost_model": {
     "recommended_model": "gpt-4.1-mini",
-    "reasoning": "이번 루프는 전략 메모와 중복 판정이 중심이라, 고비용 추론 모델보다 저비용 요약 모델이 적합하다.",
-    "credit_saving": [
-      "최근 보고서와 recent idea_ledger만 참조",
-      "앱 코드/구현 추론은 생략",
-      "새 아이디어를 2개로 제한",
-      "Codex 작업지시서도 문서 수준으로만 작성"
+    "reasoning_level": "low",
+    "credit_saving_basis": [
+      "문서/원장 기반 제안이라 장문 추론이 필요하지 않다.",
+      "새 API 호출 없이 UX 규칙만 정리하면 된다.",
+      "최근 보고서 맥락만 짧게 참조해도 충분하다."
     ],
+    "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-05-31",
-    "last_report_path": "data/ai_lab/growth_reports/2026-05-31.md",
-    "last_issue_title": "[AI DEV] 2026-05-31 수익 성장 제안",
-    "last_run_at_kst": "2026-05-31T13:58:08.330333+09:00"
+    "last_report_date": "2026-06-01",
+    "last_report_path": "data/ai_lab/growth_reports/2026-06-01.md",
+    "last_issue_title": "[AI DEV] 2026-06-01 디자인/UX 성장 제안",
+    "last_run_at_kst": "2026-06-01T14:24:06.583272+09:00"
   }
 }
