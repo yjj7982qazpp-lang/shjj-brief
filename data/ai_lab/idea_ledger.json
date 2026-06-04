@@ -342,7 +342,23 @@
         "요약"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "2454deb8e275def4",
+      "date": "2026-06-04",
+      "category": "scalability",
+      "title": "확장 단위 메타데이터 레지스트리 + 신규 도메인 온보딩 패킷",
+      "summary": "알림 시간, 관심 법령, 사용자 결정 기록을 향후 iOS/Android 동기화가 쉬운 데이터 단위로 분리하는 계획을 세운다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "앱화",
+        "설정",
+        "동기화",
+        "iOS",
+        "Android"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-06-03T14:31:18.154728+09:00"
+  "last_updated": "2026-06-04T14:16:08.502242+09:00"
 }

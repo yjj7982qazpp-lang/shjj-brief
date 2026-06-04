@@ -1,29 +1,24 @@
 {
-  "date": "2026-06-03",
+  "date": "2026-06-04",
   "mode": "growth_suggestion",
-  "category": "content",
-  "category_name": "콘텐츠",
-  "top_proposal_title": "상황별 실무 시나리오 카드 팩",
-  "top_proposal_summary": "법령 변경마다 원문 요약과 별도로 실무자가 바로 이해할 수 있는 영향 문장과 확인 질문을 제공한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-06-03.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-06-03-1431.md",
-  "last_issue_title": "[AI DEV] 2026-06-03 콘텐츠 성장 제안",
-  "last_run_at_kst": "2026-06-03T14:31:18.154728+09:00",
+  "category": "scalability",
+  "category_name": "확장성",
+  "top_proposal_title": "확장 단위 메타데이터 레지스트리 + 신규 도메인 온보딩 패킷",
+  "top_proposal_summary": "알림 시간, 관심 법령, 사용자 결정 기록을 향후 iOS/Android 동기화가 쉬운 데이터 단위로 분리하는 계획을 세운다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-06-04.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-06-04-1416.md",
+  "last_issue_title": "[AI DEV] 2026-06-04 확장성 성장 제안",
+  "last_run_at_kst": "2026-06-04T14:16:08.502242+09:00",
   "cost_model": {
     "recommended_model": "gpt-4.1-mini",
-    "reasoning": "문서 스펙, 분류 체계, 템플릿 설계 수준이라 초고성능 모델까지는 필요 없다.",
-    "credit_savings": [
-      "최근 보고서만 제한적으로 참고",
-      "템플릿 기반 문구 재사용",
-      "새 콘텐츠는 최대 2개로 제한",
-      "코드 수정 없이 문서화 우선"
-    ],
+    "reasoning": "문서형 확장성 제안은 구조 비교와 요약이 중심이라 초고비용 모델이 필요하지 않다.",
+    "credit_saving": "짧은 구조화 산출물에 맞는 모델을 써서 검토 비용을 낮추고, 반복 루프 실행 여지를 남긴다.",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-06-03",
-    "last_report_path": "data/ai_lab/growth_reports/2026-06-03.md",
-    "last_issue_title": "[AI DEV] 2026-06-03 콘텐츠 성장 제안",
-    "last_run_at_kst": "2026-06-03T14:31:18.154728+09:00"
+    "last_report_date": "2026-06-04",
+    "last_report_path": "data/ai_lab/growth_reports/2026-06-04.md",
+    "last_issue_title": "[AI DEV] 2026-06-04 확장성 성장 제안",
+    "last_run_at_kst": "2026-06-04T14:16:08.502242+09:00"
   }
 }
