@@ -358,7 +358,23 @@
         "Android"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "ad9d14d23a77bfb4",
+      "date": "2026-06-05",
+      "category": "automation",
+      "title": "승인 전 점검 패킷 자동 생성 + 자동 중단 게이트",
+      "summary": "진행/보류/폐기 결정이 decisions.json에 기록되면 다음 루프가 같은 제안을 반복하지 않도록 자동 반영한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "관리자",
+        "결정",
+        "자동반영",
+        "보류",
+        "폐기"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-06-04T14:16:08.502242+09:00"
+  "last_updated": "2026-06-05T15:42:55.095843+09:00"
 }
