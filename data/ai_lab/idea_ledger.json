@@ -374,7 +374,23 @@
         "폐기"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "91916a7ee0d71d7f",
+      "date": "2026-06-06",
+      "category": "code_quality",
+      "title": "변경 영향 매트릭스 + 모듈 경계표",
+      "summary": "보고서 필수 섹션과 원장 필드를 검증하는 저비용 스키마 체크를 추가해 깨진 보고서 생성을 막는다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "스키마",
+        "검증",
+        "보고서",
+        "원장",
+        "회귀방지"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-06-05T15:42:55.095843+09:00"
+  "last_updated": "2026-06-06T15:20:53.451864+09:00"
 }
