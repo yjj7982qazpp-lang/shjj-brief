@@ -1,26 +1,25 @@
 {
-  "date": "2026-06-06",
+  "date": "2026-06-07",
   "mode": "growth_suggestion",
-  "category": "code_quality",
-  "category_name": "코드품질",
-  "top_proposal_title": "변경 영향 매트릭스 + 모듈 경계표",
-  "top_proposal_summary": "보고서 필수 섹션과 원장 필드를 검증하는 저비용 스키마 체크를 추가해 깨진 보고서 생성을 막는다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-06-06.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-06-06-1520.md",
-  "last_issue_title": "[AI DEV] 2026-06-06 코드품질 성장 제안",
-  "last_run_at_kst": "2026-06-06T15:20:53.451864+09:00",
+  "category": "ops_cost",
+  "category_name": "운영비",
+  "top_proposal_title": "브리핑 생성 예산 가드레일 + 저가치 섹션 강제 대체 규칙",
+  "top_proposal_summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-06-07.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-06-07-1405.md",
+  "last_issue_title": "[AI DEV] 2026-06-07 운영비 성장 제안",
+  "last_run_at_kst": "2026-06-07T14:05:38.285499+09:00",
   "cost_model": {
-    "recommended_model": "gpt-4.1-mini",
-    "reasoning_intelligence": "low",
-    "credit_saving": "문서/스펙 중심으로만 다뤄 추가 코드 탐색이나 긴 맥락 확장을 피한다.",
-    "ops_note": "최근 보고서와 원장만 참조해 추가 검색 비용을 억제한다.",
-    "reasoning": "Medium",
+    "recommendation": "gpt-4.1-mini",
+    "reasoning": "예산 계산, 임계치 판단, 시나리오 검토는 고비용 추론보다 규칙 정리와 요약이 중심이라 저비용 모델이 적합하다.",
+    "credit_saving": "고비용 모델은 최종 고가치 브리핑에만 남기고, 비용 정책 검토는 mini로 고정하면 검토 크레딧을 줄일 수 있다.",
+    "recommended_model": "GPT-5.4 Mini",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-06-06",
-    "last_report_path": "data/ai_lab/growth_reports/2026-06-06.md",
-    "last_issue_title": "[AI DEV] 2026-06-06 코드품질 성장 제안",
-    "last_run_at_kst": "2026-06-06T15:20:53.451864+09:00"
+    "last_report_date": "2026-06-07",
+    "last_report_path": "data/ai_lab/growth_reports/2026-06-07.md",
+    "last_issue_title": "[AI DEV] 2026-06-07 운영비 성장 제안",
+    "last_run_at_kst": "2026-06-07T14:05:38.285499+09:00"
   }
 }

@@ -390,7 +390,23 @@
         "회귀방지"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "428fbfbf132aea29",
+      "date": "2026-06-07",
+      "category": "ops_cost",
+      "title": "브리핑 생성 예산 가드레일 + 저가치 섹션 강제 대체 규칙",
+      "summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "비용",
+        "캐시",
+        "summary_key",
+        "재사용률",
+        "OpenAI"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-06-06T15:20:53.451864+09:00"
+  "last_updated": "2026-06-07T14:05:38.285499+09:00"
 }
