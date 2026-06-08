@@ -1,25 +1,30 @@
 {
-  "date": "2026-06-07",
+  "date": "2026-06-08",
   "mode": "growth_suggestion",
-  "category": "ops_cost",
-  "category_name": "운영비",
-  "top_proposal_title": "브리핑 생성 예산 가드레일 + 저가치 섹션 강제 대체 규칙",
-  "top_proposal_summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-06-07.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-06-07-1405.md",
-  "last_issue_title": "[AI DEV] 2026-06-07 운영비 성장 제안",
-  "last_run_at_kst": "2026-06-07T14:05:38.285499+09:00",
+  "category": "admin_analytics",
+  "category_name": "관리자/분석",
+  "top_proposal_title": "결정 만료일 기반 재검토 큐 + 지표 신뢰도 카드",
+  "top_proposal_summary": "제안별 진행/보류/폐기 상태와 카테고리 편중을 JSON으로 축적해 운영자가 다음 작업을 빠르게 고르게 한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-06-08.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-06-08-1556.md",
+  "last_issue_title": "[AI DEV] 2026-06-08 관리자/분석 성장 제안",
+  "last_run_at_kst": "2026-06-08T15:56:16.901445+09:00",
   "cost_model": {
-    "recommendation": "gpt-4.1-mini",
-    "reasoning": "예산 계산, 임계치 판단, 시나리오 검토는 고비용 추론보다 규칙 정리와 요약이 중심이라 저비용 모델이 적합하다.",
-    "credit_saving": "고비용 모델은 최종 고가치 브리핑에만 남기고, 비용 정책 검토는 mini로 고정하면 검토 크레딧을 줄일 수 있다.",
-    "recommended_model": "GPT-5.4 Mini",
+    "recommended_model": "gpt-4.1-mini",
+    "reasoning_intelligence": "낮음-중간",
+    "credit_saving_basis": [
+      "문서/스키마 제안이라 고추론이 필요 없다.",
+      "기존 결정 로그를 재사용하면 추가 생성 비용이 적다.",
+      "새로운 데이터 수집 없이 메타데이터만 정의하면 된다."
+    ],
+    "runtime_notes": "추가 API 호출보다 원장 정리와 검토 기준 문서화에 집중하는 편이 저비용이다.",
+    "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-06-07",
-    "last_report_path": "data/ai_lab/growth_reports/2026-06-07.md",
-    "last_issue_title": "[AI DEV] 2026-06-07 운영비 성장 제안",
-    "last_run_at_kst": "2026-06-07T14:05:38.285499+09:00"
+    "last_report_date": "2026-06-08",
+    "last_report_path": "data/ai_lab/growth_reports/2026-06-08.md",
+    "last_issue_title": "[AI DEV] 2026-06-08 관리자/분석 성장 제안",
+    "last_run_at_kst": "2026-06-08T15:56:16.901445+09:00"
   }
 }
