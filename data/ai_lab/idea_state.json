@@ -1,29 +1,25 @@
 {
-  "date": "2026-06-10",
+  "date": "2026-06-11",
   "mode": "growth_suggestion",
-  "category": "revenue",
-  "category_name": "수익",
-  "top_proposal_title": "업종별 화이트라벨 브리핑 라이선스 + 월간 납품 패키지",
-  "top_proposal_summary": "무료 일일 브리프는 유지하고, 주간 변경 요약과 실무 체크리스트를 PDF/메일형 프리미엄 리포트로 분리한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-06-10.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-06-10-1542.md",
-  "last_issue_title": "[AI DEV] 2026-06-10 수익 성장 제안",
-  "last_run_at_kst": "2026-06-10T15:42:55.725803+09:00",
+  "category": "design_ux",
+  "category_name": "디자인/UX",
+  "top_proposal_title": "본문 종료 레일 + 잠금형 미리보기 카드",
+  "top_proposal_summary": "오늘 시행 법령, 행동 가이드, 일정 중 사용자의 다음 행동과 연결되는 정보를 첫 화면 상단에 더 명확히 배치한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-06-11.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-06-11-1405.md",
+  "last_issue_title": "[AI DEV] 2026-06-11 디자인/UX 성장 제안",
+  "last_run_at_kst": "2026-06-11T14:05:37.277386+09:00",
   "cost_model": {
     "recommended_model": "gpt-4.1-mini",
-    "reasoning_level": "low-medium",
-    "credit_saving_basis": [
-      "최근 보고서와 원장만으로 중복 판단 가능",
-      "코드 생성이 아니라 문서 스펙 정리에 그침",
-      "복잡한 추론보다 패키지 경계 정리가 핵심"
-    ],
+    "reasoning_level": "low",
+    "credit_saving": "문서/원장 중심 제안이라 고성능 추론보다 짧은 정리와 중복 검토가 중요하다. 대형 모델 없이도 충분하다.",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-06-10",
-    "last_report_path": "data/ai_lab/growth_reports/2026-06-10.md",
-    "last_issue_title": "[AI DEV] 2026-06-10 수익 성장 제안",
-    "last_run_at_kst": "2026-06-10T15:42:55.725803+09:00"
+    "last_report_date": "2026-06-11",
+    "last_report_path": "data/ai_lab/growth_reports/2026-06-11.md",
+    "last_issue_title": "[AI DEV] 2026-06-11 디자인/UX 성장 제안",
+    "last_run_at_kst": "2026-06-11T14:05:37.277386+09:00"
   }
 }
