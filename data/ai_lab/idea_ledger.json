@@ -470,7 +470,23 @@
         "행동"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "7c33e5ee181a60b0",
+      "date": "2026-06-12",
+      "category": "feature",
+      "title": "전일 대비 변경점 하이라이트 기능",
+      "summary": "사용자가 특정 법령 변경에 메모를 남기고 후속 확인 날짜를 저장해 재방문 이유를 만든다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "메모",
+        "후속",
+        "알림",
+        "관심법령",
+        "재방문"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-06-11T14:05:37.277386+09:00"
+  "last_updated": "2026-06-12T16:00:21.301773+09:00"
 }
