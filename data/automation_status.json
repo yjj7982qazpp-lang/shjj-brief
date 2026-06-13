@@ -1,15 +1,15 @@
 {
-  "last_run_kst": "2026-06-12T16:00:00+09:00",
-  "next_run_kst": "2026-06-13T09:20:00+09:00",
-  "status": "partial_failed",
-  "message": "일부 관심 법령 확인에 실패했습니다. GitHub Actions 로그 확인이 필요합니다.",
-  "failure_hint": "일부 법령 조회가 실패했습니다. 실패 후보 24건의 법령명 또는 API 응답을 확인하세요.",
-  "legal_change_count": 0,
+  "last_run_kst": "2026-06-13T13:56:19+09:00",
+  "next_run_kst": "2026-06-14T09:20:00+09:00",
+  "status": "changed",
+  "message": "오늘 관심 법령 데이터가 갱신되었습니다. 변경 후보 5건, OpenAI 호출 0회입니다.",
+  "failure_hint": "특이사항 없음",
+  "legal_change_count": 5,
   "today_count": 0,
   "last_7_days_count": 0,
-  "last_30_days_count": 0,
+  "last_30_days_count": 5,
   "new_summary_key_count": 0,
-  "cache_hit_count": 0,
+  "cache_hit_count": 5,
   "openai_call_count": 0,
   "estimated_cost_usd": 0.0,
   "cost_per_openai_call_usd": 0.0,
@@ -476,19 +476,19 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 6604.73,
       "changed_files_count": 1
+    },
+    {
+      "date": "2026-06-13",
+      "last_run_kst": "2026-06-13T13:56:19+09:00",
+      "status": "changed",
+      "message": "오늘 관심 법령 데이터가 갱신되었습니다. 변경 후보 5건, OpenAI 호출 0회입니다.",
+      "openai_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "duration_seconds": 78.1,
+      "changed_files_count": 1
     }
   ],
   "recent_7_runs": [
-    {
-      "date": "2026-06-06",
-      "last_run_kst": "2026-06-06T15:20:35+09:00",
-      "status": "partial_failed",
-      "message": "일부 관심 법령 확인에 실패했습니다. GitHub Actions 로그 확인이 필요합니다.",
-      "openai_call_count": 0,
-      "estimated_cost_usd": 0.0,
-      "duration_seconds": 6542.75,
-      "changed_files_count": 0
-    },
     {
       "date": "2026-06-07",
       "last_run_kst": "2026-06-07T14:05:19+09:00",
@@ -548,9 +548,19 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 6604.73,
       "changed_files_count": 1
+    },
+    {
+      "date": "2026-06-13",
+      "last_run_kst": "2026-06-13T13:56:19+09:00",
+      "status": "changed",
+      "message": "오늘 관심 법령 데이터가 갱신되었습니다. 변경 후보 5건, OpenAI 호출 0회입니다.",
+      "openai_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "duration_seconds": 78.1,
+      "changed_files_count": 1
     }
   ],
-  "duration_seconds": 6604.73,
+  "duration_seconds": 78.1,
   "changed_files": [
     "ata/law_updates.json"
   ],
