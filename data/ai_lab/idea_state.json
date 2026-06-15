@@ -1,34 +1,31 @@
 {
-  "date": "2026-06-14",
+  "date": "2026-06-15",
   "mode": "growth_suggestion",
-  "category": "scalability",
-  "category_name": "확장성",
-  "top_proposal_title": "워크스페이스/역할/공유범위 스키마",
-  "top_proposal_summary": "알림 시간, 관심 법령, 사용자 결정 기록을 향후 iOS/Android 동기화가 쉬운 데이터 단위로 분리하는 계획을 세운다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-06-14.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-06-14-1557.md",
-  "last_issue_title": "[AI DEV] 2026-06-14 확장성 성장 제안",
-  "last_run_at_kst": "2026-06-14T15:57:09.378929+09:00",
+  "category": "automation",
+  "category_name": "자동화",
+  "top_proposal_title": "도메인별 샘플링 품질감시 + 드리프트 경보",
+  "top_proposal_summary": "진행/보류/폐기 결정이 decisions.json에 기록되면 다음 루프가 같은 제안을 반복하지 않도록 자동 반영한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-06-15.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-06-15-1434.md",
+  "last_issue_title": "[AI DEV] 2026-06-15 자동화 성장 제안",
+  "last_run_at_kst": "2026-06-15T14:34:18.026084+09:00",
   "cost_model": {
-    "current_phase": "낮음",
-    "development_cost": "문서/스펙 정리 중심이라 초기 비용이 작다.",
-    "runtime_cost": "낮음",
-    "expected_savings": [
-      "중복 구현 감소",
-      "온보딩/지원 비용 절감",
-      "확장 시 회귀 감소",
-      "B2B 전환 준비 비용 감소"
+    "recommended_model": "gpt-4.1-mini",
+    "reasoning_level": "medium",
+    "cost_strategy": [
+      "샘플링된 일부 항목에만 분석 호출",
+      "이상징후 없으면 추가 생성 금지",
+      "문서 기반 규칙 우선, LLM은 설명 보강용만 사용"
     ],
-    "payback": "중기",
-    "note": "AI 호출량이나 서버 운영비를 늘리는 방향이 아니라, 확장 전에 구조를 고정해 비용 상승을 막는 쪽이다.",
-    "recommended_model": "GPT-5.4 Mini",
+    "expected_cost": "low",
+    "saving_rationale": "전수 분석 대신 샘플링과 경보 중심으로 돌리면 호출 수를 크게 줄일 수 있다.",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-06-14",
-    "last_report_path": "data/ai_lab/growth_reports/2026-06-14.md",
-    "last_issue_title": "[AI DEV] 2026-06-14 확장성 성장 제안",
-    "last_run_at_kst": "2026-06-14T15:57:09.378929+09:00"
+    "last_report_date": "2026-06-15",
+    "last_report_path": "data/ai_lab/growth_reports/2026-06-15.md",
+    "last_issue_title": "[AI DEV] 2026-06-15 자동화 성장 제안",
+    "last_run_at_kst": "2026-06-15T14:34:18.026084+09:00"
   }
 }
