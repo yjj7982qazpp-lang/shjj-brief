@@ -550,7 +550,23 @@
         "회귀방지"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "d410af50105e25b9",
+      "date": "2026-06-17",
+      "category": "ops_cost",
+      "title": "공통 중간산출물 재사용 레이어",
+      "summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "비용",
+        "캐시",
+        "summary_key",
+        "재사용률",
+        "OpenAI"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-06-16T14:41:56.102344+09:00"
+  "last_updated": "2026-06-17T16:13:04.506347+09:00"
 }
