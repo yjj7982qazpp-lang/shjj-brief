@@ -566,7 +566,23 @@
         "OpenAI"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "a6760929496ffb82",
+      "date": "2026-06-18",
+      "category": "admin_analytics",
+      "title": "결정-결과 추적 보드",
+      "summary": "제안별 진행/보류/폐기 상태와 카테고리 편중을 JSON으로 축적해 운영자가 다음 작업을 빠르게 고르게 한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "대시보드",
+        "결정",
+        "상태",
+        "카테고리",
+        "운영자"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-06-17T16:13:04.506347+09:00"
+  "last_updated": "2026-06-18T16:01:01.269931+09:00"
 }

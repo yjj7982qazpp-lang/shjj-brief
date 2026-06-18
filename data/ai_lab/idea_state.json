@@ -1,32 +1,29 @@
 {
-  "date": "2026-06-17",
+  "date": "2026-06-18",
   "mode": "growth_suggestion",
-  "category": "ops_cost",
-  "category_name": "운영비",
-  "top_proposal_title": "공통 중간산출물 재사용 레이어",
-  "top_proposal_summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-06-17.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-06-17-1613.md",
-  "last_issue_title": "[AI DEV] 2026-06-17 운영비 성장 제안",
-  "last_run_at_kst": "2026-06-17T16:13:04.506347+09:00",
+  "category": "admin_analytics",
+  "category_name": "관리자/분석",
+  "top_proposal_title": "결정-결과 추적 보드",
+  "top_proposal_summary": "제안별 진행/보류/폐기 상태와 카테고리 편중을 JSON으로 축적해 운영자가 다음 작업을 빠르게 고르게 한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-06-18.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-06-18-1601.md",
+  "last_issue_title": "[AI DEV] 2026-06-18 관리자/분석 성장 제안",
+  "last_run_at_kst": "2026-06-18T16:01:01.269931+09:00",
   "cost_model": {
-    "baseline": "같은 원천이 카드/푸시/미리보기/관리자 검토용으로 따로 문장화되면 호출이 반복된다.",
-    "proposed_model": "원천 1회 생성 후 공통 중간산출물을 공유하고, 채널별 차이는 템플릿과 짧은 변형만 사용한다.",
-    "estimated_savings": {
-      "token_reduction": "대략 15%~35%",
-      "call_reduction": "반복 출력이 많은 날에는 1인당 1~2회 수준의 중복 호출 절감 가능",
-      "storage_overhead": "미미"
-    },
-    "tradeoff": "중간산출물 정의와 재사용 조건을 잘못 잡으면 품질 저하가 생길 수 있다.",
-    "execution_cost": "문서/원장 정리 중심이면 낮음",
+    "one_time_cost": "low",
+    "ongoing_cost": "low",
+    "ai_cost": "none_to_low",
+    "data_cost": "low",
+    "ops_cost": "low",
+    "notes": "문서/메타데이터 중심이면 신규 AI 호출 없이도 운영 가능하고, 실제 적용 시에도 저장 필드 몇 개와 조회 조건 추가 수준입니다.",
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-06-17",
-    "last_report_path": "data/ai_lab/growth_reports/2026-06-17.md",
-    "last_issue_title": "[AI DEV] 2026-06-17 운영비 성장 제안",
-    "last_run_at_kst": "2026-06-17T16:13:04.506347+09:00"
+    "last_report_date": "2026-06-18",
+    "last_report_path": "data/ai_lab/growth_reports/2026-06-18.md",
+    "last_issue_title": "[AI DEV] 2026-06-18 관리자/분석 성장 제안",
+    "last_run_at_kst": "2026-06-18T16:01:01.269931+09:00"
   }
 }
