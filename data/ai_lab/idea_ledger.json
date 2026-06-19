@@ -582,7 +582,23 @@
         "운영자"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "531d0f479649b1e7",
+      "date": "2026-06-19",
+      "category": "marketing_growth",
+      "title": "채널별 배포 패킷 + 성과 귀속 레지스트리",
+      "summary": "사용자가 카카오톡이나 메일로 공유하기 쉬운 짧은 변경 요약 문구를 생성해 자연 유입을 늘린다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "공유",
+        "요약문구",
+        "카카오톡",
+        "메일",
+        "유입"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-06-18T16:01:01.269931+09:00"
+  "last_updated": "2026-06-19T16:18:10.044168+09:00"
 }
