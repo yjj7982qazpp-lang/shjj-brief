@@ -1,15 +1,15 @@
 {
-  "last_run_kst": "2026-06-20T13:48:32+09:00",
-  "next_run_kst": "2026-06-21T09:20:00+09:00",
-  "status": "changed",
-  "message": "오늘 관심 법령 데이터가 갱신되었습니다. 변경 후보 3건, OpenAI 호출 0회입니다.",
-  "failure_hint": "특이사항 없음",
-  "legal_change_count": 3,
+  "last_run_kst": "2026-06-21T16:09:26+09:00",
+  "next_run_kst": "2026-06-22T09:20:00+09:00",
+  "status": "partial_failed",
+  "message": "일부 관심 법령 확인에 실패했습니다. GitHub Actions 로그 확인이 필요합니다.",
+  "failure_hint": "일부 법령 조회가 실패했습니다. 실패 후보 24건의 법령명 또는 API 응답을 확인하세요.",
+  "legal_change_count": 0,
   "today_count": 0,
   "last_7_days_count": 0,
-  "last_30_days_count": 3,
+  "last_30_days_count": 0,
   "new_summary_key_count": 0,
-  "cache_hit_count": 3,
+  "cache_hit_count": 0,
   "openai_call_count": 0,
   "estimated_cost_usd": 0.0,
   "cost_per_openai_call_usd": 0.0,
@@ -556,19 +556,19 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 215.1,
       "changed_files_count": 1
-    }
-  ],
-  "recent_7_runs": [
+    },
     {
-      "date": "2026-06-14",
-      "last_run_kst": "2026-06-14T15:56:44+09:00",
+      "date": "2026-06-21",
+      "last_run_kst": "2026-06-21T16:09:26+09:00",
       "status": "partial_failed",
       "message": "일부 관심 법령 확인에 실패했습니다. GitHub Actions 로그 확인이 필요합니다.",
       "openai_call_count": 0,
       "estimated_cost_usd": 0.0,
-      "duration_seconds": 6284.45,
+      "duration_seconds": 6482.32,
       "changed_files_count": 1
-    },
+    }
+  ],
+  "recent_7_runs": [
     {
       "date": "2026-06-15",
       "last_run_kst": "2026-06-15T14:33:57+09:00",
@@ -628,9 +628,19 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 215.1,
       "changed_files_count": 1
+    },
+    {
+      "date": "2026-06-21",
+      "last_run_kst": "2026-06-21T16:09:26+09:00",
+      "status": "partial_failed",
+      "message": "일부 관심 법령 확인에 실패했습니다. GitHub Actions 로그 확인이 필요합니다.",
+      "openai_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "duration_seconds": 6482.32,
+      "changed_files_count": 1
     }
   ],
-  "duration_seconds": 215.1,
+  "duration_seconds": 6482.32,
   "changed_files": [
     "ata/law_updates.json"
   ],
