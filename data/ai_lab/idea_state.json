@@ -1,27 +1,32 @@
 {
-  "date": "2026-06-20",
+  "date": "2026-06-21",
   "mode": "growth_suggestion",
-  "category": "revenue",
-  "category_name": "수익",
-  "top_proposal_title": "단건 결제형 프리미엄 업그레이드 패스",
-  "top_proposal_summary": "무료 일일 브리프는 유지하고, 주간 변경 요약과 실무 체크리스트를 PDF/메일형 프리미엄 리포트로 분리한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-06-20.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-06-20-1348.md",
-  "last_issue_title": "[AI DEV] 2026-06-20 수익 성장 제안",
-  "last_run_at_kst": "2026-06-20T13:48:52.139125+09:00",
+  "category": "design_ux",
+  "category_name": "디자인/UX",
+  "top_proposal_title": "관리자 승인형 첫 화면 템플릿 레지스트리",
+  "top_proposal_summary": "오늘 시행 법령, 행동 가이드, 일정 중 사용자의 다음 행동과 연결되는 정보를 첫 화면 상단에 더 명확히 배치한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-06-21.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-06-21-1609.md",
+  "last_issue_title": "[AI DEV] 2026-06-21 디자인/UX 성장 제안",
+  "last_run_at_kst": "2026-06-21T16:09:46.251308+09:00",
   "cost_model": {
-    "implementation_size": "S",
+    "development_cost": "low_to_medium",
     "runtime_cost": "low",
-    "revenue_model": "단건 결제/크레딧 소모형 업셀",
-    "expected_margin": "높음: 기존 브리프 재가공 중심이라 추가 원가가 작다.",
-    "recommended_model": "gpt-4.1-mini",
+    "ops_cost": "low",
+    "revenue_effect": "medium_positive",
+    "notes": [
+      "정적 템플릿과 라벨 사전 중심이면 추가 API 비용이 거의 없습니다.",
+      "운영 비용은 템플릿 승인/롤백 규칙을 잘 정하면 낮게 유지됩니다.",
+      "수익 효과는 직접 매출보다 전환 실험 효율 개선 쪽이 큽니다."
+    ],
+    "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-06-20",
-    "last_report_path": "data/ai_lab/growth_reports/2026-06-20.md",
-    "last_issue_title": "[AI DEV] 2026-06-20 수익 성장 제안",
-    "last_run_at_kst": "2026-06-20T13:48:52.139125+09:00"
+    "last_report_date": "2026-06-21",
+    "last_report_path": "data/ai_lab/growth_reports/2026-06-21.md",
+    "last_issue_title": "[AI DEV] 2026-06-21 디자인/UX 성장 제안",
+    "last_run_at_kst": "2026-06-21T16:09:46.251308+09:00"
   }
 }
