@@ -1,6 +1,6 @@
 {
-  "last_run_kst": "2026-06-21T16:09:26+09:00",
-  "next_run_kst": "2026-06-22T09:20:00+09:00",
+  "last_run_kst": "2026-06-22T16:29:50+09:00",
+  "next_run_kst": "2026-06-23T09:20:00+09:00",
   "status": "partial_failed",
   "message": "일부 관심 법령 확인에 실패했습니다. GitHub Actions 로그 확인이 필요합니다.",
   "failure_hint": "일부 법령 조회가 실패했습니다. 실패 후보 24건의 법령명 또는 API 응답을 확인하세요.",
@@ -566,19 +566,19 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 6482.32,
       "changed_files_count": 1
+    },
+    {
+      "date": "2026-06-22",
+      "last_run_kst": "2026-06-22T16:29:50+09:00",
+      "status": "partial_failed",
+      "message": "일부 관심 법령 확인에 실패했습니다. GitHub Actions 로그 확인이 필요합니다.",
+      "openai_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "duration_seconds": 6863.8,
+      "changed_files_count": 0
     }
   ],
   "recent_7_runs": [
-    {
-      "date": "2026-06-15",
-      "last_run_kst": "2026-06-15T14:33:57+09:00",
-      "status": "changed",
-      "message": "오늘 관심 법령 데이터가 갱신되었습니다. 변경 후보 5건, OpenAI 호출 0회입니다.",
-      "openai_call_count": 0,
-      "estimated_cost_usd": 0.0,
-      "duration_seconds": 153.45,
-      "changed_files_count": 1
-    },
     {
       "date": "2026-06-16",
       "last_run_kst": "2026-06-16T14:41:32+09:00",
@@ -638,12 +638,20 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 6482.32,
       "changed_files_count": 1
+    },
+    {
+      "date": "2026-06-22",
+      "last_run_kst": "2026-06-22T16:29:50+09:00",
+      "status": "partial_failed",
+      "message": "일부 관심 법령 확인에 실패했습니다. GitHub Actions 로그 확인이 필요합니다.",
+      "openai_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "duration_seconds": 6863.8,
+      "changed_files_count": 0
     }
   ],
-  "duration_seconds": 6482.32,
-  "changed_files": [
-    "ata/law_updates.json"
-  ],
+  "duration_seconds": 6863.8,
+  "changed_files": [],
   "workflow": "Auto Law Brief Update",
   "branch": "main",
   "source": "github_actions"
