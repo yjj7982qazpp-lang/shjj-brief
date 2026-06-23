@@ -1,28 +1,37 @@
 {
-  "date": "2026-06-22",
+  "date": "2026-06-23",
   "mode": "growth_suggestion",
-  "category": "feature",
-  "category_name": "기능",
-  "top_proposal_title": "브리핑 보관함 + 재열람 링크",
-  "top_proposal_summary": "사용자가 특정 법령 변경에 메모를 남기고 후속 확인 날짜를 저장해 재방문 이유를 만든다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-06-22.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-06-22-1630.md",
-  "last_issue_title": "[AI DEV] 2026-06-22 기능 성장 제안",
-  "last_run_at_kst": "2026-06-22T16:30:16.693157+09:00",
+  "category": "content",
+  "category_name": "콘텐츠",
+  "top_proposal_title": "업종별 저장형 레퍼런스 카드팩",
+  "top_proposal_summary": "법령 변경마다 원문 요약과 별도로 실무자가 바로 이해할 수 있는 영향 문장과 확인 질문을 제공한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-06-23.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-06-23-1519.md",
+  "last_issue_title": "[AI DEV] 2026-06-23 콘텐츠 성장 제안",
+  "last_run_at_kst": "2026-06-23T15:19:45.541096+09:00",
   "cost_model": {
-    "build_cost": "low",
-    "ops_cost": "low",
-    "ai_cost": "very_low",
-    "revenue_upside": "medium",
-    "assumption": "기존 브리프 결과를 저장/조회하는 구조로 설계해 새 생성량을 늘리지 않는다.",
+    "implementation_cost": "낮음",
+    "content_production_cost": "중간",
+    "runtime_ai_cost": "낮음",
+    "ops_cost": "낮음",
+    "estimation": {
+      "doc_spec_only_hours": 2,
+      "content_template_design_hours": 3,
+      "future_maintenance_effort": "주 1회 검토 수준"
+    },
+    "assumptions": [
+      "실시간 생성보다 템플릿 재사용을 우선",
+      "기존 브리프 결과를 재편집해 카드화",
+      "추가 API 호출 없이 문서/원장 중심으로 운영"
+    ],
+    "cost_reason": "새로운 실시간 기능보다 기존 콘텐츠의 재구성이라 운영비가 크지 않고, 저장형 자산은 장기적으로 재사용 효율이 높습니다.",
     "recommended_model": "GPT-5.4 Mini",
-    "reasoning": "Medium",
-    "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
+    "reasoning": "Medium"
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-06-22",
-    "last_report_path": "data/ai_lab/growth_reports/2026-06-22.md",
-    "last_issue_title": "[AI DEV] 2026-06-22 기능 성장 제안",
-    "last_run_at_kst": "2026-06-22T16:30:16.693157+09:00"
+    "last_report_date": "2026-06-23",
+    "last_report_path": "data/ai_lab/growth_reports/2026-06-23.md",
+    "last_issue_title": "[AI DEV] 2026-06-23 콘텐츠 성장 제안",
+    "last_run_at_kst": "2026-06-23T15:19:45.541096+09:00"
   }
 }
