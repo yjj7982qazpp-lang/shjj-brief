@@ -662,7 +662,23 @@
         "요약"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "129736b36e7a7a7b",
+      "date": "2026-06-24",
+      "category": "scalability",
+      "title": "도메인별 런칭 패키지 레지스트리",
+      "summary": "새 업종/플랫폼을 붙일 때 앱 설명, 권한 사유, FAQ, 지원 답변, 파트너 소개문을 한 묶음으로 생성·관리하는 확장 자산 체계",
+      "status": "proposed",
+      "similarity_keywords": [
+        "앱화",
+        "설정",
+        "동기화",
+        "iOS",
+        "Android"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-06-23T15:19:45.541096+09:00"
+  "last_updated": "2026-06-24T15:30:28.171417+09:00"
 }
