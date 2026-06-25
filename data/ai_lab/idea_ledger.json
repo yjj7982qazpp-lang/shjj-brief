@@ -678,7 +678,23 @@
         "Android"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "7349f6986021855a",
+      "date": "2026-06-25",
+      "category": "automation",
+      "title": "자동화 룰 만료일/신뢰도 기반 자동 정지",
+      "summary": "진행/보류/폐기 결정이 decisions.json에 기록되면 다음 루프가 같은 제안을 반복하지 않도록 자동 반영한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "관리자",
+        "결정",
+        "자동반영",
+        "보류",
+        "폐기"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-06-24T15:30:28.171417+09:00"
+  "last_updated": "2026-06-25T15:27:50.606515+09:00"
 }
