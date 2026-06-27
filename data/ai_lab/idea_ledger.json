@@ -710,7 +710,23 @@
         "회귀방지"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "72815bbcd7ff35fa",
+      "date": "2026-06-27",
+      "category": "ops_cost",
+      "title": "생성 전 예상원가 카드 + 고비용 요청 우선순위 게이트",
+      "summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "비용",
+        "캐시",
+        "summary_key",
+        "재사용률",
+        "OpenAI"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-06-26T15:36:54.481203+09:00"
+  "last_updated": "2026-06-27T15:21:16.517455+09:00"
 }
