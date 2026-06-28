@@ -1,45 +1,29 @@
 {
-  "date": "2026-06-27",
+  "date": "2026-06-28",
   "mode": "growth_suggestion",
-  "category": "ops_cost",
-  "category_name": "운영비",
-  "top_proposal_title": "생성 전 예상원가 카드 + 고비용 요청 우선순위 게이트",
-  "top_proposal_summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-06-27.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-06-27-1521.md",
-  "last_issue_title": "[AI DEV] 2026-06-27 운영비 성장 제안",
-  "last_run_at_kst": "2026-06-27T15:21:16.517455+09:00",
+  "category": "admin_analytics",
+  "category_name": "관리자/분석",
+  "top_proposal_title": "지표-조치 매핑 보드",
+  "top_proposal_summary": "제안별 진행/보류/폐기 상태와 카테고리 편중을 JSON으로 축적해 운영자가 다음 작업을 빠르게 고르게 한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-06-28.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-06-28-1543.md",
+  "last_issue_title": "[AI DEV] 2026-06-28 관리자/분석 성장 제안",
+  "last_run_at_kst": "2026-06-28T15:43:51.932279+09:00",
   "cost_model": {
-    "current_cost_driver": [
-      "비싼 요청이 생성된 뒤에야 비용이 드러남",
-      "낮은 가치 섹션도 동일한 생성 경로를 탐",
-      "도메인별 정책이 없어 전역 규칙만으로 대응"
-    ],
-    "estimated_savings": {
-      "low": "월 AI/API 원가 8% 절감",
-      "base": "월 AI/API 원가 15% 절감",
-      "high": "월 AI/API 원가 25% 절감"
-    },
-    "tradeoff": "원가 표시는 추가 판단 단계를 만들지만, 비싼 호출 1~2건만 줄여도 충분히 상쇄될 가능성이 높다.",
-    "rollout_strategy": [
-      "관리자 요청부터 적용",
-      "고비용 도메인만 우선 적용",
-      "fallback 비율과 승인율을 보고 점진 확대"
-    ],
-    "success_metrics": [
-      "고비용 요청 비율",
-      "fallback 선택률",
-      "캐시 대체율",
-      "도메인별 월 원가"
-    ],
+    "implementation_cost": "낮음",
+    "runtime_cost": "거의 없음",
+    "storage_cost": "소량의 JSON/문서 추가 수준",
+    "api_cost": "추가 없음",
+    "maintenance_cost": "중간 이하",
+    "notes": "현재 단계는 문서화와 원장 정리 중심이라 비용 부담이 작다. 나중에 실제 알림/집계로 확장할 때만 비용이 의미 있게 늘어난다.",
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-06-27",
-    "last_report_path": "data/ai_lab/growth_reports/2026-06-27.md",
-    "last_issue_title": "[AI DEV] 2026-06-27 운영비 성장 제안",
-    "last_run_at_kst": "2026-06-27T15:21:16.517455+09:00"
+    "last_report_date": "2026-06-28",
+    "last_report_path": "data/ai_lab/growth_reports/2026-06-28.md",
+    "last_issue_title": "[AI DEV] 2026-06-28 관리자/분석 성장 제안",
+    "last_run_at_kst": "2026-06-28T15:43:51.932279+09:00"
   }
 }
