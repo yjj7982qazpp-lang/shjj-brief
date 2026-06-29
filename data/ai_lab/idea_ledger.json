@@ -742,7 +742,23 @@
         "운영자"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "e8778d9084d8db6d",
+      "date": "2026-06-29",
+      "category": "marketing_growth",
+      "title": "검색형 공개 브리핑 허브 + 주제별 목차 페이지",
+      "summary": "사용자가 카카오톡이나 메일로 공유하기 쉬운 짧은 변경 요약 문구를 생성해 자연 유입을 늘린다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "공유",
+        "요약문구",
+        "카카오톡",
+        "메일",
+        "유입"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-06-28T15:43:51.932279+09:00"
+  "last_updated": "2026-06-29T14:06:52.567347+09:00"
 }
