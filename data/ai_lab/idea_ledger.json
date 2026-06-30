@@ -758,7 +758,23 @@
         "유입"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "624d70132ddeeb27",
+      "date": "2026-06-30",
+      "category": "revenue",
+      "title": "증빙/감사 내보내기 패스",
+      "summary": "무료 일일 브리프는 유지하고, 주간 변경 요약과 실무 체크리스트를 PDF/메일형 프리미엄 리포트로 분리한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "유료",
+        "주간",
+        "프리미엄",
+        "리포트",
+        "전문가"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-06-29T14:06:52.567347+09:00"
+  "last_updated": "2026-06-30T15:27:10.022838+09:00"
 }
