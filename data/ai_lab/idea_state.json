@@ -1,28 +1,33 @@
 {
-  "date": "2026-06-30",
+  "date": "2026-07-01",
   "mode": "growth_suggestion",
-  "category": "revenue",
-  "category_name": "수익",
-  "top_proposal_title": "증빙/감사 내보내기 패스",
-  "top_proposal_summary": "무료 일일 브리프는 유지하고, 주간 변경 요약과 실무 체크리스트를 PDF/메일형 프리미엄 리포트로 분리한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-06-30.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-06-30-1527.md",
-  "last_issue_title": "[AI DEV] 2026-06-30 수익 성장 제안",
-  "last_run_at_kst": "2026-06-30T15:27:10.022838+09:00",
+  "category": "design_ux",
+  "category_name": "디자인/UX",
+  "top_proposal_title": "콘텐츠 밀도 프리셋(요약/표준/실무) + 화면 정책 분리",
+  "top_proposal_summary": "오늘 시행 법령, 행동 가이드, 일정 중 사용자의 다음 행동과 연결되는 정보를 첫 화면 상단에 더 명확히 배치한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-07-01.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-07-01-1405.md",
+  "last_issue_title": "[AI DEV] 2026-07-01 디자인/UX 성장 제안",
+  "last_run_at_kst": "2026-07-01T14:05:10.425540+09:00",
   "cost_model": {
-    "incremental_runtime_cost": "낮음",
-    "ai_call_impact": "기존 저장 데이터 재조합 중심이라 추가 호출은 거의 없음",
-    "storage_cost": "낮음~중간",
-    "unit_economics": "고객당 월 1회 내보내기만 발생해도 마진이 높음",
-    "notes": "보관 기간이 길어질수록 스토리지 비용만 점진적으로 증가한다.",
+    "implementation_cost": "low",
+    "runtime_cost": "low",
+    "reason": "문서/정책 중심 제안이라서 새 생성 로직보다 기존 콘텐츠 재배치에 가깝습니다.",
+    "ops_impact": "추가 AI 호출 없이도 스펙화 가능하며, 정책만 바꾸면 화면 실험을 반복할 수 있습니다.",
+    "monetization_path": [
+      "프리미엄 읽기 모드",
+      "팀/소기업용 실무 모드",
+      "브랜드/테마 차등",
+      "공유 링크 전환 최적화"
+    ],
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-06-30",
-    "last_report_path": "data/ai_lab/growth_reports/2026-06-30.md",
-    "last_issue_title": "[AI DEV] 2026-06-30 수익 성장 제안",
-    "last_run_at_kst": "2026-06-30T15:27:10.022838+09:00"
+    "last_report_date": "2026-07-01",
+    "last_report_path": "data/ai_lab/growth_reports/2026-07-01.md",
+    "last_issue_title": "[AI DEV] 2026-07-01 디자인/UX 성장 제안",
+    "last_run_at_kst": "2026-07-01T14:05:10.425540+09:00"
   }
 }
