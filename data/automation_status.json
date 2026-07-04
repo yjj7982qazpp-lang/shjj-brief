@@ -1,6 +1,6 @@
 {
-  "last_run_kst": "2026-07-03T15:04:55+09:00",
-  "next_run_kst": "2026-07-04T09:20:00+09:00",
+  "last_run_kst": "2026-07-04T14:55:51+09:00",
+  "next_run_kst": "2026-07-05T09:20:00+09:00",
   "status": "partial_failed",
   "message": "일부 관심 법령 확인에 실패했습니다. GitHub Actions 로그 확인이 필요합니다.",
   "failure_hint": "일부 법령 조회가 실패했습니다. 실패 후보 24건의 법령명 또는 API 응답을 확인하세요.",
@@ -23,7 +23,7 @@
   "call_summary": {
     "today_openai_call_count": 0,
     "last_7_days_openai_call_count": 4,
-    "last_30_days_openai_call_count": 5,
+    "last_30_days_openai_call_count": 4,
     "lifetime_openai_call_count": 11
   },
   "run_history": [
@@ -686,19 +686,19 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 6704.96,
       "changed_files_count": 1
-    }
-  ],
-  "recent_7_runs": [
+    },
     {
-      "date": "2026-06-27",
-      "last_run_kst": "2026-06-27T15:20:55+09:00",
+      "date": "2026-07-04",
+      "last_run_kst": "2026-07-04T14:55:51+09:00",
       "status": "partial_failed",
       "message": "일부 관심 법령 확인에 실패했습니다. GitHub Actions 로그 확인이 필요합니다.",
       "openai_call_count": 0,
       "estimated_cost_usd": 0.0,
-      "duration_seconds": 6694.32,
+      "duration_seconds": 6566.83,
       "changed_files_count": 0
-    },
+    }
+  ],
+  "recent_7_runs": [
     {
       "date": "2026-06-28",
       "last_run_kst": "2026-06-28T15:43:33+09:00",
@@ -758,12 +758,20 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 6704.96,
       "changed_files_count": 1
+    },
+    {
+      "date": "2026-07-04",
+      "last_run_kst": "2026-07-04T14:55:51+09:00",
+      "status": "partial_failed",
+      "message": "일부 관심 법령 확인에 실패했습니다. GitHub Actions 로그 확인이 필요합니다.",
+      "openai_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "duration_seconds": 6566.83,
+      "changed_files_count": 0
     }
   ],
-  "duration_seconds": 6704.96,
-  "changed_files": [
-    "ata/law_updates.json"
-  ],
+  "duration_seconds": 6566.83,
+  "changed_files": [],
   "workflow": "Auto Law Brief Update",
   "branch": "main",
   "source": "github_actions"
