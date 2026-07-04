@@ -822,7 +822,23 @@
         "요약"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "e84ae9683651875c",
+      "date": "2026-07-04",
+      "category": "scalability",
+      "title": "확장 매니페스트(도메인×채널×요금제×권한) 레지스트리",
+      "summary": "알림 시간, 관심 법령, 사용자 결정 기록을 향후 iOS/Android 동기화가 쉬운 데이터 단위로 분리하는 계획을 세운다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "앱화",
+        "설정",
+        "동기화",
+        "iOS",
+        "Android"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-07-03T15:05:15.257185+09:00"
+  "last_updated": "2026-07-04T14:56:08.476036+09:00"
 }
