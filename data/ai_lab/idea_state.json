@@ -1,30 +1,41 @@
 {
-  "date": "2026-07-04",
+  "date": "2026-07-05",
   "mode": "growth_suggestion",
-  "category": "scalability",
-  "category_name": "확장성",
-  "top_proposal_title": "확장 매니페스트(도메인×채널×요금제×권한) 레지스트리",
-  "top_proposal_summary": "알림 시간, 관심 법령, 사용자 결정 기록을 향후 iOS/Android 동기화가 쉬운 데이터 단위로 분리하는 계획을 세운다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-07-04.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-07-04-1456.md",
-  "last_issue_title": "[AI DEV] 2026-07-04 확장성 성장 제안",
-  "last_run_at_kst": "2026-07-04T14:56:08.476036+09:00",
+  "category": "automation",
+  "category_name": "자동화",
+  "top_proposal_title": "운영 런북 스냅샷 자동 생성",
+  "top_proposal_summary": "매일 아침 또는 배포 전, 미처리 예외·만료 임박 항목·검수 대기·배포 전 체크를 하나의 실행 순서로 자동 합성한다",
+  "last_report_path": "data/ai_lab/growth_reports/2026-07-05.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-07-05-1521.md",
+  "last_issue_title": "[AI DEV] 2026-07-05 자동화 성장 제안",
+  "last_run_at_kst": "2026-07-05T15:21:31.654823+09:00",
   "cost_model": {
-    "short_term": "낮음",
-    "medium_term": "중간",
-    "notes": [
-      "초기 산출물은 문서와 원장 정리 중심이라 추가 API/서버 비용이 거의 없습니다.",
-      "오히려 중복 기획과 잘못된 확장 시도를 줄여 운영비를 절감할 가능성이 큽니다.",
-      "나중에 실제 제품화할 때만 매니페스트를 런타임 정책으로 연결하면 됩니다."
+    "model": "low_fixed_cost",
+    "assumptions": [
+      "기존 보고서/원장 데이터를 재사용한다",
+      "추가 AI 호출 없이 규칙 기반 합성부터 시작한다",
+      "문서/원장 업데이트만으로 검증한다"
+    ],
+    "estimated_marginal_cost": "거의 0에 가깝다",
+    "cost_drivers": [
+      "요약 대상 항목 수",
+      "중복 비교 대상 수",
+      "운영 런북 생성 빈도"
+    ],
+    "cost_controls": [
+      "최근 항목만 사용",
+      "캐시 재사용",
+      "필수 필드 누락 시 생성 중단",
+      "고위험 항목 자동 처리 금지"
     ],
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-07-04",
-    "last_report_path": "data/ai_lab/growth_reports/2026-07-04.md",
-    "last_issue_title": "[AI DEV] 2026-07-04 확장성 성장 제안",
-    "last_run_at_kst": "2026-07-04T14:56:08.476036+09:00"
+    "last_report_date": "2026-07-05",
+    "last_report_path": "data/ai_lab/growth_reports/2026-07-05.md",
+    "last_issue_title": "[AI DEV] 2026-07-05 자동화 성장 제안",
+    "last_run_at_kst": "2026-07-05T15:21:31.654823+09:00"
   }
 }

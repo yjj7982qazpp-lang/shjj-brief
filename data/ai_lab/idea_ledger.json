@@ -838,7 +838,23 @@
         "Android"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "c67e23d1d0d052ef",
+      "date": "2026-07-05",
+      "category": "automation",
+      "title": "운영 런북 스냅샷 자동 생성",
+      "summary": "매일 아침 또는 배포 전, 미처리 예외·만료 임박 항목·검수 대기·배포 전 체크를 하나의 실행 순서로 자동 합성한다",
+      "status": "proposed",
+      "similarity_keywords": [
+        "관리자",
+        "결정",
+        "자동반영",
+        "보류",
+        "폐기"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-07-04T14:56:08.476036+09:00"
+  "last_updated": "2026-07-05T15:21:31.654823+09:00"
 }
