@@ -1,41 +1,29 @@
 {
-  "date": "2026-07-05",
+  "date": "2026-07-06",
   "mode": "growth_suggestion",
-  "category": "automation",
-  "category_name": "자동화",
-  "top_proposal_title": "운영 런북 스냅샷 자동 생성",
-  "top_proposal_summary": "매일 아침 또는 배포 전, 미처리 예외·만료 임박 항목·검수 대기·배포 전 체크를 하나의 실행 순서로 자동 합성한다",
-  "last_report_path": "data/ai_lab/growth_reports/2026-07-05.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-07-05-1521.md",
-  "last_issue_title": "[AI DEV] 2026-07-05 자동화 성장 제안",
-  "last_run_at_kst": "2026-07-05T15:21:31.654823+09:00",
+  "category": "code_quality",
+  "category_name": "코드품질",
+  "top_proposal_title": "출력 계약 스냅샷 카탈로그",
+  "top_proposal_summary": "보고서 필수 섹션과 원장 필드를 검증하는 저비용 스키마 체크를 추가해 깨진 보고서 생성을 막는다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-07-06.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-07-06-1351.md",
+  "last_issue_title": "[AI DEV] 2026-07-06 코드품질 성장 제안",
+  "last_run_at_kst": "2026-07-06T13:51:35.890579+09:00",
   "cost_model": {
-    "model": "low_fixed_cost",
-    "assumptions": [
-      "기존 보고서/원장 데이터를 재사용한다",
-      "추가 AI 호출 없이 규칙 기반 합성부터 시작한다",
-      "문서/원장 업데이트만으로 검증한다"
-    ],
-    "estimated_marginal_cost": "거의 0에 가깝다",
-    "cost_drivers": [
-      "요약 대상 항목 수",
-      "중복 비교 대상 수",
-      "운영 런북 생성 빈도"
-    ],
-    "cost_controls": [
-      "최근 항목만 사용",
-      "캐시 재사용",
-      "필수 필드 누락 시 생성 중단",
-      "고위험 항목 자동 처리 금지"
-    ],
+    "one_time_cost": "low~medium",
+    "recurring_cost": "low",
+    "api_cost_effect": "거의 없음",
+    "expected_savings": "중간~높음 (리뷰, 재검수, 지원 설명, 회귀 확인 시간 절감)",
+    "maintenance_cost": "낮음",
+    "risk_cost": "중간 (샘플이 과도하게 늘면 문서 관리비가 증가)",
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-07-05",
-    "last_report_path": "data/ai_lab/growth_reports/2026-07-05.md",
-    "last_issue_title": "[AI DEV] 2026-07-05 자동화 성장 제안",
-    "last_run_at_kst": "2026-07-05T15:21:31.654823+09:00"
+    "last_report_date": "2026-07-06",
+    "last_report_path": "data/ai_lab/growth_reports/2026-07-06.md",
+    "last_issue_title": "[AI DEV] 2026-07-06 코드품질 성장 제안",
+    "last_run_at_kst": "2026-07-06T13:51:35.890579+09:00"
   }
 }
