@@ -870,7 +870,23 @@
         "회귀방지"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "092d33ec984f54a0",
+      "date": "2026-07-07",
+      "category": "ops_cost",
+      "title": "비용-가치 티어링 브리핑",
+      "summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "비용",
+        "캐시",
+        "summary_key",
+        "재사용률",
+        "OpenAI"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-07-06T13:51:35.890579+09:00"
+  "last_updated": "2026-07-07T15:19:42.741711+09:00"
 }

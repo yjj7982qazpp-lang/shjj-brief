@@ -1,29 +1,49 @@
 {
-  "date": "2026-07-06",
+  "date": "2026-07-07",
   "mode": "growth_suggestion",
-  "category": "code_quality",
-  "category_name": "코드품질",
-  "top_proposal_title": "출력 계약 스냅샷 카탈로그",
-  "top_proposal_summary": "보고서 필수 섹션과 원장 필드를 검증하는 저비용 스키마 체크를 추가해 깨진 보고서 생성을 막는다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-07-06.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-07-06-1351.md",
-  "last_issue_title": "[AI DEV] 2026-07-06 코드품질 성장 제안",
-  "last_run_at_kst": "2026-07-06T13:51:35.890579+09:00",
+  "category": "ops_cost",
+  "category_name": "운영비",
+  "top_proposal_title": "비용-가치 티어링 브리핑",
+  "top_proposal_summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-07-07.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-07-07-1519.md",
+  "last_issue_title": "[AI DEV] 2026-07-07 운영비 성장 제안",
+  "last_run_at_kst": "2026-07-07T15:19:42.741711+09:00",
   "cost_model": {
-    "one_time_cost": "low~medium",
-    "recurring_cost": "low",
-    "api_cost_effect": "거의 없음",
-    "expected_savings": "중간~높음 (리뷰, 재검수, 지원 설명, 회귀 확인 시간 절감)",
-    "maintenance_cost": "낮음",
-    "risk_cost": "중간 (샘플이 과도하게 늘면 문서 관리비가 증가)",
+    "current_cost_drivers": [
+      "모든 사용자에게 동일 수준의 생성물 제공",
+      "고비용 확장 문장 무조건 포함",
+      "중복 브리핑 재생성",
+      "관리자 비용 판단의 수동 처리"
+    ],
+    "proposed_levers": [
+      "무료는 캐시 가능한 짧은 브리핑으로 고정",
+      "업무형/유료 요청에만 확장 해설 생성",
+      "원가 초과 시 대체문구로 자동 하향",
+      "관리자 큐로 초과 루트 즉시 정리"
+    ],
+    "expected_savings": {
+      "ai_call_reduction": "대략 30~45% 범위 가능성",
+      "ops_time_saving": "운영 검토 시간 주 1~2시간 절감 가능성",
+      "storage_delta": "거의 없음"
+    },
+    "revenue_offset": {
+      "premium_uplift": "고의도 사용자 대상 업셀 포인트가 생김",
+      "break_even": "절감액의 일부만 전환돼도 정책 도입 명분이 선다"
+    },
+    "assumptions": [
+      "무료 사용자의 만족도는 짧은 브리핑으로 유지 가능",
+      "유료/업무형 사용자는 확장 문장에 비용을 낼 의사가 있음",
+      "티어는 3단계 이하로 유지"
+    ],
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-07-06",
-    "last_report_path": "data/ai_lab/growth_reports/2026-07-06.md",
-    "last_issue_title": "[AI DEV] 2026-07-06 코드품질 성장 제안",
-    "last_run_at_kst": "2026-07-06T13:51:35.890579+09:00"
+    "last_report_date": "2026-07-07",
+    "last_report_path": "data/ai_lab/growth_reports/2026-07-07.md",
+    "last_issue_title": "[AI DEV] 2026-07-07 운영비 성장 제안",
+    "last_run_at_kst": "2026-07-07T15:19:42.741711+09:00"
   }
 }
