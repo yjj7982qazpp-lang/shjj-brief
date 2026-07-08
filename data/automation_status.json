@@ -1,15 +1,15 @@
 {
-  "last_run_kst": "2026-07-07T15:19:18+09:00",
-  "next_run_kst": "2026-07-08T09:20:00+09:00",
-  "status": "partial_failed",
-  "message": "일부 관심 법령 확인에 실패했습니다. GitHub Actions 로그 확인이 필요합니다.",
-  "failure_hint": "일부 법령 조회가 실패했습니다. 실패 후보 24건의 법령명 또는 API 응답을 확인하세요.",
-  "legal_change_count": 0,
+  "last_run_kst": "2026-07-08T12:53:57+09:00",
+  "next_run_kst": "2026-07-09T09:20:00+09:00",
+  "status": "changed",
+  "message": "오늘 관심 법령 데이터가 갱신되었습니다. 변경 후보 4건, OpenAI 호출 0회입니다.",
+  "failure_hint": "특이사항 없음",
+  "legal_change_count": 4,
   "today_count": 0,
-  "last_7_days_count": 0,
-  "last_30_days_count": 0,
+  "last_7_days_count": 1,
+  "last_30_days_count": 4,
   "new_summary_key_count": 0,
-  "cache_hit_count": 0,
+  "cache_hit_count": 4,
   "openai_call_count": 0,
   "estimated_cost_usd": 0.0,
   "cost_per_openai_call_usd": 0.0,
@@ -22,7 +22,7 @@
   },
   "call_summary": {
     "today_openai_call_count": 0,
-    "last_7_days_openai_call_count": 2,
+    "last_7_days_openai_call_count": 1,
     "last_30_days_openai_call_count": 4,
     "lifetime_openai_call_count": 11
   },
@@ -726,19 +726,19 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 6681.71,
       "changed_files_count": 1
+    },
+    {
+      "date": "2026-07-08",
+      "last_run_kst": "2026-07-08T12:53:57+09:00",
+      "status": "changed",
+      "message": "오늘 관심 법령 데이터가 갱신되었습니다. 변경 후보 4건, OpenAI 호출 0회입니다.",
+      "openai_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "duration_seconds": 225.47,
+      "changed_files_count": 1
     }
   ],
   "recent_7_runs": [
-    {
-      "date": "2026-07-01",
-      "last_run_kst": "2026-07-01T14:04:52+09:00",
-      "status": "changed",
-      "message": "오늘 관심 법령 데이터가 갱신되었습니다. 변경 후보 6건, OpenAI 호출 1회입니다.",
-      "openai_call_count": 1,
-      "estimated_cost_usd": 0.0,
-      "duration_seconds": 444.11,
-      "changed_files_count": 2
-    },
     {
       "date": "2026-07-02",
       "last_run_kst": "2026-07-02T13:37:23+09:00",
@@ -798,9 +798,19 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 6681.71,
       "changed_files_count": 1
+    },
+    {
+      "date": "2026-07-08",
+      "last_run_kst": "2026-07-08T12:53:57+09:00",
+      "status": "changed",
+      "message": "오늘 관심 법령 데이터가 갱신되었습니다. 변경 후보 4건, OpenAI 호출 0회입니다.",
+      "openai_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "duration_seconds": 225.47,
+      "changed_files_count": 1
     }
   ],
-  "duration_seconds": 6681.71,
+  "duration_seconds": 225.47,
   "changed_files": [
     "ata/law_updates.json"
   ],
