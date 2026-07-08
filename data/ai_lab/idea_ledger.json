@@ -886,7 +886,23 @@
         "OpenAI"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "6e2ff656e27995f2",
+      "date": "2026-07-08",
+      "category": "admin_analytics",
+      "title": "결정 전 4지표 사전판정 카드",
+      "summary": "제안별 진행/보류/폐기 상태와 카테고리 편중을 JSON으로 축적해 운영자가 다음 작업을 빠르게 고르게 한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "대시보드",
+        "결정",
+        "상태",
+        "카테고리",
+        "운영자"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-07-07T15:19:42.741711+09:00"
+  "last_updated": "2026-07-08T12:54:14.766104+09:00"
 }
