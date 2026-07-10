@@ -1,29 +1,27 @@
 {
-  "date": "2026-07-09",
+  "date": "2026-07-10",
   "mode": "growth_suggestion",
-  "category": "marketing_growth",
-  "category_name": "마케팅/성장",
-  "top_proposal_title": "외부 사이트용 임베드 브리프 위젯",
-  "top_proposal_summary": "사용자가 카카오톡이나 메일로 공유하기 쉬운 짧은 변경 요약 문구를 생성해 자연 유입을 늘린다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-07-09.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-07-09-1508.md",
-  "last_issue_title": "[AI DEV] 2026-07-09 마케팅/성장 성장 제안",
-  "last_run_at_kst": "2026-07-09T15:08:09.992427+09:00",
+  "category": "revenue",
+  "category_name": "수익",
+  "top_proposal_title": "맥락형 후원 슬롯 레지스트리",
+  "top_proposal_summary": "무료 일일 브리프는 유지하고, 주간 변경 요약과 실무 체크리스트를 PDF/메일형 프리미엄 리포트로 분리한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-07-10.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-07-10-1332.md",
+  "last_issue_title": "[AI DEV] 2026-07-10 수익 성장 제안",
+  "last_run_at_kst": "2026-07-10T13:32:18.764843+09:00",
   "cost_model": {
-    "assumption": "실시간 AI 생성이 아니라 일별 캐시된 브리프를 재사용한다.",
-    "generation_cost": "위젯 본문은 하루 1회 생성, 채널별 템플릿만 조합하면 된다.",
-    "delivery_cost": "정적/캐시 중심이면 조회당 원가는 매우 낮다.",
-    "ops_cost": "관리자 템플릿만 늘고, 사용자별 추가 호출은 거의 없다.",
-    "revenue_fit": "파트너 배포, 화이트라벨, 고급 템플릿을 유료화하면 원가 대비 마진이 좋다.",
-    "overall": "저비용-중확장형",
+    "one_time": "낮음: 슬롯 규칙과 파트너 분류만 정리하면 된다.",
+    "monthly": "낮음: 초기에 운영자 검수만 있으면 자동화 전까지도 유지 가능하다.",
+    "variable": "낮음~중간: 기존 브리프 재사용이 기본이라 생성비용 증가는 작고, 리드 매칭이 붙을 때만 약간 늘어난다.",
+    "notes": "가장 좋은 구조는 '광고 노출비 + 리드 정산'의 혼합형이며, 무료 핵심을 유지할수록 전환 저항 대비 효율이 좋아진다.",
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-07-09",
-    "last_report_path": "data/ai_lab/growth_reports/2026-07-09.md",
-    "last_issue_title": "[AI DEV] 2026-07-09 마케팅/성장 성장 제안",
-    "last_run_at_kst": "2026-07-09T15:08:09.992427+09:00"
+    "last_report_date": "2026-07-10",
+    "last_report_path": "data/ai_lab/growth_reports/2026-07-10.md",
+    "last_issue_title": "[AI DEV] 2026-07-10 수익 성장 제안",
+    "last_run_at_kst": "2026-07-10T13:32:18.764843+09:00"
   }
 }
