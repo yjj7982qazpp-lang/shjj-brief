@@ -1,27 +1,28 @@
 {
-  "date": "2026-07-10",
+  "date": "2026-07-11",
   "mode": "growth_suggestion",
-  "category": "revenue",
-  "category_name": "수익",
-  "top_proposal_title": "맥락형 후원 슬롯 레지스트리",
-  "top_proposal_summary": "무료 일일 브리프는 유지하고, 주간 변경 요약과 실무 체크리스트를 PDF/메일형 프리미엄 리포트로 분리한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-07-10.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-07-10-1332.md",
-  "last_issue_title": "[AI DEV] 2026-07-10 수익 성장 제안",
-  "last_run_at_kst": "2026-07-10T13:32:18.764843+09:00",
+  "category": "design_ux",
+  "category_name": "디자인/UX",
+  "top_proposal_title": "행동 신호 기반 홈 카드 재정렬",
+  "top_proposal_summary": "오늘 시행 법령, 행동 가이드, 일정 중 사용자의 다음 행동과 연결되는 정보를 첫 화면 상단에 더 명확히 배치한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-07-11.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-07-11-1433.md",
+  "last_issue_title": "[AI DEV] 2026-07-11 디자인/UX 성장 제안",
+  "last_run_at_kst": "2026-07-11T14:33:53.211863+09:00",
   "cost_model": {
-    "one_time": "낮음: 슬롯 규칙과 파트너 분류만 정리하면 된다.",
-    "monthly": "낮음: 초기에 운영자 검수만 있으면 자동화 전까지도 유지 가능하다.",
-    "variable": "낮음~중간: 기존 브리프 재사용이 기본이라 생성비용 증가는 작고, 리드 매칭이 붙을 때만 약간 늘어난다.",
-    "notes": "가장 좋은 구조는 '광고 노출비 + 리드 정산'의 혼합형이며, 무료 핵심을 유지할수록 전환 저항 대비 효율이 좋아진다.",
+    "one_time": "문서화/정책 정의만 하면 0.5~1 MD 수준",
+    "runtime": "추가 AI 호출 0, 기존 행동 로그/상태만 쓰면 서버비 증가는 미미",
+    "storage": "최근 열람/마지막 탭 정도만 저장하면 매우 작음",
+    "future_risk": "개인화 규칙을 과하게 늘리면 유지보수 비용이 커질 수 있음",
+    "saving_point": "기존 데이터 재활용으로 시작해 비용 없이 UX만 먼저 검증 가능",
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-07-10",
-    "last_report_path": "data/ai_lab/growth_reports/2026-07-10.md",
-    "last_issue_title": "[AI DEV] 2026-07-10 수익 성장 제안",
-    "last_run_at_kst": "2026-07-10T13:32:18.764843+09:00"
+    "last_report_date": "2026-07-11",
+    "last_report_path": "data/ai_lab/growth_reports/2026-07-11.md",
+    "last_issue_title": "[AI DEV] 2026-07-11 디자인/UX 성장 제안",
+    "last_run_at_kst": "2026-07-11T14:33:53.211863+09:00"
   }
 }
