@@ -1,28 +1,27 @@
 {
-  "date": "2026-07-11",
+  "date": "2026-07-12",
   "mode": "growth_suggestion",
-  "category": "design_ux",
-  "category_name": "디자인/UX",
-  "top_proposal_title": "행동 신호 기반 홈 카드 재정렬",
-  "top_proposal_summary": "오늘 시행 법령, 행동 가이드, 일정 중 사용자의 다음 행동과 연결되는 정보를 첫 화면 상단에 더 명확히 배치한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-07-11.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-07-11-1433.md",
-  "last_issue_title": "[AI DEV] 2026-07-11 디자인/UX 성장 제안",
-  "last_run_at_kst": "2026-07-11T14:33:53.211863+09:00",
+  "category": "feature",
+  "category_name": "기능",
+  "top_proposal_title": "상황 프리필터(업종·역할·긴급도) + 개인 브리프 모드",
+  "top_proposal_summary": "사용자가 특정 법령 변경에 메모를 남기고 후속 확인 날짜를 저장해 재방문 이유를 만든다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-07-12.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-07-12-1305.md",
+  "last_issue_title": "[AI DEV] 2026-07-12 기능 성장 제안",
+  "last_run_at_kst": "2026-07-12T13:05:55.543073+09:00",
   "cost_model": {
-    "one_time": "문서화/정책 정의만 하면 0.5~1 MD 수준",
-    "runtime": "추가 AI 호출 0, 기존 행동 로그/상태만 쓰면 서버비 증가는 미미",
-    "storage": "최근 열람/마지막 탭 정도만 저장하면 매우 작음",
-    "future_risk": "개인화 규칙을 과하게 늘리면 유지보수 비용이 커질 수 있음",
-    "saving_point": "기존 데이터 재활용으로 시작해 비용 없이 UX만 먼저 검증 가능",
+    "setup": "문서/원장 정리 중심이라 초기 비용이 매우 낮다. 필터 규칙과 상태값 정의만 정하면 된다.",
+    "runtime": "추가 생성 비용은 거의 없고, 저장된 설정을 읽는 수준의 저비용 분기만 필요하다.",
+    "ops_savings": "사용자별 불필요 노출이 줄어 재열람, 재설정, 재설명 비용이 감소한다.",
+    "monetization": "무료는 개인 필터, 유료는 업종/역할 프리셋과 팀 공유 모드로 자연스럽게 확장 가능하다.",
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-07-11",
-    "last_report_path": "data/ai_lab/growth_reports/2026-07-11.md",
-    "last_issue_title": "[AI DEV] 2026-07-11 디자인/UX 성장 제안",
-    "last_run_at_kst": "2026-07-11T14:33:53.211863+09:00"
+    "last_report_date": "2026-07-12",
+    "last_report_path": "data/ai_lab/growth_reports/2026-07-12.md",
+    "last_issue_title": "[AI DEV] 2026-07-12 기능 성장 제안",
+    "last_run_at_kst": "2026-07-12T13:05:55.543073+09:00"
   }
 }
