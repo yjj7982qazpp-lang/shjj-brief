@@ -1,27 +1,36 @@
 {
-  "date": "2026-07-12",
+  "date": "2026-07-13",
   "mode": "growth_suggestion",
-  "category": "feature",
-  "category_name": "기능",
-  "top_proposal_title": "상황 프리필터(업종·역할·긴급도) + 개인 브리프 모드",
-  "top_proposal_summary": "사용자가 특정 법령 변경에 메모를 남기고 후속 확인 날짜를 저장해 재방문 이유를 만든다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-07-12.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-07-12-1305.md",
-  "last_issue_title": "[AI DEV] 2026-07-12 기능 성장 제안",
-  "last_run_at_kst": "2026-07-12T13:05:55.543073+09:00",
+  "category": "content",
+  "category_name": "콘텐츠",
+  "top_proposal_title": "월간 변화 지도 + 누적 맥락 아카이브",
+  "top_proposal_summary": "법령 변경마다 원문 요약과 별도로 실무자가 바로 이해할 수 있는 영향 문장과 확인 질문을 제공한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-07-13.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-07-13-1310.md",
+  "last_issue_title": "[AI DEV] 2026-07-13 콘텐츠 성장 제안",
+  "last_run_at_kst": "2026-07-13T13:10:19.849689+09:00",
   "cost_model": {
-    "setup": "문서/원장 정리 중심이라 초기 비용이 매우 낮다. 필터 규칙과 상태값 정의만 정하면 된다.",
-    "runtime": "추가 생성 비용은 거의 없고, 저장된 설정을 읽는 수준의 저비용 분기만 필요하다.",
-    "ops_savings": "사용자별 불필요 노출이 줄어 재열람, 재설정, 재설명 비용이 감소한다.",
-    "monetization": "무료는 개인 필터, 유료는 업종/역할 프리셋과 팀 공유 모드로 자연스럽게 확장 가능하다.",
+    "assumption": "기존 일간 브리프 데이터를 재조합해 월간 요약을 만드는 방식",
+    "incremental_cost": "낮음",
+    "cost_drivers": [
+      "배치 요약 1회 생성",
+      "아카이브 저장",
+      "간단한 인덱싱/검색"
+    ],
+    "avoid_cost_growth": [
+      "사용자별 실시간 재생성",
+      "이미지/멀티미디어 확장",
+      "불필요한 세부 카드 남발"
+    ],
+    "note": "유료화 전에도 비용 부담이 크지 않으며, 이후 전문가용 패키지로 확장할 때만 원가가 점진적으로 늘어난다.",
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-07-12",
-    "last_report_path": "data/ai_lab/growth_reports/2026-07-12.md",
-    "last_issue_title": "[AI DEV] 2026-07-12 기능 성장 제안",
-    "last_run_at_kst": "2026-07-12T13:05:55.543073+09:00"
+    "last_report_date": "2026-07-13",
+    "last_report_path": "data/ai_lab/growth_reports/2026-07-13.md",
+    "last_issue_title": "[AI DEV] 2026-07-13 콘텐츠 성장 제안",
+    "last_run_at_kst": "2026-07-13T13:10:19.849689+09:00"
   }
 }
