@@ -998,7 +998,23 @@
         "Android"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "2f320886a08e23c3",
+      "date": "2026-07-15",
+      "category": "automation",
+      "title": "승인 요청 배치 + SLA 에스컬레이션",
+      "summary": "진행/보류/폐기 결정이 decisions.json에 기록되면 다음 루프가 같은 제안을 반복하지 않도록 자동 반영한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "관리자",
+        "결정",
+        "자동반영",
+        "보류",
+        "폐기"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-07-14T14:31:42.793163+09:00"
+  "last_updated": "2026-07-15T14:32:49.938900+09:00"
 }
