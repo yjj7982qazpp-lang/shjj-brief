@@ -1,34 +1,38 @@
 {
-  "date": "2026-07-17",
+  "date": "2026-07-18",
   "mode": "growth_suggestion",
-  "category": "ops_cost",
-  "category_name": "운영비",
-  "top_proposal_title": "요청 전 경량 판별기 + 모델 라우팅 레지스트리",
-  "top_proposal_summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-07-17.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-07-17-1245.md",
-  "last_issue_title": "[AI DEV] 2026-07-17 운영비 성장 제안",
-  "last_run_at_kst": "2026-07-17T12:45:42.744852+09:00",
+  "category": "admin_analytics",
+  "category_name": "관리자/분석",
+  "top_proposal_title": "지표 정의·신선도·근거 카드",
+  "top_proposal_summary": "제안별 진행/보류/폐기 상태와 카테고리 편중을 JSON으로 축적해 운영자가 다음 작업을 빠르게 고르게 한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-07-18.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-07-18-1240.md",
+  "last_issue_title": "[AI DEV] 2026-07-18 관리자/분석 성장 제안",
+  "last_run_at_kst": "2026-07-18T12:40:39.017326+09:00",
   "cost_model": {
-    "current_pattern": "대부분의 요청이 동일 생성 경로를 타고, 캐시 미스 시 비싼 호출이 발생한다.",
-    "proposed_pattern": "경량 판별 -> 템플릿 재사용/캐시 재사용 -> 저비용 모델 -> 고비용 모델 순으로 분기한다.",
-    "cost_drivers": [
-      "상위 모델 호출 수",
-      "불필요한 재생성",
-      "짧은 변경에도 전체 재렌더링",
-      "캐시 만료로 인한 재계산"
+    "runtime_cost": "낮음",
+    "storage_cost": "낮음",
+    "expected_delta": "문서/메타데이터 중심이면 추가 API 호출 없이도 운영 가능하다.",
+    "main_cost_drivers": [
+      "지표 정의 문서 유지",
+      "근거 메타데이터 기록",
+      "중복 검토 시간"
     ],
-    "savings_formula": "절감액 ≈ (상위모델 대체 건수 × 상위모델 평균비용) - (판별 비용 + 추가 운영비)",
-    "expected_direction": "총비용 하락, 특히 소규모 잦은 요청에서 효과가 큼",
-    "break_even_note": "판별 오탐이 낮고 캐시 적중률이 일정 수준만 넘으면 즉시 효과가 난다.",
+    "control_levers": [
+      "지표 수 상한",
+      "신선도 임계값 고정",
+      "원천 불명확 항목 자동 표시",
+      "월 1회만 정의 개정 검토"
+    ],
+    "verdict": "비용 대비 운영 판단 품질 개선 폭이 커서 시도 가치가 높다.",
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-07-17",
-    "last_report_path": "data/ai_lab/growth_reports/2026-07-17.md",
-    "last_issue_title": "[AI DEV] 2026-07-17 운영비 성장 제안",
-    "last_run_at_kst": "2026-07-17T12:45:42.744852+09:00"
+    "last_report_date": "2026-07-18",
+    "last_report_path": "data/ai_lab/growth_reports/2026-07-18.md",
+    "last_issue_title": "[AI DEV] 2026-07-18 관리자/분석 성장 제안",
+    "last_run_at_kst": "2026-07-18T12:40:39.017326+09:00"
   }
 }
