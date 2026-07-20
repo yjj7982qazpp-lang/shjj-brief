@@ -1,28 +1,32 @@
 {
-  "date": "2026-07-19",
+  "date": "2026-07-20",
   "mode": "growth_suggestion",
-  "category": "marketing_growth",
-  "category_name": "마케팅/성장",
-  "top_proposal_title": "앱스토어/플레이스토어 성장 패키지",
-  "top_proposal_summary": "사용자가 카카오톡이나 메일로 공유하기 쉬운 짧은 변경 요약 문구를 생성해 자연 유입을 늘린다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-07-19.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-07-19-1453.md",
-  "last_issue_title": "[AI DEV] 2026-07-19 마케팅/성장 성장 제안",
-  "last_run_at_kst": "2026-07-19T14:53:28.036416+09:00",
+  "category": "revenue",
+  "category_name": "수익",
+  "top_proposal_title": "상황별 상담/견적 요청 리드 카드",
+  "top_proposal_summary": "무료 일일 브리프는 유지하고, 주간 변경 요약과 실무 체크리스트를 PDF/메일형 프리미엄 리포트로 분리한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-07-20.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-07-20-1502.md",
+  "last_issue_title": "[AI DEV] 2026-07-20 수익 성장 제안",
+  "last_run_at_kst": "2026-07-20T15:02:31.727227+09:00",
   "cost_model": {
-    "one_time_cost": "낮음. 문서 템플릿과 메타 규칙을 만드는 수준이라 서버 비용이 거의 없다.",
-    "ongoing_cost": "낮음. 릴리즈 때만 문구를 갱신하면 된다.",
-    "ai_cost_control": "채널별 초안 생성이 필요하면 릴리즈 단위로만 실행하고, 이전 템플릿을 캐시 재사용한다.",
-    "operational_savings": "운영자가 채널마다 새 문구를 매번 작성하지 않아도 되어 검토 시간이 줄어든다.",
-    "watchouts": "스토어 문구가 너무 자주 바뀌면 심사와 측정이 흔들리므로 버전 고정이 필요하다.",
+    "one_time_cost": "낮음: 문서/원장 정리 중심이라 구현 착수비가 작다.",
+    "monthly_ops_cost": "중간: 파트너 검수와 리드 품질 관리가 필요하다.",
+    "ai_cost": "낮음: 규칙 기반 분기면 추가 호출 없이 운영 가능하다.",
+    "revenue_levers": [
+      "리드당 고정 수수료",
+      "성과형 소개비",
+      "업종별 우선 배정 프리미엄"
+    ],
+    "break_even_note": "월 소수의 고의도 리드만 발생해도 후원형/배너형보다 빠르게 회수될 가능성이 있다.",
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-07-19",
-    "last_report_path": "data/ai_lab/growth_reports/2026-07-19.md",
-    "last_issue_title": "[AI DEV] 2026-07-19 마케팅/성장 성장 제안",
-    "last_run_at_kst": "2026-07-19T14:53:28.036416+09:00"
+    "last_report_date": "2026-07-20",
+    "last_report_path": "data/ai_lab/growth_reports/2026-07-20.md",
+    "last_issue_title": "[AI DEV] 2026-07-20 수익 성장 제안",
+    "last_run_at_kst": "2026-07-20T15:02:31.727227+09:00"
   }
 }
