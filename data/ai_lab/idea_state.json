@@ -1,32 +1,27 @@
 {
-  "date": "2026-07-20",
+  "date": "2026-07-21",
   "mode": "growth_suggestion",
-  "category": "revenue",
-  "category_name": "수익",
-  "top_proposal_title": "상황별 상담/견적 요청 리드 카드",
-  "top_proposal_summary": "무료 일일 브리프는 유지하고, 주간 변경 요약과 실무 체크리스트를 PDF/메일형 프리미엄 리포트로 분리한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-07-20.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-07-20-1502.md",
-  "last_issue_title": "[AI DEV] 2026-07-20 수익 성장 제안",
-  "last_run_at_kst": "2026-07-20T15:02:31.727227+09:00",
+  "category": "design_ux",
+  "category_name": "디자인/UX",
+  "top_proposal_title": "탐색 상태 기억형 하단 점프바",
+  "top_proposal_summary": "사용자의 마지막 읽기 위치, 최근 필터, 자주 보는 섹션을 기억해 다음 방문 시 바로 이어 읽게 한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-07-21.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-07-21-1436.md",
+  "last_issue_title": "[AI DEV] 2026-07-21 디자인/UX 성장 제안",
+  "last_run_at_kst": "2026-07-21T14:36:44.436913+09:00",
   "cost_model": {
-    "one_time_cost": "낮음: 문서/원장 정리 중심이라 구현 착수비가 작다.",
-    "monthly_ops_cost": "중간: 파트너 검수와 리드 품질 관리가 필요하다.",
-    "ai_cost": "낮음: 규칙 기반 분기면 추가 호출 없이 운영 가능하다.",
-    "revenue_levers": [
-      "리드당 고정 수수료",
-      "성과형 소개비",
-      "업종별 우선 배정 프리미엄"
-    ],
-    "break_even_note": "월 소수의 고의도 리드만 발생해도 후원형/배너형보다 빠르게 회수될 가능성이 있다.",
+    "prototype_cost": "문서화만 하면 거의 0에 가깝다. 실제 구현을 가정해도 클라이언트 상태 기억 위주라 저비용이다.",
+    "runtime_cost": "서버/API 추가 호출이 거의 없고, 로컬 저장소 또는 경량 설정값만 쓰면 된다.",
+    "maintenance_cost": "기억 항목 수를 제한하면 유지보수 부담이 낮다. 관리자 검토 카드는 템플릿만 유지하면 된다.",
+    "notes": "수익 증분은 직접 과금보다 체류/재방문 증가를 통한 간접 효과가 크다.",
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-07-20",
-    "last_report_path": "data/ai_lab/growth_reports/2026-07-20.md",
-    "last_issue_title": "[AI DEV] 2026-07-20 수익 성장 제안",
-    "last_run_at_kst": "2026-07-20T15:02:31.727227+09:00"
+    "last_report_date": "2026-07-21",
+    "last_report_path": "data/ai_lab/growth_reports/2026-07-21.md",
+    "last_issue_title": "[AI DEV] 2026-07-21 디자인/UX 성장 제안",
+    "last_run_at_kst": "2026-07-21T14:36:44.436913+09:00"
   }
 }
