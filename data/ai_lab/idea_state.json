@@ -1,27 +1,26 @@
 {
-  "date": "2026-07-21",
+  "date": "2026-07-22",
   "mode": "growth_suggestion",
-  "category": "design_ux",
-  "category_name": "디자인/UX",
-  "top_proposal_title": "탐색 상태 기억형 하단 점프바",
-  "top_proposal_summary": "사용자의 마지막 읽기 위치, 최근 필터, 자주 보는 섹션을 기억해 다음 방문 시 바로 이어 읽게 한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-07-21.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-07-21-1436.md",
-  "last_issue_title": "[AI DEV] 2026-07-21 디자인/UX 성장 제안",
-  "last_run_at_kst": "2026-07-21T14:36:44.436913+09:00",
+  "category": "feature",
+  "category_name": "기능",
+  "top_proposal_title": "1탭 브리핑 반응 수집 + 선호 저장",
+  "top_proposal_summary": "사용자가 특정 법령 변경에 메모를 남기고 후속 확인 날짜를 저장해 재방문 이유를 만든다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-07-22.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-07-22-1254.md",
+  "last_issue_title": "[AI DEV] 2026-07-22 기능 성장 제안",
+  "last_run_at_kst": "2026-07-22T12:54:44.652680+09:00",
   "cost_model": {
-    "prototype_cost": "문서화만 하면 거의 0에 가깝다. 실제 구현을 가정해도 클라이언트 상태 기억 위주라 저비용이다.",
-    "runtime_cost": "서버/API 추가 호출이 거의 없고, 로컬 저장소 또는 경량 설정값만 쓰면 된다.",
-    "maintenance_cost": "기억 항목 수를 제한하면 유지보수 부담이 낮다. 관리자 검토 카드는 템플릿만 유지하면 된다.",
-    "notes": "수익 증분은 직접 과금보다 체류/재방문 증가를 통한 간접 효과가 크다.",
-    "recommended_model": "GPT-5.4 Mini",
-    "reasoning": "Medium",
+    "recommended_model": "rules-first + optional lightweight classifier",
+    "reasoning": "핵심은 버튼 태그 수집과 선호 저장이라 AI 생성이 필수가 아니다.",
+    "credit_saving": "AI는 사용자가 명시적으로 반응을 남긴 항목만 주간 단위로 묶어 요약할 때만 사용하고, 평소에는 로컬 규칙과 캐시로 처리한다.",
+    "expected_cost": "낮음",
+    "note": "기능 자체는 무거운 호출 없이도 운영 가능하며, 분석용 요약만 배치 처리하면 된다.",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-07-21",
-    "last_report_path": "data/ai_lab/growth_reports/2026-07-21.md",
-    "last_issue_title": "[AI DEV] 2026-07-21 디자인/UX 성장 제안",
-    "last_run_at_kst": "2026-07-21T14:36:44.436913+09:00"
+    "last_report_date": "2026-07-22",
+    "last_report_path": "data/ai_lab/growth_reports/2026-07-22.md",
+    "last_issue_title": "[AI DEV] 2026-07-22 기능 성장 제안",
+    "last_run_at_kst": "2026-07-22T12:54:44.652680+09:00"
   }
 }
