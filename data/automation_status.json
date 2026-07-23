@@ -1,13 +1,13 @@
 {
-  "last_run_kst": "2026-07-22T12:54:23+09:00",
-  "next_run_kst": "2026-07-23T09:20:00+09:00",
-  "status": "changed",
-  "message": "오늘 관심 법령 데이터가 갱신되었습니다. 변경 후보 2건, OpenAI 호출 0회입니다.",
+  "last_run_kst": "2026-07-23T12:52:45+09:00",
+  "next_run_kst": "2026-07-24T09:20:00+09:00",
+  "status": "no_change",
+  "message": "오늘 확인 결과 변경된 관심 법령이 없습니다.",
   "failure_hint": "특이사항 없음",
-  "legal_change_count": 2,
+  "legal_change_count": 0,
   "today_count": 0,
   "last_7_days_count": 0,
-  "last_30_days_count": 2,
+  "last_30_days_count": 0,
   "new_summary_key_count": 0,
   "cache_hit_count": 2,
   "openai_call_count": 0,
@@ -876,19 +876,19 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 165.36,
       "changed_files_count": 1
+    },
+    {
+      "date": "2026-07-23",
+      "last_run_kst": "2026-07-23T12:52:45+09:00",
+      "status": "no_change",
+      "message": "오늘 확인 결과 변경된 관심 법령이 없습니다.",
+      "openai_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "duration_seconds": 183.25,
+      "changed_files_count": 0
     }
   ],
   "recent_7_runs": [
-    {
-      "date": "2026-07-16",
-      "last_run_kst": "2026-07-16T14:34:16+09:00",
-      "status": "partial_failed",
-      "message": "일부 관심 법령 확인에 실패했습니다. GitHub Actions 로그 확인이 필요합니다.",
-      "openai_call_count": 0,
-      "estimated_cost_usd": 0.0,
-      "duration_seconds": 6634.76,
-      "changed_files_count": 0
-    },
     {
       "date": "2026-07-17",
       "last_run_kst": "2026-07-17T12:45:24+09:00",
@@ -948,12 +948,20 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 165.36,
       "changed_files_count": 1
+    },
+    {
+      "date": "2026-07-23",
+      "last_run_kst": "2026-07-23T12:52:45+09:00",
+      "status": "no_change",
+      "message": "오늘 확인 결과 변경된 관심 법령이 없습니다.",
+      "openai_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "duration_seconds": 183.25,
+      "changed_files_count": 0
     }
   ],
-  "duration_seconds": 165.36,
-  "changed_files": [
-    "ata/law_updates.json"
-  ],
+  "duration_seconds": 183.25,
+  "changed_files": [],
   "workflow": "Auto Law Brief Update",
   "branch": "main",
   "source": "github_actions"
