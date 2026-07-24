@@ -1142,7 +1142,23 @@
         "요약"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "9677c01821f275b7",
+      "date": "2026-07-24",
+      "category": "scalability",
+      "title": "선언형 Entitlement Matrix",
+      "summary": "도메인×역할×플랜×플랫폼 조합에 따라 기능, 콘텐츠, CTA, 내보내기 권한을 선언적으로 결정하는 정책 레이어를 만든다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "앱화",
+        "설정",
+        "동기화",
+        "iOS",
+        "Android"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-07-23T12:53:04.073526+09:00"
+  "last_updated": "2026-07-24T12:58:45.795454+09:00"
 }
