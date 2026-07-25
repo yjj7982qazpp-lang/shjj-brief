@@ -1158,7 +1158,23 @@
         "Android"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "b43b90f6ea2493eb",
+      "date": "2026-07-25",
+      "category": "automation",
+      "title": "검수 증거 패킷 자동 생성기",
+      "summary": "리포트나 원장 생성 시 입력 스냅샷, 누락 필드, 중복 신호, 위험 사유, 권장 액션을 한 묶음으로 자동 생성해 관리자 판정을 최소 클릭으로 끝내게 한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "관리자",
+        "결정",
+        "자동반영",
+        "보류",
+        "폐기"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-07-24T12:58:45.795454+09:00"
+  "last_updated": "2026-07-25T14:30:16.516393+09:00"
 }
