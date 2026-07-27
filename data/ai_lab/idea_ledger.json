@@ -1190,7 +1190,23 @@
         "회귀방지"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "a482655429f8e360",
+      "date": "2026-07-27",
+      "category": "ops_cost",
+      "title": "원가 회수 스코어 기반 섹션 퇴출/승격",
+      "summary": "단순 비용 절감이 아니라, 생성비용과 사용자 반응을 묶어 섹션을 자동으로 승격/축소하는 기준을 만든다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "비용",
+        "캐시",
+        "summary_key",
+        "재사용률",
+        "OpenAI"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-07-26T13:03:54.636734+09:00"
+  "last_updated": "2026-07-27T15:00:33.182346+09:00"
 }
