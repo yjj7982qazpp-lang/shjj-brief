@@ -1238,7 +1238,23 @@
         "유입"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "b2f724832f10217b",
+      "date": "2026-07-30",
+      "category": "revenue",
+      "title": "브리핑 API/웹훅 리셀 패스",
+      "summary": "무료 일일 브리프는 유지하고, 주간 변경 요약과 실무 체크리스트를 PDF/메일형 프리미엄 리포트로 분리한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "유료",
+        "주간",
+        "프리미엄",
+        "리포트",
+        "전문가"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-07-29T12:51:56.350893+09:00"
+  "last_updated": "2026-07-30T12:42:54.439121+09:00"
 }
