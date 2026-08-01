@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "lastUpdated": "2026-07-31T12:58:23+09:00",
+    "lastUpdated": "2026-08-01T12:59:45+09:00",
     "model": "gpt-4.1-mini",
-    "totalCount": 23,
-    "openaiCallCount": 5
+    "totalCount": 24,
+    "openaiCallCount": 1
   },
   "items": {
     "66681a1388c7b712b3e89f9a6f6a3abeabe9d0f9e9d0379c1bbe4a9f95a84726": {
@@ -252,6 +252,17 @@
         "휴대용 경사로 비치 의무는 병원, 화장시설 내 장례식장 포함",
         "개정 규칙은 2026년 7월 2일부터 시행",
         "휠체어 이용자의 장례식장 출입 편의 증진 목적"
+      ],
+      "confidence": "low",
+      "source": "openai"
+    },
+    "90fe3c2c820a630462a689367518019460a686f92beccbb52f2b9bb711bce8b3": {
+      "headline": "건축법 시행령 일부개정 - 변전소 조경 의무 완화",
+      "bullets": [
+        "대지 경계 50m 이내 산지에 건축하는 변전소는 대지 조경 의무 적용 제외",
+        "조경 의무 문구 '아니할' → '않을'로 변경",
+        "산불 확산 및 정전 피해 방지 목적",
+        "2026-07-28부터 시행"
       ],
       "confidence": "low",
       "source": "openai"
