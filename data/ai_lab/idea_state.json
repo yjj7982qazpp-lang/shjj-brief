@@ -1,28 +1,29 @@
 {
-  "date": "2026-07-31",
+  "date": "2026-08-01",
   "mode": "growth_suggestion",
-  "category": "design_ux",
-  "category_name": "디자인/UX",
-  "top_proposal_title": "본문 우선순위 고정 레일",
-  "top_proposal_summary": "브리프 본문 상단에 '먼저 볼 것 / 지금 할 것 / 참고할 것'을 고정 노출하는 UX 규칙을 만든다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-07-31.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-07-31-1258.md",
-  "last_issue_title": "[AI DEV] 2026-07-31 디자인/UX 성장 제안",
-  "last_run_at_kst": "2026-07-31T12:58:43.667999+09:00",
+  "category": "feature",
+  "category_name": "기능",
+  "top_proposal_title": "브리핑 충돌 감지 + 우선순위 한 줄",
+  "top_proposal_summary": "사용자가 특정 법령 변경에 메모를 남기고 후속 확인 날짜를 저장해 재방문 이유를 만든다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-08-01.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-08-01-1300.md",
+  "last_issue_title": "[AI DEV] 2026-08-01 기능 성장 제안",
+  "last_run_at_kst": "2026-08-01T13:00:10.661971+09:00",
   "cost_model": {
-    "implementation_cost": "low",
-    "runtime_cost": "very_low",
-    "maintenance_cost": "low",
-    "expected_benefit": "탐색 시간 감소, 이탈 감소, 빈 상태 신뢰도 개선",
-    "notes": "이번 제안은 문서/규칙 중심이라 운영비 증가는 거의 없고, 향후 구현 시에도 추가 API 없이 카피와 레이아웃 규칙으로 처리할 수 있다.",
+    "approach": "규칙 기반 1차 판정 + 고위험 건만 설명 생성",
+    "incremental_ai_calls": "0~1회/브리프",
+    "server_cost": "낮음",
+    "data_cost": "기존 날씨·일정·법령 조회 범위 내",
+    "expected_payback": "체류와 재방문 증가로 광고 노출을 늘리고, 유료 사업장 경고 팩의 전환 기반을 만든다.",
+    "notes": "새로운 상시 API를 추가하기보다 기존 데이터 조합 규칙을 재사용하는 쪽이 적합하다.",
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-07-31",
-    "last_report_path": "data/ai_lab/growth_reports/2026-07-31.md",
-    "last_issue_title": "[AI DEV] 2026-07-31 디자인/UX 성장 제안",
-    "last_run_at_kst": "2026-07-31T12:58:43.667999+09:00"
+    "last_report_date": "2026-08-01",
+    "last_report_path": "data/ai_lab/growth_reports/2026-08-01.md",
+    "last_issue_title": "[AI DEV] 2026-08-01 기능 성장 제안",
+    "last_run_at_kst": "2026-08-01T13:00:10.661971+09:00"
   }
 }
