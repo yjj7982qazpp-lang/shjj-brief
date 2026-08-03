@@ -1,28 +1,36 @@
 {
-  "date": "2026-08-02",
+  "date": "2026-08-03",
   "mode": "growth_suggestion",
-  "category": "content",
-  "category_name": "콘텐츠",
-  "top_proposal_title": "업종별 7일 완주형 브리핑 코스",
-  "top_proposal_summary": "법령 변경마다 원문 요약과 별도로 실무자가 바로 이해할 수 있는 영향 문장과 확인 질문을 제공한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-08-02.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-08-02-1447.md",
-  "last_issue_title": "[AI DEV] 2026-08-02 콘텐츠 성장 제안",
-  "last_run_at_kst": "2026-08-02T14:47:35.053093+09:00",
+  "category": "scalability",
+  "category_name": "확장성",
+  "top_proposal_title": "화이트라벨 데모 워크스페이스",
+  "top_proposal_summary": "알림 시간, 관심 법령, 사용자 결정 기록을 향후 iOS/Android 동기화가 쉬운 데이터 단위로 분리하는 계획을 세운다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-08-03.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-08-03-1304.md",
+  "last_issue_title": "[AI DEV] 2026-08-03 확장성 성장 제안",
+  "last_run_at_kst": "2026-08-03T13:04:42.096344+09:00",
   "cost_model": {
-    "base_cost": "기존 브리프 생성 비용 유지",
-    "incremental_cost": "시리즈 메타데이터와 단계 텍스트만 추가하면 토큰 증가는 대략 5~10% 수준",
-    "api_impact": "새 외부 데이터 호출은 없고, 재조합/템플릿화 중심이라 운영비 증가는 낮음",
-    "optimization": "series_id와 업종/역할 키로 캐시하면 반복 생성 비용을 더 줄일 수 있다",
-    "overall": "저비용",
+    "runtime_cost": "거의 없음",
+    "build_cost": "낮음",
+    "maintenance_cost": "낮음~중간",
+    "assumptions": [
+      "새 API 호출이나 서버 연산을 추가하지 않는다",
+      "샘플 데이터와 문서 자산은 재사용한다",
+      "도메인 추가 시마다 데모 팩만 보강한다"
+    ],
+    "expected_saving": [
+      "세일즈 전 설명 시간 감소",
+      "온보딩 셋업 수작업 감소",
+      "검수/QA 재현 비용 감소"
+    ],
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-08-02",
-    "last_report_path": "data/ai_lab/growth_reports/2026-08-02.md",
-    "last_issue_title": "[AI DEV] 2026-08-02 콘텐츠 성장 제안",
-    "last_run_at_kst": "2026-08-02T14:47:35.053093+09:00"
+    "last_report_date": "2026-08-03",
+    "last_report_path": "data/ai_lab/growth_reports/2026-08-03.md",
+    "last_issue_title": "[AI DEV] 2026-08-03 확장성 성장 제안",
+    "last_run_at_kst": "2026-08-03T13:04:42.096344+09:00"
   }
 }
