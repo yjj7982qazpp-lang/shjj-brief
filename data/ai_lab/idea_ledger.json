@@ -1318,7 +1318,23 @@
         "Android"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "eb8c054bcb44edeb",
+      "date": "2026-08-04",
+      "category": "automation",
+      "title": "관리자 검수 면제/재검토 레지스트리",
+      "summary": "연속 무결성 통과, 변경 없음, 저위험 상태, 최근 실패 없음 같은 조건을 묶어 '이번 루프에서 사람이 안 봐도 되는 항목'을 자동 판정하는 문서/룰 레지스트리를 만든다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "관리자",
+        "결정",
+        "자동반영",
+        "보류",
+        "폐기"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-08-03T13:04:42.096344+09:00"
+  "last_updated": "2026-08-04T12:49:14.102003+09:00"
 }
