@@ -1350,7 +1350,23 @@
         "회귀방지"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "a7cb7c666aa14159",
+      "date": "2026-08-06",
+      "category": "ops_cost",
+      "title": "슬롯별 신선도 SLA + 제로생성 발행",
+      "summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "비용",
+        "캐시",
+        "summary_key",
+        "재사용률",
+        "OpenAI"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-08-05T14:31:08.285160+09:00"
+  "last_updated": "2026-08-06T12:50:16.981800+09:00"
 }
