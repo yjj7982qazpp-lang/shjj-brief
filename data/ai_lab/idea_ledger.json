@@ -1366,7 +1366,23 @@
         "OpenAI"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "68b074027560c427",
+      "date": "2026-08-07",
+      "category": "admin_analytics",
+      "title": "실험 판정 레지스트리(가설·KPI·중단선·비용상한)",
+      "summary": "제안별 진행/보류/폐기 상태와 카테고리 편중을 JSON으로 축적해 운영자가 다음 작업을 빠르게 고르게 한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "대시보드",
+        "결정",
+        "상태",
+        "카테고리",
+        "운영자"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-08-06T12:50:16.981800+09:00"
+  "last_updated": "2026-08-07T12:24:21.935076+09:00"
 }

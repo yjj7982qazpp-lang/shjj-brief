@@ -1,31 +1,36 @@
 {
-  "date": "2026-08-06",
+  "date": "2026-08-07",
   "mode": "growth_suggestion",
-  "category": "ops_cost",
-  "category_name": "운영비",
-  "top_proposal_title": "슬롯별 신선도 SLA + 제로생성 발행",
-  "top_proposal_summary": "summary_key 캐시 재사용률과 신규 생성률을 월 1회 기록해 OpenAI 호출 비용이 늘어나는 지점을 조기 발견한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-08-06.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-08-06-1250.md",
-  "last_issue_title": "[AI DEV] 2026-08-06 운영비 성장 제안",
-  "last_run_at_kst": "2026-08-06T12:50:16.981800+09:00",
+  "category": "admin_analytics",
+  "category_name": "관리자/분석",
+  "top_proposal_title": "실험 판정 레지스트리(가설·KPI·중단선·비용상한)",
+  "top_proposal_summary": "제안별 진행/보류/폐기 상태와 카테고리 편중을 JSON으로 축적해 운영자가 다음 작업을 빠르게 고르게 한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-08-07.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-08-07-1224.md",
+  "last_issue_title": "[AI DEV] 2026-08-07 관리자/분석 성장 제안",
+  "last_run_at_kst": "2026-08-07T12:24:21.935076+09:00",
   "cost_model": {
-    "assumption": "전체 브리프 슬롯의 30~50%가 실제로는 변경이 없거나 체감가치가 낮다고 가정합니다.",
-    "baseline": "현재는 슬롯별로 상세 요약을 만드는 구조라, 무변경 슬롯도 동일 비용이 발생합니다.",
-    "expected_savings": {
-      "api_calls": "15~35% 감소",
-      "token_usage": "20~40% 감소",
-      "admin_review_time": "10~25% 감소"
-    },
-    "notes": "절감폭은 데이터 변경률과 슬롯별 재사용률에 따라 달라집니다. 축약본 전환이 함께 붙으면 비용 절감과 유료화 실험을 동시에 할 수 있습니다.",
+    "build_cost": "낮음",
+    "run_cost": "낮음",
+    "cost_drivers": [
+      "기존 결정 로그 재사용",
+      "기존 지표 집계값 재사용",
+      "규칙 기반 판정 우선"
+    ],
+    "savings": [
+      "죽은 실험의 조기 정리",
+      "관리자 검토 시간 절감",
+      "불필요한 콘텐츠/기능 반복 비용 감소"
+    ],
+    "note": "새 API 호출을 늘리지 않고 문서/원장 기준만 보강하는 방향이 가장 적합합니다.",
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-08-06",
-    "last_report_path": "data/ai_lab/growth_reports/2026-08-06.md",
-    "last_issue_title": "[AI DEV] 2026-08-06 운영비 성장 제안",
-    "last_run_at_kst": "2026-08-06T12:50:16.981800+09:00"
+    "last_report_date": "2026-08-07",
+    "last_report_path": "data/ai_lab/growth_reports/2026-08-07.md",
+    "last_issue_title": "[AI DEV] 2026-08-07 관리자/분석 성장 제안",
+    "last_run_at_kst": "2026-08-07T12:24:21.935076+09:00"
   }
 }
