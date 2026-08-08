@@ -1,6 +1,6 @@
 {
-  "last_run_kst": "2026-08-07T12:24:00+09:00",
-  "next_run_kst": "2026-08-08T09:20:00+09:00",
+  "last_run_kst": "2026-08-08T11:26:40+09:00",
+  "next_run_kst": "2026-08-09T09:20:00+09:00",
   "status": "no_change",
   "message": "오늘 확인 결과 변경된 관심 법령이 없습니다.",
   "failure_hint": "특이사항 없음",
@@ -22,21 +22,11 @@
   },
   "call_summary": {
     "today_openai_call_count": 0,
-    "last_7_days_openai_call_count": 1,
+    "last_7_days_openai_call_count": 0,
     "last_30_days_openai_call_count": 13,
     "lifetime_openai_call_count": 24
   },
   "run_history": [
-    {
-      "date": "2026-05-10",
-      "last_run_kst": "2026-05-10T13:29:26+09:00",
-      "status": "no_change",
-      "message": "오늘 확인 결과 변경된 관심 법령이 없습니다.",
-      "openai_call_count": 0,
-      "estimated_cost_usd": 0.0,
-      "duration_seconds": 61.81,
-      "changed_files_count": 0
-    },
     {
       "date": "2026-05-11",
       "last_run_kst": "2026-05-11T13:41:49+09:00",
@@ -926,19 +916,19 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 218.05,
       "changed_files_count": 0
+    },
+    {
+      "date": "2026-08-08",
+      "last_run_kst": "2026-08-08T11:26:40+09:00",
+      "status": "no_change",
+      "message": "오늘 확인 결과 변경된 관심 법령이 없습니다.",
+      "openai_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "duration_seconds": 118.27,
+      "changed_files_count": 0
     }
   ],
   "recent_7_runs": [
-    {
-      "date": "2026-08-01",
-      "last_run_kst": "2026-08-01T12:59:45+09:00",
-      "status": "changed",
-      "message": "오늘 관심 법령 데이터가 갱신되었습니다. 변경 후보 4건, OpenAI 호출 1회입니다.",
-      "openai_call_count": 1,
-      "estimated_cost_usd": 0.0,
-      "duration_seconds": 206.3,
-      "changed_files_count": 2
-    },
     {
       "date": "2026-08-02",
       "last_run_kst": "2026-08-02T14:47:17+09:00",
@@ -998,9 +988,19 @@
       "estimated_cost_usd": 0.0,
       "duration_seconds": 218.05,
       "changed_files_count": 0
+    },
+    {
+      "date": "2026-08-08",
+      "last_run_kst": "2026-08-08T11:26:40+09:00",
+      "status": "no_change",
+      "message": "오늘 확인 결과 변경된 관심 법령이 없습니다.",
+      "openai_call_count": 0,
+      "estimated_cost_usd": 0.0,
+      "duration_seconds": 118.27,
+      "changed_files_count": 0
     }
   ],
-  "duration_seconds": 218.05,
+  "duration_seconds": 118.27,
   "changed_files": [],
   "workflow": "Auto Law Brief Update",
   "branch": "main",
