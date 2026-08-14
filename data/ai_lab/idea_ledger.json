@@ -1478,7 +1478,23 @@
         "Android"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "83b859bbc1e80f1f",
+      "date": "2026-08-14",
+      "category": "automation",
+      "title": "자동화 실행 범위/한도 레지스트리",
+      "summary": "진행/보류/폐기 결정이 decisions.json에 기록되면 다음 루프가 같은 제안을 반복하지 않도록 자동 반영한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "관리자",
+        "결정",
+        "자동반영",
+        "보류",
+        "폐기"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-08-13T12:07:10.170514+09:00"
+  "last_updated": "2026-08-14T12:06:01.295300+09:00"
 }

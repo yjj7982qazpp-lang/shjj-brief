@@ -1,30 +1,32 @@
 {
-  "date": "2026-08-13",
+  "date": "2026-08-14",
   "mode": "growth_suggestion",
-  "category": "scalability",
-  "category_name": "확장성",
-  "top_proposal_title": "상속형 도메인 프로필 레이어(기본값 + 오버라이드 diff)",
-  "top_proposal_summary": "알림 시간, 관심 법령, 사용자 결정 기록을 향후 iOS/Android 동기화가 쉬운 데이터 단위로 분리하는 계획을 세운다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-08-13.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-08-13-1207.md",
-  "last_issue_title": "[AI DEV] 2026-08-13 확장성 성장 제안",
-  "last_run_at_kst": "2026-08-13T12:07:10.170514+09:00",
+  "category": "automation",
+  "category_name": "자동화",
+  "top_proposal_title": "자동화 실행 범위/한도 레지스트리",
+  "top_proposal_summary": "진행/보류/폐기 결정이 decisions.json에 기록되면 다음 루프가 같은 제안을 반복하지 않도록 자동 반영한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-08-14.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-08-14-1206.md",
+  "last_issue_title": "[AI DEV] 2026-08-14 자동화 성장 제안",
+  "last_run_at_kst": "2026-08-14T12:06:01.295300+09:00",
   "cost_model": {
-    "build_cost": "low",
-    "ongoing_cost": "low",
+    "implementation_cost": "low",
+    "runtime_cost": "very_low",
+    "maintenance_cost": "low",
+    "expected_savings": "medium_to_high",
     "notes": [
-      "문서/원장 중심이라 초기 구현비가 낮다.",
-      "운영 중에는 예외가 늘수록만 관리비가 증가하므로 상속 규칙을 단순하게 유지해야 한다.",
-      "기대수익은 직접 과금보다 B2B 전환/화이트라벨 재사용에서 발생한다."
+      "문서/규칙 중심이라 API 추가 비용이 거의 없다.",
+      "허용 범위와 중단 조건을 표준화하면 수동 재검토 시간이 줄어든다.",
+      "나중에 자동화가 늘어날수록 같은 레지스트리를 재사용할 수 있어 추가 비용 대비 효과가 커진다."
     ],
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-08-13",
-    "last_report_path": "data/ai_lab/growth_reports/2026-08-13.md",
-    "last_issue_title": "[AI DEV] 2026-08-13 확장성 성장 제안",
-    "last_run_at_kst": "2026-08-13T12:07:10.170514+09:00"
+    "last_report_date": "2026-08-14",
+    "last_report_path": "data/ai_lab/growth_reports/2026-08-14.md",
+    "last_issue_title": "[AI DEV] 2026-08-14 자동화 성장 제안",
+    "last_run_at_kst": "2026-08-14T12:06:01.295300+09:00"
   }
 }
