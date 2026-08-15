@@ -1494,7 +1494,23 @@
         "폐기"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "029cb036f9ec5192",
+      "date": "2026-08-15",
+      "category": "code_quality",
+      "title": "기본값/스킵 provenance ledger",
+      "summary": "보고서 필수 섹션과 원장 필드를 검증하는 저비용 스키마 체크를 추가해 깨진 보고서 생성을 막는다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "스키마",
+        "검증",
+        "보고서",
+        "원장",
+        "회귀방지"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-08-14T12:06:01.295300+09:00"
+  "last_updated": "2026-08-15T12:41:38.113823+09:00"
 }
