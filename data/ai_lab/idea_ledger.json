@@ -1510,7 +1510,23 @@
         "회귀방지"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "1a68c9f235fcacef",
+      "date": "2026-08-16",
+      "category": "ops_cost",
+      "title": "슬롯 통합 배치 발행 레이어",
+      "summary": "같은 입력군을 개별 호출하지 말고 배치 윈도우로 묶어 1회 생성 후 슬롯별로 재사용한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "비용",
+        "캐시",
+        "summary_key",
+        "재사용률",
+        "OpenAI"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-08-15T12:41:38.113823+09:00"
+  "last_updated": "2026-08-16T12:49:16.400145+09:00"
 }
