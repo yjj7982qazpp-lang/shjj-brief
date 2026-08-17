@@ -1,41 +1,29 @@
 {
-  "date": "2026-08-16",
+  "date": "2026-08-17",
   "mode": "growth_suggestion",
-  "category": "ops_cost",
-  "category_name": "운영비",
-  "top_proposal_title": "슬롯 통합 배치 발행 레이어",
-  "top_proposal_summary": "같은 입력군을 개별 호출하지 말고 배치 윈도우로 묶어 1회 생성 후 슬롯별로 재사용한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-08-16.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-08-16-1249.md",
-  "last_issue_title": "[AI DEV] 2026-08-16 운영비 성장 제안",
-  "last_run_at_kst": "2026-08-16T12:49:16.400145+09:00",
+  "category": "admin_analytics",
+  "category_name": "관리자/분석",
+  "top_proposal_title": "지표 사용성/의사결정 귀속 계측",
+  "top_proposal_summary": "제안별 진행/보류/폐기 상태와 카테고리 편중을 JSON으로 축적해 운영자가 다음 작업을 빠르게 고르게 한다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-08-17.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-08-17-1102.md",
+  "last_issue_title": "[AI DEV] 2026-08-17 관리자/분석 성장 제안",
+  "last_run_at_kst": "2026-08-17T11:02:13.211855+09:00",
   "cost_model": {
-    "current_cost_drivers": [
-      "개별 슬롯 호출",
-      "재시도",
-      "중복 생성",
-      "낮은 캐시 적중"
-    ],
-    "assumptions": [
-      "하루 생성 요청의 일부가 동일 템플릿/유사 입력을 공유한다",
-      "최신성이 필요한 슬롯은 소수다"
-    ],
-    "estimated_effect": "호출 수 20~40% 감소, 재시도 비용 10~20% 감소 가능",
-    "tradeoff": "배치 지연으로 인한 최신성 손실이 1차 리스크다",
-    "metrics_to_watch": [
-      "calls_per_day",
-      "retry_rate",
-      "cache_hit_rate",
-      "stale_slot_count"
-    ],
+    "runtime": "low",
+    "ai_calls": "none_or_negligible",
+    "storage": "low",
+    "ops": "low",
+    "assumption": "기존 결정 로그와 조회 로그를 집계하는 방식이면 추가 생성 비용 없이 운영 가능하다.",
+    "note": "가장 큰 비용은 계산이 아니라 지표를 너무 많이 정의해 해석 비용이 늘어나는 것이다.",
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-08-16",
-    "last_report_path": "data/ai_lab/growth_reports/2026-08-16.md",
-    "last_issue_title": "[AI DEV] 2026-08-16 운영비 성장 제안",
-    "last_run_at_kst": "2026-08-16T12:49:16.400145+09:00"
+    "last_report_date": "2026-08-17",
+    "last_report_path": "data/ai_lab/growth_reports/2026-08-17.md",
+    "last_issue_title": "[AI DEV] 2026-08-17 관리자/분석 성장 제안",
+    "last_run_at_kst": "2026-08-17T11:02:13.211855+09:00"
   }
 }
