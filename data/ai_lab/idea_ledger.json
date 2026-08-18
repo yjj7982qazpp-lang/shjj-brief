@@ -1542,7 +1542,23 @@
         "운영자"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "57ad2ffe98fea04d",
+      "date": "2026-08-18",
+      "category": "marketing_growth",
+      "title": "공개 브리핑 아카이브 + RSS/JSON 피드",
+      "summary": "매일 생성되는 브리프를 검색 가능한 공개 페이지로 축적하고, RSS/JSON 피드로 외부 구독과 재배포를 가능하게 한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "공유",
+        "요약문구",
+        "카카오톡",
+        "메일",
+        "유입"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-08-17T11:02:13.211855+09:00"
+  "last_updated": "2026-08-18T10:56:53.271087+09:00"
 }
