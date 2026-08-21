@@ -1,27 +1,39 @@
 {
-  "date": "2026-08-20",
+  "date": "2026-08-21",
   "mode": "growth_suggestion",
-  "category": "design_ux",
-  "category_name": "디자인/UX",
-  "top_proposal_title": "점진 공개형 브리프(요약→근거→행동)",
-  "top_proposal_summary": "오늘 시행 법령, 행동 가이드, 일정 중 사용자의 다음 행동과 연결되는 정보를 첫 화면 상단에 더 명확히 배치한다.",
-  "last_report_path": "data/ai_lab/growth_reports/2026-08-20.md",
-  "last_daily_report_path": "data/ai_lab/daily/2026-08-20-1059.md",
-  "last_issue_title": "[AI DEV] 2026-08-20 디자인/UX 성장 제안",
-  "last_run_at_kst": "2026-08-20T10:59:21.213776+09:00",
+  "category": "feature",
+  "category_name": "기능",
+  "top_proposal_title": "7일 운영 리스크 보드",
+  "top_proposal_summary": "날씨·일정·법령 브리프를 따로 읽지 않고, 오늘/이번 주/보류로 묶어 보여주는 운영 화면을 만든다.",
+  "last_report_path": "data/ai_lab/growth_reports/2026-08-21.md",
+  "last_daily_report_path": "data/ai_lab/daily/2026-08-21-1105.md",
+  "last_issue_title": "[AI DEV] 2026-08-21 기능 성장 제안",
+  "last_run_at_kst": "2026-08-21T11:05:32.458346+09:00",
   "cost_model": {
-    "current_cost": "낮음",
-    "why": "문서/설계 수준의 제안이라 추가 API나 서버 호출이 없다.",
-    "future_cost": "템플릿과 규칙 재사용으로 저비용 유지 가능",
-    "risk": "상세층이 과도하게 늘면 렌더 복잡도만 증가하므로 초기에는 2단계 구조로 제한",
+    "estimate": "low",
+    "assumptions": [
+      "기존 브리프 결과를 재활용",
+      "규칙 기반 우선순위부터 시작",
+      "추가 AI 요약은 선택사항"
+    ],
+    "monthly_effect": [
+      "저장 비용: 미미",
+      "연산 비용: 미미",
+      "AI 비용: 0~소폭 증가"
+    ],
+    "cost_control": [
+      "일 단위 캐시",
+      "템플릿 재사용",
+      "우선순위 계산은 비AI 규칙 우선"
+    ],
     "recommended_model": "GPT-5.4 Mini",
     "reasoning": "Medium",
     "cost_reason": "최근 보고서는 최대 7개만 참조하고 빈 필드는 로컬 fallback으로 보정해 OpenAI/API 호출 비용을 늘리지 않습니다."
   },
   "_ai_development_loop": {
-    "last_report_date": "2026-08-20",
-    "last_report_path": "data/ai_lab/growth_reports/2026-08-20.md",
-    "last_issue_title": "[AI DEV] 2026-08-20 디자인/UX 성장 제안",
-    "last_run_at_kst": "2026-08-20T10:59:21.213776+09:00"
+    "last_report_date": "2026-08-21",
+    "last_report_path": "data/ai_lab/growth_reports/2026-08-21.md",
+    "last_issue_title": "[AI DEV] 2026-08-21 기능 성장 제안",
+    "last_run_at_kst": "2026-08-21T11:05:32.458346+09:00"
   }
 }
