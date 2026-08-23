@@ -1622,7 +1622,23 @@
         "요약"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "178af9aea639a897",
+      "date": "2026-08-23",
+      "category": "scalability",
+      "title": "도메인 런칭 게이트 스코어카드",
+      "summary": "알림 시간, 관심 법령, 사용자 결정 기록을 향후 iOS/Android 동기화가 쉬운 데이터 단위로 분리하는 계획을 세운다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "앱화",
+        "설정",
+        "동기화",
+        "iOS",
+        "Android"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-08-22T12:43:09.992000+09:00"
+  "last_updated": "2026-08-23T12:52:05.832348+09:00"
 }
