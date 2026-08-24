@@ -1,10 +1,7 @@
 name: E2E Smoke Guard
 
+# Automatic triggers disabled. Manual execution only.
 on:
-  pull_request:
-    branches:
-      - main
-      - preview
   workflow_dispatch:
 
 permissions:
