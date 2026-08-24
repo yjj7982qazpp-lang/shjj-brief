@@ -1638,7 +1638,23 @@
         "Android"
       ],
       "cooldown_days": 14
+    },
+    {
+      "id": "e39efae28aea7d55",
+      "date": "2026-08-24",
+      "category": "automation",
+      "title": "작업 가치 점수 기반 자동 재배치 큐",
+      "summary": "관리자 반복 작업을 비용 절감, 실패 위험, 긴급도, 재검토 필요성으로 점수화해 매일 자동 재정렬하고, 오래된 항목은 만료 또는 보류 전환한다.",
+      "status": "proposed",
+      "similarity_keywords": [
+        "관리자",
+        "결정",
+        "자동반영",
+        "보류",
+        "폐기"
+      ],
+      "cooldown_days": 14
     }
   ],
-  "last_updated": "2026-08-23T12:52:05.832348+09:00"
+  "last_updated": "2026-08-24T11:04:45.438294+09:00"
 }
