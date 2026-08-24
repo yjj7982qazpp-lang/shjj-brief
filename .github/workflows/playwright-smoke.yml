@@ -1,10 +1,8 @@
 name: Playwright Smoke Test
 
+# Automatic triggers disabled. Manual execution only.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 21 * * *' # KST 06:00
-    - cron: '0 5 * * *'  # KST 14:00
 
 permissions:
   contents: read
