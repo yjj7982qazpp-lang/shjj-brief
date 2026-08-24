@@ -1,10 +1,8 @@
 ﻿name: shjj-brief AI Auto Maintain
 
+# Automatic triggers disabled. Manual execution only.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "20 9 * * *"
-      timezone: "Asia/Seoul"
 
 permissions:
   contents: write
