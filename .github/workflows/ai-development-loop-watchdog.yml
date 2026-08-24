@@ -1,11 +1,7 @@
 name: AI Development Loop Watchdog
 
+# Automatic triggers disabled. Manual execution only.
 on:
-  workflow_run:
-    workflows:
-      - Auto Law Brief Update
-    types:
-      - completed
   workflow_dispatch:
 
 permissions:
@@ -14,7 +10,6 @@ permissions:
 
 jobs:
   run-loop-after-law-update:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -34,7 +29,7 @@ jobs:
         id: loop
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          AI_DEV_SLOT: ${{ github.event_name == 'workflow_dispatch' && 'manual' || '' }}
+          AI_DEV_SLOT: manual
         run: python .github/scripts/ai_development_loop.py
 
       - name: Commit and push if changed
